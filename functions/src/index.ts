@@ -1322,14 +1322,21 @@ export const registerPushToken = onCall(
 
     // Use token as doc ID so duplicate writes are idempotent
     const tokenDocRef = db.collection('pushTokens').doc(token);
+    const studentRef = db.collection('students').doc(auth.uid);
 
-    await tokenDocRef.set({
-      token,
-      userId: auth.uid,
-      platform: typeof platform === 'string' ? platform : null,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
+    await Promise.all([
+      tokenDocRef.set({
+        token,
+        userId: auth.uid,
+        platform: typeof platform === 'string' ? platform : null,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true }),
+      studentRef.set({
+        expoPushTokens: admin.firestore.FieldValue.arrayUnion(token),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true }),
+    ]);
 
     return { success: true };
   }
