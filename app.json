@@ -93,7 +93,7 @@
         "expo-font",
         {
           "fonts": [
-            "./assets/fonts/phonk.otf",
+            "./assets/fonts/Hanson-Bold.otf",
             "./assets/fonts/poppins.ttf",
             "./assets/fonts/jali-arabic-regular.ttf",
             "./assets/fonts/jali-arabic-bold.ttf"

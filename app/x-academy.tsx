@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
 
   applyButtonText: {
     color: '#000',
-    fontFamily: Typography.phonk.bold,
+    fontFamily: Typography.hanson.bold,
     fontSize: 10,
   },
 });

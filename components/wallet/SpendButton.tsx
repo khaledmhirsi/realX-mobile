@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         fontSize: 16,
-        fontFamily: Typography.phonk.bold,
+        fontFamily: Typography.hanson.bold,
         color: '#FFFFFF',
         letterSpacing: 1,
     },

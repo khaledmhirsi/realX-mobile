@@ -20,7 +20,7 @@ export default function GreetingHeader({ userName }: Props) {
         <View style={[styles.textContainer, isRTL && styles.textContainerRTL]}>
             <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.greeting, textAlignStyle]}>
                 {prefix}
-                <Text style={[{ color: Colors.brandGreen, fontFamily: Typography.phonk.bold }, styles.userName]}>{userName}</Text>
+                <Text style={[{ color: Colors.brandGreen, fontFamily: Typography.hanson.bold }, styles.userName]}>{userName}</Text>
                 {suffix ?? ''}
             </Text>
             <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.subtitle, textAlignStyle]}>{t('greeting_prompt')}</Text>

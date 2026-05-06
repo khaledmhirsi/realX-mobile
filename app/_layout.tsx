@@ -36,7 +36,7 @@ void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    Phonk: require('../assets/fonts/phonk.otf'),
+    Hanson: require('../assets/fonts/Hanson-Bold.otf'),
     Poppins: require('../assets/fonts/poppins.ttf'),
     JaliArabicRegular: require('../assets/fonts/jali-arabic-regular.ttf'),
     JaliArabicBold: require('../assets/fonts/jali-arabic-bold.ttf'),
@@ -260,4 +260,3 @@ function LayoutContent({
     </Stack>
   );
 }
-

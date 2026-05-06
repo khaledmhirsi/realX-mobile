@@ -3,8 +3,8 @@ import { I18nManager } from 'react-native';
 const isArabic = I18nManager.isRTL;
 
 export const Typography = {
-    phonk: {
-        bold: isArabic ? 'JaliArabicBold' : 'Phonk',
+    hanson: {
+        bold: isArabic ? 'JaliArabicBold' : 'Hanson',
     },
     poppins: {
         medium: isArabic ? 'JaliArabicRegular' : 'Poppins',
