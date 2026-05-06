@@ -437,10 +437,16 @@ const processTransaction = async (options) => {
         ? userCashback + creatorCashback
         : userCashback;
 
+    const savedAmountCents =
+      appliedOffer?.discountType === 'buy1get1'
+        ? totalCents
+        : discountCents + giftcardSavingsCents;
+
     return {
       transactionId: transactionRef.id,
       finalAmount: fromCents(finalCents),
       discountAmount: fromCents(discountCents),
+      savedAmount: fromCents(savedAmountCents),
       cashbackAmount: fromCents(totalUserCashbackCents),
       creatorUid: creatorData?.creatorUid || null,
       creatorName: creatorData?.creatorName || null,

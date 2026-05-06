@@ -32,6 +32,7 @@ import { showLocalNotification } from '../../utils/notifications';
 
 interface RedemptionResult {
     discountAmount: number;
+    savedAmount?: number;
     cashbackAmount: number;
     creatorName?: string;
     totalAmount: number;
@@ -128,7 +129,7 @@ export default function RedeemScreen() {
     if (discountType === 'percentage') {
         discountAmount = totalAmount * (discountValue / 100);
     } else if (discountType === 'buy1get1') {
-        discountAmount = 0; // No discount shown for buy1get1
+        discountAmount = 0; // No discount deducted — user pays full amount
     } else {
         discountAmount = Math.min(discountValue, totalAmount);
     }
@@ -163,7 +164,7 @@ export default function RedeemScreen() {
             const data = result.data as any;
 
             const currency = t('currency_qar');
-            const savedAmount = data.discountAmount?.toFixed(2) || discountAmount.toFixed(2);
+            const savedAmount = (data.savedAmount ?? data.discountAmount ?? discountAmount).toFixed(2);
             let message = t('you_saved_success_message', { currency, amount: savedAmount });
 
             if (data.cashbackAmount > 0) {
@@ -183,6 +184,7 @@ export default function RedeemScreen() {
                 setIsRedeeming(false);
                 setRedemptionResult({
                     discountAmount: data.discountAmount || discountAmount,
+                    savedAmount: data.savedAmount ?? data.discountAmount ?? discountAmount,
                     cashbackAmount: data.cashbackAmount || 0,
                     creatorName: data.creatorName,
                     totalAmount,
@@ -256,7 +258,7 @@ export default function RedeemScreen() {
 
     // Success Screen
     if (redemptionResult) {
-        const savedStr = redemptionResult.discountAmount.toFixed(2);
+        const savedStr = (redemptionResult.savedAmount ?? redemptionResult.discountAmount).toFixed(2);
         const earnedStr = redemptionResult.cashbackAmount.toFixed(2);
         const currency = t('currency_qar');
 
@@ -315,13 +317,11 @@ export default function RedeemScreen() {
 
                     {/* Bottom Pill — Breakdown */}
                     <View style={styles.successBottomPill}>
-                        {/* You Saved (only for non-buy1get1) */}
-                        {offer.discountType !== 'buy1get1' && (
+                        {/* You Saved */}
                         <View style={styles.successSavedRow}>
                             <Ionicons name="pricetag" size={18} color={Colors.brandGreen} />
                             <Text style={styles.successSavedLabel}>{t('you_saved_success_message', { currency, amount: savedStr }).replace('!', '')}</Text>
                         </View>
-                        )}
 
                         {/* Amount to Pay */}
                         <View style={styles.successPayRow}>
