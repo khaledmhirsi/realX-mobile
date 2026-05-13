@@ -193,6 +193,7 @@ const sendCreatorCodeUsedPush = async ({
       vendorName,
       cashbackAmount,
     },
+    channelId: 'reelx_general',
   }));
 
   const response = await fetch('https://exp.host/--/api/v2/push/send', {
