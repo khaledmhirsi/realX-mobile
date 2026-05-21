@@ -11,89 +11,86 @@ import { logger } from '../../utils/logger';
 export default function TrendingOffers() {
     const { t } = useTranslation();
     const isRTL = I18nManager.isRTL;
-    const [offers, setOffers] = useState<any[]>([]);
+    const [vendors, setVendors] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
     const scrollViewRef = useRef<ScrollView | null>(null);
     const router = useRouter();
-    const displayedOffers = useMemo(() => (isRTL ? [...offers].reverse() : offers), [offers, isRTL]);
+    const displayedVendors = useMemo(() => (isRTL ? [...vendors].reverse() : vendors), [vendors, isRTL]);
     const trendingLabelPrefix = t('trending_label_prefix');
     const trendingLabelHighlight = t('trending_label_highlight');
 
     useEffect(() => {
-        const fetchTrendingOffers = async () => {
+        const fetchTrendingVendors = async () => {
             try {
                 const db = getFirestore();
                 const q = query(collection(db, 'vendors'), where('isTrending', '==', true));
                 const snapshot = await getDocs(q);
 
-                const fetchedResults: any[] = [];
-                snapshot.docs.forEach((docSnap: any) => {
+                const fetchedResults = snapshot.docs.map((docSnap: any) => {
                     const vendorData = docSnap.data();
-                    const vendorOffers = vendorData.offers || [];
-                    vendorOffers.forEach((offer: any, index: number) => {
-                        fetchedResults.push({
-                            id: `${docSnap.id}_offer_${index}`,
-                            vendorId: docSnap.id,
-                            ...offer,
-                            nameEn: vendorData.nameEn || vendorData.name,
-                            nameAr: vendorData.nameAr || vendorData.nameAr,
-                            vendorName: vendorData.name,
-                            vendorNameAr: vendorData.nameAr,
-                            shortDescription: vendorData.shortDescription,
-                            shortDescriptionAr: vendorData.shortDescriptionAr || vendorData.shortDescriptionAR,
-                            brandDescription: vendorData.brandDescription,
-                            descriptionEn: vendorData.descriptionEn,
-                            descriptionAr: vendorData.descriptionAr,
-                            vendorProfilePicture: vendorData.profilePicture,
-                            coverImage: vendorData.coverImage,
-                            xcard: vendorData.xcard || false,
-                            isTrending: true,
-                        });
-                    });
+
+                    return {
+                        id: docSnap.id,
+                        vendorId: docSnap.id,
+                        nameEn: vendorData.nameEn || vendorData.name,
+                        nameAr: vendorData.nameAr || vendorData.name,
+                        vendorName: vendorData.name,
+                        vendorNameAr: vendorData.nameAr,
+                        shortDescription: vendorData.shortDescription,
+                        shortDescriptionAr: vendorData.shortDescriptionAr || vendorData.shortDescriptionAR,
+                        brandDescription: vendorData.brandDescription,
+                        descriptionEn: vendorData.descriptionEn,
+                        descriptionAr: vendorData.descriptionAr,
+                        vendorProfilePicture: vendorData.profilePicture,
+                        coverImage: vendorData.coverImage,
+                        bannerImage: vendorData.bannerImage,
+                        xcard: vendorData.xcard || false,
+                        isTrending: true,
+                    };
                 });
 
-                setOffers(fetchedResults);
+                setVendors(fetchedResults);
             } catch (error) {
-                logger.error('Error fetching trending offers:', error);
+                logger.error('Error fetching trending vendors:', error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchTrendingOffers();
+        fetchTrendingVendors();
     }, []);
 
     useEffect(() => {
-        if (displayedOffers.length <= 1) {
+        if (displayedVendors.length <= 1) {
             return;
         }
 
         const interval = setInterval(() => {
-            setCurrentIndex((prevIndex) => (prevIndex + 1) % displayedOffers.length);
+            setCurrentIndex((prevIndex) => (prevIndex + 1) % displayedVendors.length);
         }, 4000);
 
         return () => clearInterval(interval);
-    }, [displayedOffers.length]);
+    }, [displayedVendors.length]);
 
     useEffect(() => {
-        if (!scrollViewRef.current || displayedOffers.length === 0) {
+        if (!scrollViewRef.current || displayedVendors.length === 0) {
             return;
         }
 
         const cardWidth = 220;
         const gap = 12;
         const horizontalPadding = 20;
-        const maxIndex = Math.max(0, displayedOffers.length - 1);
+        const maxIndex = Math.max(0, displayedVendors.length - 1);
         const safeIndex = Math.min(currentIndex, maxIndex);
         const offset = horizontalPadding + safeIndex * (cardWidth + gap);
 
         scrollViewRef.current.scrollTo({ x: offset, animated: true });
-    }, [currentIndex, displayedOffers.length]);
+    }, [currentIndex, displayedVendors.length]);
 
-    const handleOfferPress = (offer: any) => {
-        if (offer.vendorId) {
-            router.push({ pathname: '/vendor/[id]', params: { id: offer.vendorId } });
+    const handleVendorPress = (vendor: any) => {
+        if (vendor.vendorId) {
+            router.push({ pathname: '/vendor/[id]', params: { id: vendor.vendorId } });
         }
     };
 
@@ -105,7 +102,7 @@ export default function TrendingOffers() {
         );
     }
 
-    if (displayedOffers.length === 0) {
+    if (displayedVendors.length === 0) {
         return null;
     }
 
@@ -127,30 +124,26 @@ export default function TrendingOffers() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={[styles.scrollContent, { flexDirection: 'row' }]}
             >
-                {displayedOffers.map((offer) => {
+                {displayedVendors.map((vendor) => {
+                    const description = isRTL
+                        ? (vendor.shortDescriptionAr || vendor.shortDescriptionAR || vendor.descriptionAr || vendor.brandDescription || '')
+                        : (vendor.shortDescription || vendor.brandDescription || vendor.descriptionEn || '');
                     const name = isRTL
-                        ? (offer.nameAr || offer.vendorNameAr || offer.nameEn || offer.vendorName || 'Vendor')
-                        : (offer.nameEn || offer.vendorName || offer.nameAr || offer.vendorNameAr || 'Vendor');
-                    const cashbackText = isRTL
-                        ? (offer.shortDescriptionAr || offer.shortDescriptionAR || offer.descriptionAr || offer.brandDescription || '')
-                        : (offer.shortDescription || offer.brandDescription || offer.descriptionEn || '');
-                    const _discountText = offer.discountType === 'buy1get1'
-                        ? 'BUY 1 GET 1 FREE'
-                        : `${offer.discountValue || ''}${offer.discountType === 'percentage' ? '%' : ''} OFF`;
-                    void _discountText;
+                        ? (vendor.nameAr || vendor.vendorNameAr || vendor.nameEn || vendor.vendorName || 'Vendor')
+                        : (vendor.nameEn || vendor.vendorName || vendor.nameAr || vendor.vendorNameAr || 'Vendor');
 
                     return (
                         <RestaurantCard
-                            key={offer.id}
-                            id={offer.id}
+                            key={vendor.id}
+                            id={vendor.id}
                             name={name}
-                            cashbackText={cashbackText}
-                            isTrending={offer.isTrending}
-                            isTopRated={offer.isTopRated}
-                            imageUri={offer.coverImage || offer.bannerImage}
-                            logoUri={offer.vendorProfilePicture || offer.profilePicture}
-                            xcardEnabled={offer.xcard}
-                            onPress={() => handleOfferPress(offer)}
+                            cashbackText={description}
+                            isTrending={vendor.isTrending}
+                            isTopRated={vendor.isTopRated}
+                            imageUri={vendor.bannerImage || vendor.coverImage}
+                            logoUri={vendor.vendorProfilePicture || vendor.profilePicture}
+                            xcardEnabled={vendor.xcard}
+                            onPress={() => handleVendorPress(vendor)}
                             style={styles.offerCard}
                         />
                     );
