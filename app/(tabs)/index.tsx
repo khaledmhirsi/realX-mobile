@@ -11,7 +11,8 @@ import {
   GreetingHeader,
   PromoBanner,
   SearchBar,
-  TrendingOffers
+  TrendingOffers,
+  WaktiBanner
 } from '../../components/home';
 
 import { Colors } from '../../constants/Colors';
@@ -55,6 +56,7 @@ export default function HomeScreen() {
         <TrendingOffers />
         <BrandGrid />
         <FeaturedBanner />
+        <WaktiBanner />
       </ScrollView>
     </SafeAreaView>
   );
