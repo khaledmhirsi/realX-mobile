@@ -40,8 +40,9 @@ export default function SearchBar({
   const navigation = useNavigation();
   const useNativeGlass = canUseNativeGlass();
   const [isFocused, setIsFocused] = useState(false);
-  const [animatedPlaceholder, setAnimatedPlaceholder] = useState("");
+  const [animatedPlaceholder, setAnimatedPlaceholder] = useState<string | null>(null);
   const isActive = isFocused || (value?.length ?? 0) > 0;
+  const placeholderText = isActive ? "" : (animatedPlaceholder ?? placeholder);
 
   useEffect(() => {
     if (!onChangeText) return;
@@ -112,7 +113,7 @@ export default function SearchBar({
         >
           <GlassHighlights />
           <SearchBarContent
-            placeholder={isActive ? "" : animatedPlaceholder || placeholder}
+            placeholder={placeholderText}
             value={value}
             onChangeText={onChangeText}
             onSubmit={onSubmit}
@@ -126,7 +127,7 @@ export default function SearchBar({
         <View style={[styles.searchSurface, styles.fallbackGlass]}>
           <GlassHighlights />
           <SearchBarContent
-            placeholder={isActive ? "" : animatedPlaceholder || placeholder}
+            placeholder={placeholderText}
             value={value}
             onChangeText={onChangeText}
             onSubmit={onSubmit}

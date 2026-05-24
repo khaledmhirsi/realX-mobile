@@ -157,7 +157,7 @@ export default function MapScreen() {
   void _searchingNearby;
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [animatedSearchPlaceholder, setAnimatedSearchPlaceholder] = useState('');
+  const [animatedSearchPlaceholder, setAnimatedSearchPlaceholder] = useState<string | null>(null);
   const [submittedSearchQuery, setSubmittedSearchQuery] = useState('');
   const [searchedVendorIds, setSearchedVendorIds] = useState<Set<string> | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -273,7 +273,7 @@ export default function MapScreen() {
     let index = 0;
     let direction: 'typing' | 'deleting' = 'typing';
 
-    setAnimatedSearchPlaceholder('');
+    setAnimatedSearchPlaceholder(null);
 
     const tick = () => {
       if (direction === 'typing') {
@@ -781,7 +781,7 @@ export default function MapScreen() {
             />
             <TextInput
               style={[styles.searchInput, isSearchActive && styles.searchInputActive]}
-              placeholder={isSearchActive ? '' : animatedSearchPlaceholder || searchPlaceholder}
+              placeholder={isSearchActive ? '' : (animatedSearchPlaceholder ?? searchPlaceholder)}
               placeholderTextColor={Colors.light.tabIconDefault}
               value={searchQuery}
               onChangeText={setSearchQuery}
