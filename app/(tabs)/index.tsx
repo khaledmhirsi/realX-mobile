@@ -26,6 +26,13 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
 
+  const handleVendorPress = useCallback((vendorId?: string) => {
+    const trimmedVendorId = vendorId?.trim();
+    if (!trimmedVendorId) return;
+
+    router.push({ pathname: '/vendor/[id]', params: { id: trimmedVendorId } });
+  }, [router]);
+
   const handleSearch = useCallback(() => {
     const trimmed = searchQuery.trim();
     if (!trimmed) return;
@@ -42,6 +49,9 @@ export default function HomeScreen() {
       <ScrollView
         style={[styles.container, { backgroundColor: Colors.light.background }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="always"
+        nestedScrollEnabled
+        directionalLockEnabled
         contentContainerStyle={styles.contentContainer}
       >
         <GreetingHeader userName={userName || t('user')} />
@@ -51,9 +61,9 @@ export default function HomeScreen() {
           onChangeText={setSearchQuery}
           onSubmit={handleSearch}
         />
-        <PromoBanner />
+        <PromoBanner onBannerPress={(banner) => handleVendorPress(banner.vendorId)} />
         <CategoryGrid />
-        <TrendingOffers />
+        <TrendingOffers onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
         <BrandGrid />
         <FeaturedBanner />
         <WaktiBanner />

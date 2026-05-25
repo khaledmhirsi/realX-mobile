@@ -1,7 +1,7 @@
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Dimensions, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
@@ -10,7 +10,7 @@ const { width: screenWidth } = Dimensions.get('window');
 const BANNER_WIDTH = screenWidth - 48;
 const BANNER_HEIGHT = 192;
 
-type BannerItem = {
+export type BannerItem = {
     bannerId: string;
     altText: string;
     images: {
@@ -22,11 +22,14 @@ type BannerItem = {
     lastUpdated?: string;
 };
 
-export default function PromoBanner() {
+type PromoBannerProps = {
+    onBannerPress?: (banner: BannerItem) => void;
+};
+
+export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
     const [banners, setBanners] = useState<BannerItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeIndex, setActiveIndex] = useState(0);
-    const scrollViewRef = useRef<ScrollView>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -52,21 +55,6 @@ export default function PromoBanner() {
         fetchBanners();
     }, []);
 
-    useEffect(() => {
-        if (banners.length <= 1) return;
-
-        const interval = setInterval(() => {
-            const nextIndex = (activeIndex + 1) % banners.length;
-            scrollViewRef.current?.scrollTo({
-                x: nextIndex * (BANNER_WIDTH + 10),
-                animated: true,
-            });
-            setActiveIndex(nextIndex);
-        }, 3000);
-
-        return () => clearInterval(interval);
-    }, [banners.length, activeIndex]);
-
     const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const contentOffsetX = event.nativeEvent.contentOffset.x;
         const index = Math.round(contentOffsetX / (BANNER_WIDTH + 10));
@@ -76,7 +64,11 @@ export default function PromoBanner() {
     const handlePress = (banner: BannerItem) => {
         triggerSubtleHaptic();
         if (banner.vendorId) {
-            router.push(`/vendor/${banner.vendorId}`);
+            if (onBannerPress) {
+                onBannerPress(banner);
+            } else {
+                router.push({ pathname: '/vendor/[id]', params: { id: banner.vendorId } });
+            }
         }
     };
 
@@ -99,11 +91,14 @@ export default function PromoBanner() {
     return (
         <View style={styles.container}>
             <ScrollView
-                ref={scrollViewRef}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 snapToInterval={BANNER_WIDTH + 10}
                 decelerationRate="fast"
+                nestedScrollEnabled
+                directionalLockEnabled
+                canCancelContentTouches={false}
+                keyboardShouldPersistTaps="always"
                 contentContainerStyle={styles.scrollContent}
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
@@ -114,6 +109,8 @@ export default function PromoBanner() {
                         style={styles.bannerColumn}
                         onPress={() => handlePress(banner)}
                         activeOpacity={0.9}
+                        accessibilityRole="button"
+                        accessibilityLabel={banner.altText || 'Open vendor'}
                     >
                         <View style={styles.topPill}>
                             <Image

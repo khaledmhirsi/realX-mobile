@@ -1,7 +1,7 @@
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     I18nManager,
@@ -27,114 +27,22 @@ type BrandItem = {
 const BRAND_TILE_SIZE = 64;
 const BRAND_TILE_GAP = 14;
 const BRAND_ROW_SIDE_PADDING = 20;
-const BRAND_SCROLL_SPEED = 18;
-const BRAND_REPEAT_COUNT = 3;
 
-function wrapOffset(offset: number, loopDistance: number) {
-    if (loopDistance === 0) {
-        return offset;
-    }
-
-    if (offset < loopDistance * 0.5) {
-        return offset + loopDistance;
-    }
-
-    if (offset >= loopDistance * 1.5) {
-        return offset - loopDistance;
-    }
-
-    return offset;
-}
-
-function InfiniteBrandRow({
+function BrandRow({
     items,
     onPressBrand,
-    direction,
 }: {
     items: BrandItem[];
     onPressBrand: (brand: BrandItem) => void;
-    direction: 1 | -1;
 }) {
-    const scrollRef = useRef<ScrollView | null>(null);
-    const currentOffsetRef = useRef(0);
-    const isDraggingRef = useRef(false);
-    const isMomentumRef = useRef(false);
-    const animationFrameRef = useRef<number | null>(null);
-    const lastFrameTimeRef = useRef<number | null>(null);
-    const hasInitializedRef = useRef(false);
-    const shouldLoop = items.length > 1;
-    const loopDistance = useMemo(() => {
-        if (items.length <= 1) {
-            return 0;
-        }
-
-        const singleRunWidth =
-            items.length * BRAND_TILE_SIZE +
-            (items.length - 1) * BRAND_TILE_GAP +
-            BRAND_ROW_SIDE_PADDING * 2;
-
-        return singleRunWidth;
-    }, [items.length]);
-
-    useEffect(() => {
-        if (!shouldLoop || loopDistance === 0) {
-            hasInitializedRef.current = false;
-            currentOffsetRef.current = 0;
-            return;
-        }
-
-        hasInitializedRef.current = false;
-        const id = requestAnimationFrame(() => {
-            scrollRef.current?.scrollTo({ x: loopDistance, animated: false });
-            currentOffsetRef.current = loopDistance;
-            hasInitializedRef.current = true;
-        });
-
-        return () => cancelAnimationFrame(id);
-    }, [loopDistance, shouldLoop, items.length]);
-
-    useEffect(() => {
-        if (!shouldLoop || loopDistance === 0) {
-            return;
-        }
-
-        const tick = (timestamp: number) => {
-            if (lastFrameTimeRef.current == null) {
-                lastFrameTimeRef.current = timestamp;
-            }
-
-            const deltaMs = timestamp - lastFrameTimeRef.current;
-            lastFrameTimeRef.current = timestamp;
-
-            if (hasInitializedRef.current && !isDraggingRef.current && !isMomentumRef.current) {
-                const deltaX = (direction * BRAND_SCROLL_SPEED * deltaMs) / 1000;
-                const nextOffset = wrapOffset(currentOffsetRef.current + deltaX, loopDistance);
-
-                if (nextOffset !== currentOffsetRef.current) {
-                    currentOffsetRef.current = nextOffset;
-                    scrollRef.current?.scrollTo({ x: nextOffset, animated: false });
-                }
-            }
-
-            animationFrameRef.current = requestAnimationFrame(tick);
-        };
-
-        animationFrameRef.current = requestAnimationFrame(tick);
-
-        return () => {
-            if (animationFrameRef.current != null) {
-                cancelAnimationFrame(animationFrameRef.current);
-                animationFrameRef.current = null;
-            }
-            lastFrameTimeRef.current = null;
-        };
-    }, [direction, loopDistance, shouldLoop]);
-
-    const renderBrand = (brand: BrandItem, keyPrefix: string) => (
+    const renderBrand = (brand: BrandItem) => (
         <Pressable
-            key={`${keyPrefix}${brand.id}`}
+            key={brand.id}
             style={styles.brandItem}
             onPress={() => onPressBrand(brand)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={brand.name}
         >
             <Image
                 source={{ uri: brand.logoUrl }}
@@ -148,7 +56,6 @@ function InfiniteBrandRow({
     return (
         <View style={styles.rowViewport}>
             <ScrollView
-                ref={scrollRef}
                 horizontal
                 style={styles.rowScroll}
                 showsHorizontalScrollIndicator={false}
@@ -157,35 +64,13 @@ function InfiniteBrandRow({
                 nestedScrollEnabled
                 directionalLockEnabled
                 canCancelContentTouches
-                keyboardShouldPersistTaps="handled"
+                keyboardShouldPersistTaps="always"
                 scrollEventThrottle={16}
-                onScroll={(event) => {
-                    const nextOffset = wrapOffset(event.nativeEvent.contentOffset.x, loopDistance);
-                    currentOffsetRef.current = nextOffset;
-
-                    if (nextOffset !== event.nativeEvent.contentOffset.x) {
-                        scrollRef.current?.scrollTo({ x: nextOffset, animated: false });
-                    }
-                }}
-                onScrollBeginDrag={() => {
-                    isDraggingRef.current = true;
-                }}
-                onScrollEndDrag={() => {
-                    isDraggingRef.current = false;
-                }}
-                onMomentumScrollBegin={() => {
-                    isMomentumRef.current = true;
-                }}
-                onMomentumScrollEnd={() => {
-                    isMomentumRef.current = false;
-                }}
                 contentContainerStyle={styles.scrollContent}
             >
-                {Array.from({ length: shouldLoop ? BRAND_REPEAT_COUNT : 1 }).map((_, repeatIndex) => (
-                    <View key={`segment-${repeatIndex}`} style={styles.rowSegment}>
-                        {items.map((brand, index) => renderBrand(brand, `${repeatIndex}-${index}-`))}
-                    </View>
-                ))}
+                <View style={styles.rowSegment}>
+                    {items.map(renderBrand)}
+                </View>
             </ScrollView>
         </View>
     );
@@ -232,8 +117,11 @@ export default function BrandGrid() {
     }, []);
 
     const handlePress = (brand: BrandItem) => {
+        const vendorId = brand.vendorId?.trim();
+        if (!vendorId) return;
+
         triggerSubtleHaptic();
-        router.push(`/vendor/${brand.vendorId}`);
+        router.push({ pathname: '/vendor/[id]', params: { id: vendorId } });
     };
 
     // Split brands into rows: ≤4 = 1 row, 5-8 = 2 rows, >8 = 2 scrollable rows
@@ -283,10 +171,10 @@ export default function BrandGrid() {
                     </PhonkText>
                 </View>
             </View>
-            <InfiniteBrandRow items={row1} onPressBrand={handlePress} direction={1} />
+            <BrandRow items={row1} onPressBrand={handlePress} />
             {!isSingleRow && (
                 <View style={styles.rowSpacing}>
-                    <InfiniteBrandRow items={row2} onPressBrand={handlePress} direction={-1} />
+                    <BrandRow items={row2} onPressBrand={handlePress} />
                 </View>
             )}
         </View>

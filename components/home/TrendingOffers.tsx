@@ -8,7 +8,11 @@ import RestaurantCard from '../category/RestaurantCard';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../../utils/logger';
 
-export default function TrendingOffers() {
+type TrendingOffersProps = {
+    onVendorPress?: (vendor: any) => void;
+};
+
+export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
     const { t } = useTranslation();
     const isRTL = I18nManager.isRTL;
     const [vendors, setVendors] = useState<any[]>([]);
@@ -89,7 +93,9 @@ export default function TrendingOffers() {
     }, [currentIndex, displayedVendors.length]);
 
     const handleVendorPress = (vendor: any) => {
-        if (vendor.vendorId) {
+        if (onVendorPress) {
+            onVendorPress(vendor);
+        } else if (vendor.vendorId) {
             router.push({ pathname: '/vendor/[id]', params: { id: vendor.vendorId } });
         }
     };
@@ -122,6 +128,10 @@ export default function TrendingOffers() {
                 ref={scrollViewRef}
                 horizontal
                 showsHorizontalScrollIndicator={false}
+                nestedScrollEnabled
+                directionalLockEnabled
+                canCancelContentTouches={false}
+                keyboardShouldPersistTaps="handled"
                 contentContainerStyle={[styles.scrollContent, { flexDirection: 'row' }]}
             >
                 {displayedVendors.map((vendor) => {
