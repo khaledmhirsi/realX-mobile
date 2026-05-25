@@ -1,14 +1,16 @@
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
 
-const { width: screenWidth } = Dimensions.get('window');
-const BANNER_WIDTH = screenWidth - 48;
 const BANNER_HEIGHT = 192;
+const BANNER_SIDE_PADDING = 24;
+const BANNER_GAP = 12;
+const BANNER_AUTO_SCROLL_MS = 4000;
 
 export type BannerItem = {
     bannerId: string;
@@ -30,7 +32,13 @@ type PromoBannerProps = {
 export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
     const [banners, setBanners] = useState<BannerItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const scrollViewRef = useRef<ScrollView | null>(null);
+    const isUserInteractingRef = useRef(false);
+    const { width: screenWidth } = useWindowDimensions();
     const router = useRouter();
+    const bannerWidth = screenWidth - (BANNER_SIDE_PADDING * 2);
+    const bannerScrollInterval = bannerWidth + BANNER_GAP;
 
     useEffect(() => {
         const fetchBanners = async () => {
@@ -55,9 +63,59 @@ export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
         fetchBanners();
     }, []);
 
+    useEffect(() => {
+        if (banners.length <= 1) {
+            return;
+        }
+
+        const interval = setInterval(() => {
+            if (isUserInteractingRef.current) {
+                return;
+            }
+
+            setCurrentIndex((prevIndex) => (prevIndex + 1) % banners.length);
+        }, BANNER_AUTO_SCROLL_MS);
+
+        return () => clearInterval(interval);
+    }, [banners.length]);
+
+    useEffect(() => {
+        if (!scrollViewRef.current || banners.length === 0) {
+            return;
+        }
+
+        const maxIndex = Math.max(0, banners.length - 1);
+        const safeIndex = Math.min(currentIndex, maxIndex);
+
+        scrollViewRef.current.scrollTo({
+            x: safeIndex * bannerScrollInterval,
+            animated: true,
+        });
+    }, [bannerScrollInterval, banners.length, currentIndex]);
+
     const getBannerVendorId = (banner: BannerItem) => {
         const vendorId = banner.vendorId?.trim() || banner.id?.trim();
         return vendorId || null;
+    };
+
+    const handleScrollBegin = () => {
+        isUserInteractingRef.current = true;
+    };
+
+    const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        if (banners.length <= 1) {
+            isUserInteractingRef.current = false;
+            return;
+        }
+
+        const maxIndex = Math.max(0, banners.length - 1);
+        const nextIndex = Math.min(
+            maxIndex,
+            Math.max(0, Math.round(event.nativeEvent.contentOffset.x / bannerScrollInterval)),
+        );
+
+        setCurrentIndex((prevIndex) => (prevIndex === nextIndex ? prevIndex : nextIndex));
+        isUserInteractingRef.current = false;
     };
 
     const handlePress = (banner: BannerItem) => {
@@ -92,39 +150,65 @@ export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
         );
     }
 
-    const banner = banners[0];
-
     return (
         <View style={styles.container}>
-            <Pressable
-                style={({ pressed }) => [
-                    styles.bannerColumn,
-                    pressed && styles.bannerPressed,
-                ]}
-                onPress={() => handlePress(banner)}
-                accessibilityRole="button"
-                accessibilityLabel={banner.altText || 'Open vendor'}
+            <ScrollView
+                ref={scrollViewRef}
+                horizontal
+                style={styles.carousel}
+                showsHorizontalScrollIndicator={false}
+                nestedScrollEnabled
+                directionalLockEnabled
+                canCancelContentTouches
+                keyboardShouldPersistTaps="always"
+                snapToInterval={bannerScrollInterval}
+                decelerationRate="fast"
+                disableIntervalMomentum
+                scrollEventThrottle={16}
+                onScrollBeginDrag={handleScrollBegin}
+                onMomentumScrollBegin={handleScrollBegin}
+                onScrollEndDrag={handleScrollEnd}
+                onMomentumScrollEnd={handleScrollEnd}
+                contentContainerStyle={styles.scrollContent}
             >
-                <View style={styles.topPill}>
-                    <Image
-                        source={{ uri: banner.images.mobile }}
-                        style={styles.topImage}
-                        contentFit="cover"
-                        cachePolicy="memory-disk"
-                        accessibilityLabel={banner.altText || 'Banner Image'}
-                    />
-                </View>
+                {banners.map((banner, index) => {
+                    const imageUri = banner.images.mobile || banner.images.desktop;
 
-                <View style={styles.bottomPill}>
-                    <Image
-                        source={{ uri: banner.images.mobile }}
-                        style={styles.bottomImage}
-                        contentFit="cover"
-                        cachePolicy="memory-disk"
-                        accessibilityLabel={banner.altText || 'Banner Image'}
-                    />
-                </View>
-            </Pressable>
+                    return (
+                        <Pressable
+                            key={banner.bannerId || banner.vendorId || banner.id || index}
+                            style={({ pressed }) => [
+                                styles.bannerColumn,
+                                { width: bannerWidth },
+                                pressed && styles.bannerPressed,
+                            ]}
+                            onPress={() => handlePress(banner)}
+                            accessibilityRole="button"
+                            accessibilityLabel={banner.altText || 'Open vendor'}
+                        >
+                            <View style={styles.topPill}>
+                                <Image
+                                    source={{ uri: imageUri }}
+                                    style={styles.topImage}
+                                    contentFit="cover"
+                                    cachePolicy="memory-disk"
+                                    accessibilityLabel={banner.altText || 'Banner Image'}
+                                />
+                            </View>
+
+                            <View style={styles.bottomPill}>
+                                <Image
+                                    source={{ uri: imageUri }}
+                                    style={styles.bottomImage}
+                                    contentFit="cover"
+                                    cachePolicy="memory-disk"
+                                    accessibilityLabel={banner.altText || 'Banner Image'}
+                                />
+                            </View>
+                        </Pressable>
+                    );
+                })}
+            </ScrollView>
         </View>
     );
 }
@@ -138,10 +222,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    bannerColumn: {
-        width: BANNER_WIDTH,
+    carousel: {
         height: BANNER_HEIGHT,
-        alignSelf: 'center',
+    },
+    scrollContent: {
+        paddingHorizontal: BANNER_SIDE_PADDING,
+        gap: BANNER_GAP,
+    },
+    bannerColumn: {
+        height: BANNER_HEIGHT,
     },
     bannerPressed: {
         opacity: 0.9,
