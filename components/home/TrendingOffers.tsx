@@ -2,6 +2,7 @@ import { collection, getDocs, getFirestore, query, where } from '@react-native-f
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, View } from 'react-native';
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import PhonkText from '../PhonkText';
 import RestaurantCard from '../category/RestaurantCard';
@@ -11,6 +12,11 @@ import { logger } from '../../utils/logger';
 type TrendingOffersProps = {
     onVendorPress?: (vendor: any) => void;
 };
+
+const OFFER_CARD_WIDTH = 220;
+const OFFER_CARD_GAP = 12;
+const OFFER_SCROLL_INTERVAL = OFFER_CARD_WIDTH + OFFER_CARD_GAP;
+const OFFER_SIDE_PADDING = 30;
 
 export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
     const { t } = useTranslation();
@@ -82,15 +88,26 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
             return;
         }
 
-        const cardWidth = 220;
-        const gap = 12;
-        const horizontalPadding = 20;
         const maxIndex = Math.max(0, displayedVendors.length - 1);
         const safeIndex = Math.min(currentIndex, maxIndex);
-        const offset = horizontalPadding + safeIndex * (cardWidth + gap);
+        const offset = safeIndex * OFFER_SCROLL_INTERVAL;
 
         scrollViewRef.current.scrollTo({ x: offset, animated: true });
     }, [currentIndex, displayedVendors.length]);
+
+    const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        if (displayedVendors.length <= 1) {
+            return;
+        }
+
+        const maxIndex = Math.max(0, displayedVendors.length - 1);
+        const nextIndex = Math.min(
+            maxIndex,
+            Math.max(0, Math.round(event.nativeEvent.contentOffset.x / OFFER_SCROLL_INTERVAL)),
+        );
+
+        setCurrentIndex((prevIndex) => (prevIndex === nextIndex ? prevIndex : nextIndex));
+    };
 
     const handleVendorPress = (vendor: any) => {
         if (onVendorPress) {
@@ -130,8 +147,11 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
                 showsHorizontalScrollIndicator={false}
                 nestedScrollEnabled
                 directionalLockEnabled
-                canCancelContentTouches={false}
-                keyboardShouldPersistTaps="handled"
+                canCancelContentTouches
+                keyboardShouldPersistTaps="always"
+                scrollEventThrottle={16}
+                onScrollEndDrag={handleScrollEnd}
+                onMomentumScrollEnd={handleScrollEnd}
                 contentContainerStyle={[styles.scrollContent, { flexDirection: 'row' }]}
             >
                 {displayedVendors.map((vendor) => {
@@ -192,11 +212,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     scrollContent: {
-        paddingHorizontal: 30,
-        gap: 12,
+        paddingHorizontal: OFFER_SIDE_PADDING,
+        gap: OFFER_CARD_GAP,
 
     },
     offerCard: {
-        width: 220,
+        width: OFFER_CARD_WIDTH,
     },
 });

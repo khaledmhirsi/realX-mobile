@@ -2,7 +2,7 @@ import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Dimensions, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
 
@@ -13,12 +13,13 @@ const BANNER_HEIGHT = 192;
 export type BannerItem = {
     bannerId: string;
     altText: string;
+    id?: string;
     images: {
         desktop?: string;
         mobile?: string;
     };
     isActive: boolean;
-    vendorId: string;
+    vendorId?: string;
     lastUpdated?: string;
 };
 
@@ -29,7 +30,6 @@ type PromoBannerProps = {
 export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
     const [banners, setBanners] = useState<BannerItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeIndex, setActiveIndex] = useState(0);
     const router = useRouter();
 
     useEffect(() => {
@@ -55,20 +55,24 @@ export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
         fetchBanners();
     }, []);
 
-    const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-        const contentOffsetX = event.nativeEvent.contentOffset.x;
-        const index = Math.round(contentOffsetX / (BANNER_WIDTH + 10));
-        setActiveIndex(index);
+    const getBannerVendorId = (banner: BannerItem) => {
+        const vendorId = banner.vendorId?.trim() || banner.id?.trim();
+        return vendorId || null;
     };
 
     const handlePress = (banner: BannerItem) => {
+        const vendorId = getBannerVendorId(banner);
+
+        if (!vendorId) {
+            logger.warn('Promo banner is missing a linked vendorId:', banner.bannerId);
+            return;
+        }
+
         triggerSubtleHaptic();
-        if (banner.vendorId) {
-            if (onBannerPress) {
-                onBannerPress(banner);
-            } else {
-                router.push({ pathname: '/vendor/[id]', params: { id: banner.vendorId } });
-            }
+        if (onBannerPress) {
+            onBannerPress({ ...banner, vendorId });
+        } else {
+            router.push({ pathname: '/vendor/[id]', params: { id: vendorId } });
         }
     };
 
@@ -88,64 +92,39 @@ export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
         );
     }
 
+    const banner = banners[0];
+
     return (
         <View style={styles.container}>
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                snapToInterval={BANNER_WIDTH + 10}
-                decelerationRate="fast"
-                nestedScrollEnabled
-                directionalLockEnabled
-                canCancelContentTouches={false}
-                keyboardShouldPersistTaps="always"
-                contentContainerStyle={styles.scrollContent}
-                onScroll={handleScroll}
-                scrollEventThrottle={16}
+            <Pressable
+                style={({ pressed }) => [
+                    styles.bannerColumn,
+                    pressed && styles.bannerPressed,
+                ]}
+                onPress={() => handlePress(banner)}
+                accessibilityRole="button"
+                accessibilityLabel={banner.altText || 'Open vendor'}
             >
-                {banners.map((banner) => (
-                    <TouchableOpacity
-                        key={banner.bannerId}
-                        style={styles.bannerColumn}
-                        onPress={() => handlePress(banner)}
-                        activeOpacity={0.9}
-                        accessibilityRole="button"
-                        accessibilityLabel={banner.altText || 'Open vendor'}
-                    >
-                        <View style={styles.topPill}>
-                            <Image
-                                source={{ uri: banner.images.mobile }}
-                                style={styles.topImage}
-                                contentFit="cover"
-                                cachePolicy="memory-disk"
-                                accessibilityLabel={banner.altText || 'Banner Image'}
-                            />
-                        </View>
-
-                        <View style={styles.bottomPill}>
-                            <Image
-                                source={{ uri: banner.images.mobile }}
-                                style={styles.bottomImage}
-                                contentFit="cover"
-                                cachePolicy="memory-disk"
-                                accessibilityLabel={banner.altText || 'Banner Image'}
-                            />
-                        </View>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
-
-            <View style={styles.paginationContainer}>
-                {banners.map((_, index) => (
-                    <View
-                        key={index}
-                        style={[
-                            styles.paginationDot,
-                            index === activeIndex && styles.paginationDotActive,
-                        ]}
+                <View style={styles.topPill}>
+                    <Image
+                        source={{ uri: banner.images.mobile }}
+                        style={styles.topImage}
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
+                        accessibilityLabel={banner.altText || 'Banner Image'}
                     />
-                ))}
-            </View>
+                </View>
+
+                <View style={styles.bottomPill}>
+                    <Image
+                        source={{ uri: banner.images.mobile }}
+                        style={styles.bottomImage}
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
+                        accessibilityLabel={banner.altText || 'Banner Image'}
+                    />
+                </View>
+            </Pressable>
         </View>
     );
 }
@@ -159,30 +138,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    scrollContent: {
-        paddingHorizontal: 24, // Center item by using (screenWidth - BANNER_WIDTH) / 2
-        gap: 10,
-    },
-    paginationContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 16,
-        gap: 4,
-    },
-    paginationDot: {
-        width: 28,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: '#E0E0E0',
-    },
-    paginationDotActive: {
-        backgroundColor: '#333333',
-        width: 96,
-    },
     bannerColumn: {
         width: BANNER_WIDTH,
         height: BANNER_HEIGHT,
+        alignSelf: 'center',
+    },
+    bannerPressed: {
+        opacity: 0.9,
     },
     topPill: {
         flex: 1,
