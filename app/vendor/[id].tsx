@@ -835,6 +835,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingVertical: 16,
         paddingEnd: 72,
+        minHeight: 82,
         position: 'relative',
     },
     offerContent: {
@@ -876,8 +877,8 @@ const styles = StyleSheet.create({
     },
     offerSaveButton: {
         position: 'absolute',
-        top: 14,
-        right: 18,
+        top: 12,
+        right: 16,
         width: 48,
         height: 48,
         borderRadius: 24,
