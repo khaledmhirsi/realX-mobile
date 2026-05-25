@@ -42,7 +42,7 @@ export default function AZxXCard({ earnings = 0, currency = 'XP', creatorCode }:
                 animationDuration: 0.35,
               }}
               colorScheme="light"
-              tintColor="rgba(42, 190, 105, 0.16)"
+              tintColor={Colors.brandGreen}
               isInteractive
             />
           ) : (
@@ -65,9 +65,6 @@ export default function AZxXCard({ earnings = 0, currency = 'XP', creatorCode }:
                 </Text>
               </View>
 
-              <View style={styles.currencyBadge}>
-                <Text style={styles.currencyBadgeText}>{currency}</Text>
-              </View>
             </View>
 
             <View style={styles.divider} />
@@ -81,12 +78,6 @@ export default function AZxXCard({ earnings = 0, currency = 'XP', creatorCode }:
               ) : (
                 <View style={styles.creatorCodeSpacer} />
               )}
-
-              <View style={styles.badgeColumn}>
-                <View style={styles.frostChip}>
-                  <Text style={styles.frostChipText}>{currency}</Text>
-                </View>
-              </View>
             </View>
           </View>
         </View>
@@ -258,31 +249,6 @@ const styles = StyleSheet.create({
     textShadowRadius: 10,
     textShadowOffset: { width: 0, height: 3 },
   },
-  currencyBadge: {
-    minWidth: 74,
-    height: 48,
-    paddingHorizontal: 18,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    borderWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.62)',
-    borderLeftColor: 'rgba(255, 255, 255, 0.38)',
-    borderRightColor: 'rgba(255, 255, 255, 0.18)',
-    borderBottomColor: 'rgba(0, 90, 50, 0.34)',
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 8,
-  },
-  currencyBadgeText: {
-    fontSize: 20,
-    fontFamily: Typography.poppins.semiBold,
-    color: 'rgba(245, 255, 248, 0.62)',
-    letterSpacing: 1,
-  },
   divider: {
     height: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.24)',
@@ -298,7 +264,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
   },
   creatorCodeContainer: {
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
   },
   creatorCodeContainerRTL: {
     alignItems: 'flex-start',
@@ -316,31 +282,9 @@ const styles = StyleSheet.create({
   creatorCodeText: {
     fontSize: 28,
     color: 'rgba(245, 255, 248, 0.9)',
+    textAlign: 'left',
     textShadowColor: 'rgba(0, 0, 0, 0.38)',
     textShadowRadius: 8,
     textShadowOffset: { width: 0, height: 2 },
-  },
-  badgeColumn: {
-    minWidth: 74,
-    alignItems: 'flex-end',
-  },
-  frostChip: {
-    height: 42,
-    paddingHorizontal: 18,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.16)',
-    borderWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.55)',
-    borderLeftColor: 'rgba(255, 255, 255, 0.34)',
-    borderRightColor: 'rgba(255, 255, 255, 0.16)',
-    borderBottomColor: 'rgba(0, 90, 50, 0.32)',
-  },
-  frostChipText: {
-    fontSize: 16,
-    fontFamily: Typography.poppins.semiBold,
-    color: 'rgba(245, 255, 248, 0.68)',
-    letterSpacing: 1,
   },
 });
