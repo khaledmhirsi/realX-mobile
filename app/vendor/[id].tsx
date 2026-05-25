@@ -332,7 +332,7 @@ export default function VendorScreen() {
                         <Image
                             source={{ uri: vendor.profilePicture }}
                             style={styles.logoImage}
-                            contentFit="cover"
+                            contentFit="contain"
                         />
                     </View>
 
@@ -666,6 +666,8 @@ const styles = StyleSheet.create({
         height: '100%',
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
+        borderWidth: 2,
+        borderColor: Colors.brandGreen,
     },
     headerOverlay: {
         position: 'absolute',
@@ -706,8 +708,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         borderRadius: 16,
-        borderColor: "#ffffff",
-        borderWidth: 1,
+        backgroundColor: 'transparent',
     },
     detailsContainer: {
         paddingTop: 30, // Space for logo overlap
@@ -840,7 +841,7 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     offerTitle: {
-        fontSize: 28,
+        fontSize: 20,
         letterSpacing: -0.5,
         textTransform: 'uppercase',
     },
