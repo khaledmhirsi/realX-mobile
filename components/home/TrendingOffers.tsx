@@ -173,7 +173,8 @@ const styles = StyleSheet.create({
     offersText: {
         fontSize: 20,
         color: Colors.brandGreen,
-        fontStyle: 'italic',
+        fontWeight: '900',
+        fontStyle: 'normal',
         letterSpacing: 1,
     },
     loaderContainer: {
