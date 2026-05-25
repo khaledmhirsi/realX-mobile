@@ -79,7 +79,7 @@ export default function RedemptionHistoryScreen() {
         const q = query(
           collection(db, 'transactions'),
           where('userId', '==', user.uid),
-          where('type', '==', 'offer'),
+          where('type', 'in', ['offer', 'online_redemption']),
           orderBy('createdAt', 'desc'),
           limit(10)
         );
@@ -136,11 +136,14 @@ export default function RedemptionHistoryScreen() {
 
   const renderItem = ({ item }: { item: Transaction }) => {
     const logoUri = vendorLogos[item.vendorId];
-    const savings = item.discountAmount || 0;
-    const paid = item.finalAmount || 0;
+    const isOnlineRedemption = item.type === 'online_redemption';
+    const savings = isOnlineRedemption ? 0 : item.discountAmount || 0;
+    const paid = isOnlineRedemption ? 0 : item.finalAmount || 0;
 
     const discountText =
-      item.offer?.discountType === 'buy1get1'
+      isOnlineRedemption
+        ? t('online_vendor_title')
+        : item.offer?.discountType === 'buy1get1'
         ? t('buy1get1_label')
         : item.offer?.discountType && item.offer?.discountValue
         ? `${item.offer.discountValue}${item.offer.discountType === 'percentage' ? '%' : ''} OFF`

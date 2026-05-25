@@ -61,6 +61,63 @@ const normalizeDigits = (input: string | number | undefined | null): string => {
 const isValidCoordinate = (value: unknown, min: number, max: number) =>
   typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
 
+const getQatarDateKey = () => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Qatar',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+
+  const valueFor = (type: string) => parts.find((part) => part.type === type)?.value || '';
+  return `${valueFor('year')}-${valueFor('month')}-${valueFor('day')}`;
+};
+
+const getOnlineRedemptionConfig = async (vendorId: string) => {
+  const [vendorDoc, configDoc] = await Promise.all([
+    db.collection('vendors').doc(vendorId).get(),
+    db.collection('vendorOnlineRedemptionConfigs').doc(vendorId).get(),
+  ]);
+
+  if (!vendorDoc.exists) {
+    throw new HttpsError('not-found', 'Vendor not found');
+  }
+
+  const vendorData = vendorDoc.data() || {};
+  if (vendorData.vendorType !== 'online') {
+    throw new HttpsError('failed-precondition', 'This vendor is not available for online redemption');
+  }
+
+  if (!configDoc.exists) {
+    throw new HttpsError('failed-precondition', 'Online redemption is not configured for this vendor');
+  }
+
+  const configData = configDoc.data() || {};
+  const discountCode = typeof configData.discountCode === 'string' ? configData.discountCode.trim() : '';
+  const purchaseUrl = typeof configData.purchaseUrl === 'string' ? configData.purchaseUrl.trim() : '';
+  const dailyLimitPerUser = Number(configData.dailyLimitPerUser || 0);
+
+  const configIsAvailable =
+    configData.enabled === true &&
+    !!discountCode &&
+    !!purchaseUrl &&
+    Number.isFinite(dailyLimitPerUser) &&
+    dailyLimitPerUser >= 1;
+
+  if (!configIsAvailable) {
+    throw new HttpsError('failed-precondition', 'Online redemption is not available for this vendor');
+  }
+
+  return {
+    vendorData,
+    configData: {
+      discountCode,
+      purchaseUrl,
+      dailyLimitPerUser: Math.floor(dailyLimitPerUser),
+    },
+  };
+};
+
 
 /**
  * =============================
@@ -596,6 +653,136 @@ export const redeemOffer = onCall(
     }
 
     return result;
+  }
+);
+
+export const getOnlineRedemptionPreview = onCall(
+  async (request: CallableRequest) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Login required');
+    }
+
+    const vendorId = typeof request.data?.vendorId === 'string' ? request.data.vendorId : '';
+    if (!vendorId) {
+      throw new HttpsError('invalid-argument', 'Vendor ID is required');
+    }
+
+    const { configData } = await getOnlineRedemptionConfig(vendorId);
+    const dateKey = getQatarDateKey();
+    const counterId = `${vendorId}_${dateKey}`;
+    const counterDoc = await db
+      .collection('students')
+      .doc(request.auth.uid)
+      .collection('onlineRedemptionCounters')
+      .doc(counterId)
+      .get();
+
+    const usedToday = Number(counterDoc.data()?.count || 0);
+
+    return {
+      discountCode: configData.discountCode,
+      dailyLimitPerUser: configData.dailyLimitPerUser,
+      remainingToday: Math.max(0, configData.dailyLimitPerUser - usedToday),
+      dateKey,
+    };
+  }
+);
+
+export const redeemOnlineVendor = onCall(
+  async (request: CallableRequest) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Login required');
+    }
+
+    const uid = request.auth.uid;
+    const vendorId = typeof request.data?.vendorId === 'string' ? request.data.vendorId : '';
+    if (!vendorId) {
+      throw new HttpsError('invalid-argument', 'Vendor ID is required');
+    }
+
+    const vendorRef = db.collection('vendors').doc(vendorId);
+    const configRef = db.collection('vendorOnlineRedemptionConfigs').doc(vendorId);
+    const dateKey = getQatarDateKey();
+    const counterRef = db
+      .collection('students')
+      .doc(uid)
+      .collection('onlineRedemptionCounters')
+      .doc(`${vendorId}_${dateKey}`);
+    const transactionRef = db.collection('transactions').doc();
+
+    return db.runTransaction(async (tx) => {
+      const [userDoc, vendorDoc, configDoc, counterDoc] = await Promise.all([
+        tx.get(db.collection('students').doc(uid)),
+        tx.get(vendorRef),
+        tx.get(configRef),
+        tx.get(counterRef),
+      ]);
+
+      if (!userDoc.exists) throw new HttpsError('not-found', 'User not found');
+      if (!vendorDoc.exists) throw new HttpsError('not-found', 'Vendor not found');
+
+      const vendorData = vendorDoc.data() || {};
+      if (vendorData.vendorType !== 'online') {
+        throw new HttpsError('failed-precondition', 'This vendor is not available for online redemption');
+      }
+
+      if (!configDoc.exists) {
+        throw new HttpsError('failed-precondition', 'Online redemption is not configured for this vendor');
+      }
+
+      const configData = configDoc.data() || {};
+      const discountCode = typeof configData.discountCode === 'string' ? configData.discountCode.trim() : '';
+      const purchaseUrl = typeof configData.purchaseUrl === 'string' ? configData.purchaseUrl.trim() : '';
+      const dailyLimitPerUser = Math.floor(Number(configData.dailyLimitPerUser || 0));
+
+      const configIsAvailable =
+        configData.enabled === true &&
+        !!discountCode &&
+        !!purchaseUrl &&
+        Number.isFinite(dailyLimitPerUser) &&
+        dailyLimitPerUser >= 1;
+
+      if (!configIsAvailable) {
+        throw new HttpsError('failed-precondition', 'Online redemption is not available for this vendor');
+      }
+
+      const usedToday = Number(counterDoc.data()?.count || 0);
+      if (usedToday >= dailyLimitPerUser) {
+        throw new HttpsError('resource-exhausted', 'Daily online redemption limit reached');
+      }
+
+      tx.set(transactionRef, {
+        type: 'online_redemption',
+        status: 'completed',
+        userId: uid,
+        vendorId,
+        vendorName: vendorData.name || request.data?.vendorName || '',
+        vendorNameAr: vendorData.nameAr || null,
+        discountCode,
+        purchaseUrl,
+        onlineRedemptionDateKey: dateKey,
+        totalAmount: 0,
+        discountAmount: 0,
+        finalAmount: 0,
+        cashbackAmount: 0,
+        creatorCashbackAmount: 0,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      tx.set(counterRef, {
+        vendorId,
+        dateKey,
+        count: admin.firestore.FieldValue.increment(1),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+
+      return {
+        transactionId: transactionRef.id,
+        purchaseUrl,
+        discountCode,
+        remainingToday: Math.max(0, dailyLimitPerUser - usedToday - 1),
+      };
+    });
   }
 );
 

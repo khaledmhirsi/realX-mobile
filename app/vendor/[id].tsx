@@ -395,12 +395,44 @@ export default function VendorScreen() {
                                     <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]}>{t('cashback')}</Text>
                                 </View>
                             )}
+                            {vendor.vendorType === 'online' && (
+                                <View style={[styles.tagChip, { backgroundColor: '#2563EB' }]}>
+                                    <Ionicons name="globe-outline" size={14} color="#FFF" />
+                                    <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]}>{t('online_vendor_label')}</Text>
+                                </View>
+                            )}
                         </View>
                     </View>
 
                     {/* Offers List */}
                     <View style={styles.offersList}>
-                        {offers.map((offer) => {
+                        {vendor.vendorType === 'online' ? (
+                            <View style={styles.offerCard}>
+                                <View style={[styles.offerInfoContainer, { backgroundColor: '#F5F5F5' }]}>
+                                    <View style={styles.offerContent}>
+                                        <PhonkText style={[{ color: Colors.light.text }, styles.offerTitle]}>
+                                            {t('online_vendor_title')}
+                                        </PhonkText>
+                                        <Text style={[styles.descriptionText, { textAlign: isArabic ? 'right' : 'left' }]}>
+                                            {t('online_vendor_description')}
+                                        </Text>
+                                    </View>
+                                </View>
+
+                                <View style={styles.offerActionsRow}>
+                                    <TouchableOpacity
+                                        style={[styles.pillButton, styles.redeemPill]}
+                                        onPress={() => {
+                                            router.push(`/redeem/${actualVendorId || id}?vendorId=${actualVendorId || id}`);
+                                        }}
+                                    >
+                                        <Ionicons name="globe-outline" size={18} color="#FFF" />
+                                        <Text style={[{ color: '#FFF', fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>{t('redeem_caps')}</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        ) : (
+                        offers.map((offer) => {
 const percentValue =
     offer.discountType === 'percentage' && offer.discountValue
         ? `${offer.discountValue}%`
@@ -471,7 +503,8 @@ const isSaved = savedOfferIds.has(savedId);
                                     </View>
                                 </View>
                             );
-                        })}
+                        })
+                        )}
                     </View>
                 </View>
             </ScrollView>

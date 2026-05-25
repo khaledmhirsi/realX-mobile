@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
+import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { logger } from '../../utils/logger';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -11,6 +12,7 @@ import {
     Alert,
     Keyboard,
     KeyboardAvoidingView,
+    Linking,
     Platform,
     ScrollView,
     StatusBar,
@@ -43,6 +45,7 @@ interface VendorData {
     profilePicture?: string;
     name?: string;
     nameAr?: string;
+    vendorType?: 'in_store' | 'online';
     xcard?: boolean;
     pin?: string;
     [key: string]: any;
@@ -67,6 +70,10 @@ export default function RedeemScreen() {
     const [loading, setLoading] = useState(true);
     const [isRedeeming, setIsRedeeming] = useState(false);
     const [redemptionResult, setRedemptionResult] = useState<RedemptionResult | null>(null);
+    const [onlinePreview, setOnlinePreview] = useState<{ discountCode: string; remainingToday: number; dailyLimitPerUser: number } | null>(null);
+    const [onlineLoading, setOnlineLoading] = useState(false);
+    const [onlineError, setOnlineError] = useState('');
+    const [copied, setCopied] = useState(false);
 
     // Step: 'creator' only shown for xcard vendors, otherwise start at 'pin'
     const [step, setStep] = useState<'creator' | 'pin'>('pin');
@@ -94,11 +101,24 @@ export default function RedeemScreen() {
                     const vendorData = vendorSnap.data() as VendorData;
                     setVendor(vendorData);
 
-                    // Extract offer from vendor's offers array by index
-                    const offerIdx = offerIndexParam != null ? parseInt(offerIndexParam, 10) : 0;
-                    const vendorOffers = vendorData.offers || [];
-                    if (vendorOffers[offerIdx]) {
-                        setOffer(vendorOffers[offerIdx] as OfferData);
+                    if (vendorData.vendorType === 'online') {
+                        const functions = getFunctions(undefined, 'me-central1');
+                        const getOnlineRedemptionPreview = httpsCallable(functions, 'getOnlineRedemptionPreview');
+                        try {
+                            const previewResult = await getOnlineRedemptionPreview({ vendorId: currentVendorId });
+                            setOnlinePreview(previewResult.data as any);
+                            setOnlineError('');
+                        } catch (error: any) {
+                            logger.error('Online redemption preview error:', error);
+                            setOnlineError(error.message || t('redemption_failed_message'));
+                        }
+                    } else {
+                        // Extract offer from vendor's offers array by index
+                        const offerIdx = offerIndexParam != null ? parseInt(offerIndexParam, 10) : 0;
+                        const vendorOffers = vendorData.offers || [];
+                        if (vendorOffers[offerIdx]) {
+                            setOffer(vendorOffers[offerIdx] as OfferData);
+                        }
                     }
 
                     // If vendor has xcard enabled, start with creator code step
@@ -118,7 +138,7 @@ export default function RedeemScreen() {
         return () => {
             isMounted = false;
         };
-    }, [id, vendorId, offerIndexParam]);
+    }, [id, vendorId, offerIndexParam, t]);
 
     // Discount calculation
     const totalAmount = parseFloat(normalizeDigits(amount)) || 0;
@@ -136,6 +156,8 @@ export default function RedeemScreen() {
     const finalAmount = Math.max(0, totalAmount - discountAmount);
 
     const canRedeem = pin.length === 4 && totalAmount > 0;
+
+    const isOnlineVendor = vendor?.vendorType === 'online';
 
     const handleRedeem = async () => {
         if (!canRedeem) return;
@@ -201,6 +223,53 @@ export default function RedeemScreen() {
         }
     };
 
+    const handleCopyOnlineCode = async () => {
+        if (!onlinePreview?.discountCode) return;
+        triggerSubtleHaptic();
+        await Clipboard.setStringAsync(onlinePreview.discountCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1600);
+    };
+
+    const handleOnlinePurchase = async () => {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) {
+            Alert.alert(t('error'), t('login_required_message'));
+            return;
+        }
+
+        const currentVendorId = vendorId || id;
+        if (!currentVendorId) return;
+
+        setOnlineLoading(true);
+        try {
+            const functions = getFunctions(undefined, 'me-central1');
+            const redeemOnlineVendor = httpsCallable(functions, 'redeemOnlineVendor');
+            const result = await redeemOnlineVendor({
+                vendorId: currentVendorId,
+                vendorName: (isArabic ? (vendor?.nameAr || vendor?.name) : vendor?.name) || '',
+            });
+
+            const data = result.data as any;
+            if (typeof data.remainingToday === 'number') {
+                setOnlinePreview((previous) => previous ? { ...previous, remainingToday: data.remainingToday } : previous);
+            }
+
+            if (data.purchaseUrl) {
+                await Linking.openURL(data.purchaseUrl);
+            }
+        } catch (error: any) {
+            logger.error('Online redemption error:', error);
+            Alert.alert(
+                t('redemption_failed_title'),
+                error.message || t('redemption_failed_message')
+            );
+        } finally {
+            setOnlineLoading(false);
+        }
+    };
+
     const handleAction = () => {
         triggerSubtleHaptic();
         if (step === 'creator') {
@@ -240,7 +309,7 @@ export default function RedeemScreen() {
         );
     }
 
-    if (!vendor || !offer) {
+    if (!vendor || (!offer && !isOnlineVendor)) {
         return (
             <View style={styles.errorContainer}>
                 <Text style={styles.errorText}>{t('redemption_info_not_found')}</Text>
@@ -254,6 +323,114 @@ export default function RedeemScreen() {
                 </TouchableOpacity>
             </View>
         );
+    }
+
+    if (isOnlineVendor) {
+        const vendorName = isArabic ? (vendor.nameAr || vendor.name) : vendor.name;
+        const remainingToday = onlinePreview?.remainingToday ?? 0;
+
+        return (
+            <SafeAreaView style={styles.container}>
+                <StatusBar barStyle="dark-content" />
+                <View style={styles.innerContainer}>
+                    <View style={styles.header}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => {
+                                triggerSubtleHaptic();
+                                router.back();
+                            }}
+                        >
+                            <Ionicons name={isArabic ? "arrow-forward" : "arrow-back"} size={24} color="#000" />
+                        </TouchableOpacity>
+                    </View>
+
+                    <ScrollView
+                        style={{ flex: 1 }}
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <View style={styles.offerCardWrapper}>
+                            <View style={styles.onlineCard}>
+                                <Ionicons name="globe-outline" size={30} color={Colors.brandGreen} />
+                                <Text style={[styles.onlineKicker, { textAlign: isArabic ? 'right' : 'left' }]}>
+                                    {t('online_vendor_label')}
+                                </Text>
+                                <PhonkText style={[styles.onlineTitle, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                                    {vendorName || t('unknown_vendor')}
+                                </PhonkText>
+                            </View>
+
+                            <View style={styles.logoContainer}>
+                                <Image
+                                    source={{ uri: vendor.profilePicture }}
+                                    style={styles.logoImage}
+                                    contentFit="cover"
+                                />
+                            </View>
+                        </View>
+
+                        <View style={styles.onlineRedemptionCard}>
+                            <Text style={[styles.inputLabel, { textAlign: isArabic ? 'right' : 'left' }]}>
+                                {t('online_discount_code_label')}
+                            </Text>
+                            <TouchableOpacity
+                                style={[styles.onlineCodeBox, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}
+                                activeOpacity={0.85}
+                                onPress={handleCopyOnlineCode}
+                                disabled={!onlinePreview?.discountCode}
+                            >
+                                <Text style={styles.onlineCodeText}>
+                                    {onlinePreview?.discountCode || '----'}
+                                </Text>
+                                <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={24} color={Colors.brandGreen} />
+                            </TouchableOpacity>
+
+                            <Text style={[styles.onlineHint, { textAlign: isArabic ? 'right' : 'left' }]}>
+                                {onlineError || (copied ? t('online_code_copied') : t('online_copy_hint'))}
+                            </Text>
+
+                            <View style={[styles.onlineLimitRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                <Ionicons name="calendar-outline" size={18} color="#666" />
+                                <Text style={[styles.onlineLimitText, { textAlign: isArabic ? 'right' : 'left' }]}>
+                                    {t('online_remaining_today', {
+                                        count: remainingToday,
+                                        limit: onlinePreview?.dailyLimitPerUser ?? 0,
+                                    })}
+                                </Text>
+                            </View>
+                        </View>
+
+                        <TouchableOpacity
+                            style={[
+                                styles.redeemButton,
+                                { flexDirection: isArabic ? 'row-reverse' : 'row' },
+                                (!onlinePreview?.discountCode || remainingToday <= 0) && styles.redeemButtonDisabled,
+                            ]}
+                            activeOpacity={0.9}
+                            onPress={handleOnlinePurchase}
+                            disabled={!onlinePreview?.discountCode || remainingToday <= 0 || onlineLoading}
+                        >
+                            {onlineLoading ? (
+                                <ActivityIndicator size="small" color="#FFF" />
+                            ) : (
+                                <>
+                                    <Ionicons name="cart" size={20} color="#FFF" />
+                                    <PhonkText style={styles.redeemButtonText}>
+                                        {t('online_purchase_caps')}
+                                    </PhonkText>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </ScrollView>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    const inStoreOffer = offer;
+    if (!inStoreOffer) {
+        return null;
     }
 
     // Success Screen
@@ -300,7 +477,7 @@ export default function RedeemScreen() {
                             {/* Discount Badge */}
                             <View style={styles.successBadge}>
                                 <Text style={styles.successBadgeText}>
-                                    {t('flat_off_prefix')}{offer.discountType === 'buy1get1' ? t('buy1get1_label') : `${offer.discountValue}${offer.discountType === 'percentage' ? '%' : ''}`}{t('flat_off_suffix')}
+                                    {t('flat_off_prefix')}{inStoreOffer.discountType === 'buy1get1' ? t('buy1get1_label') : `${inStoreOffer.discountValue}${inStoreOffer.discountType === 'percentage' ? '%' : ''}`}{t('flat_off_suffix')}
                                 </Text>
                             </View>
                         </View>
@@ -439,7 +616,7 @@ export default function RedeemScreen() {
                                 <View style={styles.offerCard}>
                                     <PhonkText style={[styles.offerTitle, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                                         {t('flat_off_prefix')}<Text style={styles.greenText}>
-                                            {offer.discountType === 'buy1get1' ? t('buy1get1_label') : `${offer.discountValue}${offer.discountType === 'percentage' ? '%' : ''}`}
+                                            {inStoreOffer.discountType === 'buy1get1' ? t('buy1get1_label') : `${inStoreOffer.discountValue}${inStoreOffer.discountType === 'percentage' ? '%' : ''}`}
                                         </Text>{t('flat_off_suffix')}
                                     </PhonkText>
                                 </View>
@@ -558,10 +735,10 @@ export default function RedeemScreen() {
                                                     {t('amount_with_currency', { amount: totalAmount.toFixed(2), currency: t('currency_qar') })}
                                                 </Text>
                                             </View>
-                                            {offer.discountType !== 'buy1get1' && (
+                                            {inStoreOffer.discountType !== 'buy1get1' && (
                                             <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                                 <Text style={[styles.breakdownLabelGreen, { textAlign: isArabic ? 'right' : 'left' }]}>
-                                                    {t('home_title')} ({offer.discountType === 'buy1get1' ? t('buy1get1_label') : `${offer.discountValue}${offer.discountType === 'percentage' ? '%' : ''}`})
+                                                    {t('home_title')} ({inStoreOffer.discountType === 'buy1get1' ? t('buy1get1_label') : `${inStoreOffer.discountValue}${inStoreOffer.discountType === 'percentage' ? '%' : ''}`})
                                                 </Text>
                                                 <Text style={[styles.breakdownValueGreen, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                                                     {t('amount_with_currency_negative', { amount: discountAmount.toFixed(2), currency: t('currency_qar') })}
@@ -689,6 +866,79 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    onlineCard: {
+        backgroundColor: '#F7F7F7',
+        borderRadius: 35,
+        paddingTop: 70,
+        paddingBottom: 36,
+        paddingHorizontal: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    onlineKicker: {
+        fontSize: 13,
+        fontFamily: Typography.poppins.semiBold,
+        color: Colors.brandGreen,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+    },
+    onlineTitle: {
+        fontSize: 30,
+        color: '#000',
+        textAlign: 'center',
+    },
+    onlineRedemptionCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 28,
+        padding: 22,
+        borderWidth: 1,
+        borderColor: '#EFEFEF',
+        marginTop: 24,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.06,
+        shadowRadius: 18,
+        elevation: 2,
+    },
+    onlineCodeBox: {
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#F6FFF8',
+        borderColor: Colors.brandGreen,
+        borderWidth: 1.5,
+        borderRadius: 20,
+        paddingHorizontal: 20,
+        paddingVertical: 18,
+        marginTop: 10,
+    },
+    onlineCodeText: {
+        fontSize: 28,
+        fontFamily: Typography.poppins.semiBold,
+        color: Colors.brandGreen,
+        letterSpacing: 3,
+    },
+    onlineHint: {
+        marginTop: 10,
+        fontSize: 13,
+        fontFamily: Typography.poppins.medium,
+        color: '#777',
+    },
+    onlineLimitRow: {
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 18,
+        paddingTop: 18,
+        borderTopWidth: 1,
+        borderTopColor: '#F0F0F0',
+    },
+    onlineLimitText: {
+        flex: 1,
+        fontSize: 13,
+        fontFamily: Typography.poppins.medium,
+        color: '#666',
     },
     logoContainer: {
         position: 'absolute',

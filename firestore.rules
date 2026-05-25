@@ -106,6 +106,10 @@ match /students/{userId} {
     allow delete: if request.auth != null
       && (request.auth.uid == userId || isAdmin());
   }
+
+  match /onlineRedemptionCounters/{counterId} {
+    allow read, write: if isAdmin();
+  }
 }
 
 // ─── creator_codes collection ──────────────────────────────────────────
@@ -150,6 +154,11 @@ match /vendors/{vendorId} {
   allow write: if isAdmin();
 }
 
+// ─── online vendor redemption config ─────────────────────────────────
+match /vendorOnlineRedemptionConfigs/{vendorId} {
+  allow read, write: if isAdmin();
+}
+
 // ─── maps collection ──────────────────────────────────────────────────
 match /maps/{mapDocId} {
   allow read: if request.auth != null;
@@ -169,8 +178,7 @@ match /transactions/{transactionId} {
       || resource.data.vendorId == request.auth.uid
       || isAdmin());
 
-  allow create: if request.auth != null
-    && request.resource.data.userId == request.auth.uid;
+  allow create: if false;
 
   allow write: if isAdmin();
 }
