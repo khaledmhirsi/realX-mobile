@@ -264,5 +264,6 @@
   "onboarding_pending_last_checked": "Last checked: {{time}}",
   "xp_promotional_reward": "XP is a promotional reward and not legal tender",
   "xp_no_cash_withdrawal": "XP cannot be withdrawn, exchanged for cash, or transferred",
-  "xp_in_app_only": "XP can only be used within the app with participating partners"
+  "xp_in_app_only": "XP can only be used within the app with participating partners",
+  "cashback": "CASHBACK"
 }

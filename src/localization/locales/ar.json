@@ -264,5 +264,6 @@
   "onboarding_pending_last_checked": "آخر تحقق: {{time}}",
   "xp_promotional_reward": "XP هو مكافأة ترويجية وليس عملة قانونية",
   "xp_no_cash_withdrawal": "لا يمكن سحب XP أو استبداله نقدًا أو تحويله",
-  "xp_in_app_only": "يمكن استخدام XP فقط داخل التطبيق لدى الشركاء المشاركين"
+  "xp_in_app_only": "يمكن استخدام XP فقط داخل التطبيق لدى الشركاء المشاركين",
+  "cashback": "استرداد نقدي"
 }

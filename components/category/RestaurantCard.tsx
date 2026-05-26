@@ -33,7 +33,7 @@ export default function RestaurantCard({
   style,
   xcardEnabled = false,
 }: Props) {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
 
   const handlePress = () => {
@@ -88,11 +88,9 @@ export default function RestaurantCard({
         {/* Cashback Badge */}
         {xcardEnabled && (
           <View style={styles.xcardBadge}>
-            <Image
-              source={require('../../assets/images/cashback.png')}
-              style={styles.xcardIcon}
-              contentFit="contain"
-            />
+            <Text style={styles.xcardText}>
+              {t('cashback')}
+            </Text>
           </View>
         )}
       </View>
@@ -119,6 +117,12 @@ export default function RestaurantCard({
 }
 
 const styles = StyleSheet.create({
+  xcardText: {
+  color: '#FFFFFF',
+  fontSize: 11,
+  fontFamily: Typography.poppins.semiBold,
+  textTransform: 'uppercase',
+  },
   container: {
     width: '100%',
     height: 200, // Fixed height for consistency
