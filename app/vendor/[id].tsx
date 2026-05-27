@@ -1,4 +1,4 @@
-
+import { pickLocalizedText } from '@/utils/textFallback';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
 import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, query, serverTimestamp, setDoc, where } from '@react-native-firebase/firestore';
@@ -348,7 +348,7 @@ export default function VendorScreen() {
                                 contentFit="contain"
                             />
                         ) : (
-                            <PhonkText style={[{ color: Colors.light.text }, styles.vendorName]}>{vendor.name}</PhonkText>
+                            <PhonkText style={[{ color: Colors.light.text }, styles.vendorName]}>{pickLocalizedText(isArabic, vendor.nameAr, vendor.name, 'Vendor')}</PhonkText>
                         )}
                     </View>
 
@@ -365,7 +365,7 @@ export default function VendorScreen() {
                                 return;
                             }
 
-                            const vendorName = isArabic ? (vendor.nameAr || vendor.name) : vendor.name;
+                            const vendorName = pickLocalizedText(isArabic, vendor.nameAr, vendor.name, 'Vendor');
                             const q = encodeURIComponent(vendorName + " Qatar");
                             void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${q}`);
                         }} activeOpacity={0.7}>
