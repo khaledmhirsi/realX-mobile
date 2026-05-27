@@ -24,6 +24,14 @@ function getResend(): Resend {
 
 const db = admin.firestore();
 const REVIEW_EMAIL = (process.env.APPLE_REVIEW_EMAIL || '').toLowerCase().trim();
+const ALLOWED_STUDENT_EMAIL_DOMAINS = new Set([
+  'gemsed.com',
+  'dpsmisdoha.com',
+  'oliveschooldoha.com',
+  'bpsdoha.edu.qa',
+  'rajagiridoha.com',
+  'student.dbs.sch.qa',
+]);
 
 /**
  * =============================
@@ -64,6 +72,14 @@ const isValidCoordinate = (value: unknown, min: number, max: number) =>
 
 const hashDocId = (value: string) =>
   createHash('sha256').update(value).digest('hex');
+
+const isAllowedStudentEmail = (email: string) => {
+  const domain = email.split('@')[1]?.trim().toLowerCase();
+
+  if (!domain) return false;
+
+  return domain.endsWith('.edu.qa') || ALLOWED_STUDENT_EMAIL_DOMAINS.has(domain);
+};
 
 const getQatarDateKey = () => {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -558,6 +574,7 @@ export const syncVendorGeohash = onDocumentWritten(
 );
 
 export const backfillVendorGeohashes = onCall(
+  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Login required');
@@ -620,6 +637,7 @@ export const backfillVendorGeohashes = onCall(
  * =============================
  */
 export const redeemGiftCard = onCall(
+  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Login required');
@@ -636,6 +654,7 @@ export const redeemGiftCard = onCall(
 );
 
 export const redeemOffer = onCall(
+  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Login required');
@@ -661,6 +680,7 @@ export const redeemOffer = onCall(
 );
 
 export const getOnlineRedemptionPreview = onCall(
+  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Login required');
@@ -693,6 +713,7 @@ export const getOnlineRedemptionPreview = onCall(
 );
 
 export const redeemOnlineVendor = onCall(
+  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Login required');
@@ -819,6 +840,7 @@ const reserveCreatorCode = async (tx, uid: string) => {
 };
 
 export const assignCreatorCode = onCall(
+  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Must be logged in');
@@ -908,6 +930,7 @@ export const verifyWaktiStudent = onRequest(
 );
 
 export const checkStudentExists = onCall(
+  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     const email = request.data?.email?.toLowerCase()?.trim();
 
@@ -915,13 +938,10 @@ export const checkStudentExists = onCall(
       throw new HttpsError('invalid-argument', 'Email required');
     }
 
-    // ✅ Restrict ONLY self-signup emails
-    const isEduQa = /^[^@]+@[^@]+\.edu\.qa$/.test(email);
-
-    if (!isEduQa) {
+    if (!isAllowedStudentEmail(email)) {
       throw new HttpsError(
         'permission-denied',
-        'Only .edu.qa emails can sign up'
+        'Only approved school emails can sign up'
       );
     }
 
@@ -938,6 +958,7 @@ export const checkStudentExists = onCall(
 );
 
 export const checkStudentExistsLogin = onCall(
+  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     const email = request.data?.email?.toLowerCase()?.trim();
 
@@ -1027,7 +1048,7 @@ async function checkAccountRateLimit(key: string): Promise<void> {
  * =============================
  */
 export const sendOtp = onCall(
-  { secrets: ['RESEND_API_KEY'] },
+  { secrets: ['RESEND_API_KEY'], enforceAppCheck: true },
   async (request: CallableRequest) => {
     const email = request.data?.email?.toLowerCase()?.trim();
     const purpose = request.data?.purpose; // "signup" | "login" | "verification"
@@ -1040,11 +1061,10 @@ export const sendOtp = onCall(
       throw new HttpsError('invalid-argument', 'Purpose must be "signup", "login", or "verification"');
     }
 
-    // Signup: restrict to .edu.qa
+    // Signup: restrict to approved school email domains
     if (purpose === 'signup') {
-      const isEduQa = /^[^@]+@[^@]+\.edu\.qa$/.test(email);
-      if (!isEduQa) {
-        throw new HttpsError('permission-denied', 'Only .edu.qa emails can sign up');
+      if (!isAllowedStudentEmail(email)) {
+        throw new HttpsError('permission-denied', 'Only approved school emails can sign up');
       }
 
       // Check if account already exists
@@ -1219,6 +1239,7 @@ export const sendOtp = onCall(
  * =============================
  */
 export const verifyOtp = onCall(
+  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     const email = request.data?.email?.toLowerCase()?.trim();
     const code = request.data?.code?.trim();
@@ -1360,6 +1381,7 @@ const isValidDob = (dob: unknown) => {
 };
 
 export const completeSignup = onCall(
+  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Login required');
@@ -1379,8 +1401,8 @@ export const completeSignup = onCall(
       throw new HttpsError('permission-denied', 'Authenticated email does not match signup email');
     }
 
-    if (!/^[^@]+@[^@]+\.edu\.qa$/.test(requestedEmail)) {
-      throw new HttpsError('permission-denied', 'Only .edu.qa emails can complete self-signup');
+    if (!isAllowedStudentEmail(requestedEmail)) {
+      throw new HttpsError('permission-denied', 'Only approved school emails can complete self-signup');
     }
 
     if (!firstName || !lastName || firstName.length > 80 || lastName.length > 80) {
@@ -1473,6 +1495,7 @@ const VERIFICATION_MAX_SUBMISSIONS = 3;
 const VERIFICATION_RATE_LIMIT_MS = 60 * 60 * 1000; // 1 hour
 
 export const submitVerificationRequest = onCall(
+  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     const { email, idFrontBase64, idBackBase64, role } = request.data || {};
 
@@ -1483,9 +1506,9 @@ export const submitVerificationRequest = onCall(
       throw new HttpsError('invalid-argument', 'Valid email required');
     }
 
-    // Reject .edu.qa emails — they should use normal signup
-    if (/^[^@]+@[^@]+\.edu\.qa$/.test(normalizedEmail)) {
-      throw new HttpsError('invalid-argument', 'Please use the regular signup with your .edu.qa email');
+    // Reject approved school emails — they should use normal signup
+    if (isAllowedStudentEmail(normalizedEmail)) {
+      throw new HttpsError('invalid-argument', 'Please use the regular signup with your school email');
     }
 
     if (!idFrontBase64 || !idBackBase64) {
@@ -1571,6 +1594,7 @@ export const submitVerificationRequest = onCall(
 );
 
 export const checkVerificationStatus = onCall(
+  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     const email = request.data?.email?.toLowerCase()?.trim();
 
@@ -1600,6 +1624,7 @@ export const checkVerificationStatus = onCall(
 );
 
 export const listPendingVerificationRequests = onCall(
+  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Login required');
@@ -1646,6 +1671,7 @@ export const listPendingVerificationRequests = onCall(
 );
 
 export const reviewVerificationRequest = onCall(
+  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Login required');
@@ -1708,6 +1734,7 @@ export const reviewVerificationRequest = onCall(
 );
 
 export const registerPushToken = onCall(
+  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     const { auth, data } = request;
 

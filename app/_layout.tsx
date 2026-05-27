@@ -1,5 +1,6 @@
 import 'react-native-reanimated';
 import '@react-native-firebase/app';
+import { ensureFirebaseAppCheck } from '../utils/firebaseAppCheck';
 import {
   getAuth,
   getIdToken,
@@ -43,9 +44,30 @@ export default function RootLayout() {
   });
 
   const [i18nReady, setI18nReady] = useState(false);
+  const [appCheckReady, setAppCheckReady] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
   const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const setupAppCheck = async () => {
+      try {
+        await ensureFirebaseAppCheck();
+      } finally {
+        if (!cancelled) {
+          setAppCheckReady(true);
+        }
+      }
+    };
+
+    void setupAppCheck();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const setupLocalization = async () => {
@@ -78,6 +100,7 @@ export default function RootLayout() {
           loaded={loaded}
           error={error}
           i18nReady={i18nReady}
+          appCheckReady={appCheckReady}
           initializing={initializing}
           showSplash={showSplash}
           onSplashFinish={() => setShowSplash(false)}
@@ -92,6 +115,7 @@ function LayoutContent({
   loaded,
   error,
   i18nReady,
+  appCheckReady,
   initializing,
   showSplash,
   onSplashFinish,
@@ -100,6 +124,7 @@ function LayoutContent({
   loaded: boolean;
   error: Error | null;
   i18nReady: boolean;
+  appCheckReady: boolean;
   initializing: boolean;
   showSplash: boolean;
   onSplashFinish: () => void;
@@ -121,6 +146,7 @@ function LayoutContent({
   useEffect(() => {
     if (
       i18nReady &&
+      appCheckReady &&
       (loaded || error) &&
       !initializing &&
       (user === null || hasProfile !== null) &&
@@ -128,7 +154,7 @@ function LayoutContent({
     ) {
       setAppReady(true);
     }
-  }, [i18nReady, loaded, error, initializing, user, hasProfile, pendingCheckDone]);
+  }, [i18nReady, appCheckReady, loaded, error, initializing, user, hasProfile, pendingCheckDone]);
 
   // Set up local notification channels when user is authenticated with a profile
   useEffect(() => {
