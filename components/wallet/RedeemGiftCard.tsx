@@ -6,11 +6,11 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TouchableOpacity,
     View,
 } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import ScalePressable from '../ScalePressable';
 import PhonkText from '../PhonkText';
 import GiftCardCheckout from './GiftCardCheckout';
 import GiftCardTermsDrawer from './GiftCardTermsDrawer';
@@ -57,16 +57,16 @@ export default function RedeemGiftCard({
         <View style={styles.container}>
             {/* Header */}
             <View style={[styles.header, isRTL && styles.headerRTL]}>
-                <TouchableOpacity
+                <ScalePressable
                     style={styles.backButton}
                     onPress={() => {
                         triggerSubtleHaptic();
                         onBack();
                     }}
-                    activeOpacity={0.7}
+                    pressedScale={0.9}
                 >
                     <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color="#000000" />
-                </TouchableOpacity>
+                </ScalePressable>
                 <View style={styles.logoContainer}>
                     <PhonkText style={styles.logoX}>X</PhonkText>
                     <PhonkText style={styles.logoCard}>CARD</PhonkText>
@@ -104,8 +104,8 @@ export default function RedeemGiftCard({
                     <Text style={styles.brandName}>{brand.name}</Text>
 
                     <View style={styles.generateGiftCardWrapper}>
-                    <PhonkText style={styles.generateText}>{t('generate_text')}</PhonkText>
-                    <PhonkText style={styles.giftCardText}>{t('gift_card_text')}</PhonkText>
+                        <PhonkText style={styles.generateText}>{t('generate_text')}</PhonkText>
+                        <PhonkText style={styles.giftCardText}>{t('gift_card_text')}</PhonkText>
                     </View>
 
                     <View style={styles.selectedAmountContainer}>
@@ -115,16 +115,17 @@ export default function RedeemGiftCard({
                     </View>
                 </View>
 
-                <TouchableOpacity
+                <ScalePressable
                     style={[styles.tcButton, isRTL && styles.tcButtonRTL]}
                     onPress={() => {
                         triggerSubtleHaptic();
                         setShowTerms(true);
                     }}
+                    pressedScale={0.985}
                 >
                     <Ionicons name="information-circle-outline" size={18} color="#999999" />
                     <Text style={[styles.tcButtonText, isRTL && styles.tcButtonTextRTL]}>{t('view_tc')}</Text>
-                </TouchableOpacity>
+                </ScalePressable>
 
                 {/* Amount Selection */}
                 <View style={styles.selectionSection}>
@@ -132,7 +133,7 @@ export default function RedeemGiftCard({
 
                     <View style={[styles.amountOptions, isRTL && styles.amountOptionsRTL]}>
                         {amounts.map((amount) => (
-                            <TouchableOpacity
+                            <ScalePressable
                                 key={amount}
                                 style={[
                                     styles.amountOption,
@@ -142,14 +143,15 @@ export default function RedeemGiftCard({
                                     triggerSubtleHaptic();
                                     setSelectedAmount(amount);
                                 }}
+                                pressedScale={0.94}
                             >
                                 <PhonkText style={[
                                     styles.amountOptionText,
                                     selectedAmount === amount && styles.amountOptionTextSelected,
                                 ]}>
- {amount.toFixed(2)}
+                                    {amount.toFixed(2)}
                                 </PhonkText>
-                            </TouchableOpacity>
+                            </ScalePressable>
                         ))}
                     </View>
                 </View>
@@ -158,29 +160,29 @@ export default function RedeemGiftCard({
                 {selectedAmount > maxLimit && (
                     <View style={styles.insufficientContainer}>
                         <Ionicons name="alert-circle" size={18} color="#E53935" />
-                <Text style={[styles.insufficientText, { textAlign: isRTL ? 'right' : 'left' }]}>
-                    {t('insufficient_balance_warning', {
-                        currency,
-                        selectedAmount: selectedAmount.toFixed(2),
-                        maxLimit: maxLimit.toFixed(2),
-                    })}
-                </Text>
-            </View>
-        )}
+                        <Text style={[styles.insufficientText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                            {t('insufficient_balance_warning', {
+                                currency,
+                                selectedAmount: selectedAmount.toFixed(2),
+                                maxLimit: maxLimit.toFixed(2),
+                            })}
+                        </Text>
+                    </View>
+                )}
 
                 {/* Redeem Button */}
-                <TouchableOpacity
+                <ScalePressable
                     style={[styles.redeemButton, selectedAmount > maxLimit && styles.redeemButtonDisabled]}
-                    activeOpacity={0.8}
                     onPress={() => {
                         triggerSubtleHaptic();
                         setShowCheckout(true);
                     }}
                     disabled={selectedAmount > maxLimit}
+                    pressedScale={0.975}
                 >
                     <Ionicons name="flash" size={20} color="#FFFFFF" style={styles.redeemIcon} />
                     <PhonkText style={styles.redeemButtonText}>{t('redeem_button_text')}</PhonkText>
-                </TouchableOpacity>
+                </ScalePressable>
             </ScrollView>
 
             <GiftCardTermsDrawer
