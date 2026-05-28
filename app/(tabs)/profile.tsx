@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   universityBannerOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(100, 20, 20, 0.5)',
     padding: 16,
     justifyContent: 'space-between',

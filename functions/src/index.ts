@@ -31,6 +31,7 @@ const ALLOWED_STUDENT_EMAIL_DOMAINS = new Set([
   'bpsdoha.edu.qa',
   'rajagiridoha.com',
   'student.dbs.sch.qa',
+  'student.ukm.qa',
 ]);
 
 /**

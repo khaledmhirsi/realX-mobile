@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
     backgroundIconsOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         zIndex: 0,
     },
     comingSoonContainer: {

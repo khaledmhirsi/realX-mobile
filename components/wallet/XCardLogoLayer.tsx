@@ -163,12 +163,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   logoContactShadow: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   logoLiftedPlane: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   logoImage: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
 });

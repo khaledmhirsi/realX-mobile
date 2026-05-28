@@ -279,13 +279,13 @@ const styles = StyleSheet.create({
   },
 
   uniCardBgContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
 
   uniCardBg: { width: '100%', height: '100%' },
 
   uniCardOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(21, 33, 56, 0.7)',
   },
 

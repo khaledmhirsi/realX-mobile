@@ -1,6 +1,6 @@
 import { createNativeBottomTabNavigator } from '@bottom-tabs/react-navigation';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createBottomTabNavigator } from 'expo-router/js-tabs';
 import { withLayoutContext } from 'expo-router';
 import { I18nManager, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';

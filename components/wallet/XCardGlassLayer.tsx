@@ -139,7 +139,7 @@ export default function XCardGlassLayer({ config, strength, touchStyle }: Props)
         <GlassView
           testID={`xcard-${config.preset}-native-glass`}
           style={[
-            StyleSheet.absoluteFillObject,
+            StyleSheet.absoluteFill,
             styles.nativeGlassSurface,
             { opacity: nativeGlassOpacity },
           ]}
@@ -223,7 +223,7 @@ function clamp01(value: number) {
 
 const styles = StyleSheet.create({
   glassLayer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     overflow: 'hidden',
     borderRadius: CARD_RADIUS,
     borderWidth: 1,
@@ -237,10 +237,10 @@ const styles = StyleSheet.create({
     borderRadius: CARD_RADIUS,
   },
   glassTint: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   ambientSweepClip: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     overflow: 'hidden',
     borderRadius: CARD_RADIUS,
   },

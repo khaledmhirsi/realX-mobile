@@ -185,7 +185,7 @@ function getShineTravel(cardWidth: number, shineWidth: number, shineHeight: numb
 
 const styles = StyleSheet.create({
   shineClip: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: CARD_RADIUS,
     overflow: 'hidden',
   },
