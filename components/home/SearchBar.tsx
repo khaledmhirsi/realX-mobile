@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { GlassView, isGlassEffectAPIAvailable } from "expo-glass-effect";
+import { useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Platform,
@@ -8,7 +9,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { Colors } from "../../constants/Colors";
 import { Typography } from "../../constants/Typography";
 
