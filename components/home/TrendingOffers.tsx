@@ -1,7 +1,7 @@
 import { collection, getDocs, getFirestore, query, where } from '@react-native-firebase/firestore';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import PhonkText from '../PhonkText';
@@ -13,10 +13,10 @@ type TrendingOffersProps = {
     onVendorPress?: (vendor: any) => void;
 };
 
-const OFFER_CARD_WIDTH = 220;
 const OFFER_CARD_GAP = 12;
-const OFFER_SCROLL_INTERVAL = OFFER_CARD_WIDTH + OFFER_CARD_GAP;
 const OFFER_SIDE_PADDING = 30;
+const OFFER_CARD_WIDTH_RATIO = 0.60;
+const OFFER_AUTO_SCROLL_MS = 4000;
 
 export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
     const { t } = useTranslation();
@@ -25,8 +25,12 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
     const scrollViewRef = useRef<ScrollView | null>(null);
+    const isUserInteractingRef = useRef(false);
+    const { width: screenWidth } = useWindowDimensions();
     const router = useRouter();
     const displayedVendors = useMemo(() => (isRTL ? [...vendors].reverse() : vendors), [vendors, isRTL]);
+    const offerCardWidth = screenWidth * OFFER_CARD_WIDTH_RATIO;
+    const offerScrollInterval = offerCardWidth + OFFER_CARD_GAP;
     const trendingLabelPrefix = t('trending_label_prefix');
     const trendingLabelHighlight = t('trending_label_highlight');
 
@@ -77,8 +81,12 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
         }
 
         const interval = setInterval(() => {
+            if (isUserInteractingRef.current) {
+                return;
+            }
+
             setCurrentIndex((prevIndex) => (prevIndex + 1) % displayedVendors.length);
-        }, 4000);
+        }, OFFER_AUTO_SCROLL_MS);
 
         return () => clearInterval(interval);
     }, [displayedVendors.length]);
@@ -90,23 +98,31 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
 
         const maxIndex = Math.max(0, displayedVendors.length - 1);
         const safeIndex = Math.min(currentIndex, maxIndex);
-        const offset = safeIndex * OFFER_SCROLL_INTERVAL;
 
-        scrollViewRef.current.scrollTo({ x: offset, animated: true });
-    }, [currentIndex, displayedVendors.length]);
+        scrollViewRef.current.scrollTo({
+            x: safeIndex * offerScrollInterval,
+            animated: true,
+        });
+    }, [currentIndex, displayedVendors.length, offerScrollInterval]);
 
     const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         if (displayedVendors.length <= 1) {
+            isUserInteractingRef.current = false;
             return;
         }
 
         const maxIndex = Math.max(0, displayedVendors.length - 1);
         const nextIndex = Math.min(
             maxIndex,
-            Math.max(0, Math.round(event.nativeEvent.contentOffset.x / OFFER_SCROLL_INTERVAL)),
+            Math.max(0, Math.round(event.nativeEvent.contentOffset.x / offerScrollInterval)),
         );
 
         setCurrentIndex((prevIndex) => (prevIndex === nextIndex ? prevIndex : nextIndex));
+        isUserInteractingRef.current = false;
+    };
+
+    const handleScrollBegin = () => {
+        isUserInteractingRef.current = true;
     };
 
     const handleVendorPress = (vendor: any) => {
@@ -149,7 +165,12 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
                 directionalLockEnabled
                 canCancelContentTouches
                 keyboardShouldPersistTaps="always"
+                snapToInterval={offerScrollInterval}
+                decelerationRate="fast"
+                disableIntervalMomentum
                 scrollEventThrottle={16}
+                onScrollBeginDrag={handleScrollBegin}
+                onMomentumScrollBegin={handleScrollBegin}
                 onScrollEndDrag={handleScrollEnd}
                 onMomentumScrollEnd={handleScrollEnd}
                 contentContainerStyle={[styles.scrollContent, { flexDirection: 'row' }]}
@@ -174,7 +195,7 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
                             logoUri={vendor.vendorProfilePicture || vendor.profilePicture}
                             xcardEnabled={vendor.xcard}
                             onPress={() => handleVendorPress(vendor)}
-                            style={styles.offerCard}
+                            style={{ width: offerCardWidth }}
                         />
                     );
                 })}
@@ -216,8 +237,5 @@ const styles = StyleSheet.create({
         paddingHorizontal: OFFER_SIDE_PADDING,
         gap: OFFER_CARD_GAP,
 
-    },
-    offerCard: {
-        width: OFFER_CARD_WIDTH,
     },
 });
