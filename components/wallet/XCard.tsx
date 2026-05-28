@@ -131,10 +131,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#052B18',
   },
   cardArtwork: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   innerStroke: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: CARD_RADIUS,
     borderWidth: 1,
   },

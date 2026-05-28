@@ -8,7 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const LOGO_ASPECT_RATIO = 454 / 179;
-const LOGO_WIDTH_RATIO = 0.35;
+const LOGO_WIDTH_RATIO = 0.25;
 const LOGO_LEFT_RATIO = 0.072;
 const LOGO_BOTTOM_RATIO = 0.095;
 const LOGO_RELIEF_OUTSET = 2;
