@@ -1,5 +1,7 @@
-import { I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { I18nManager, StyleSheet, Text, View } from 'react-native';
+import ScalePressable from '../ScalePressable';
 import { Typography } from '../../constants/Typography';
+import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useTranslation } from 'react-i18next';
 
 type Props = {
@@ -11,10 +13,13 @@ export default function HelpLink({ onPress }: Props) {
     const isRTL = I18nManager.isRTL;
     return (
         <View style={styles.container}>
-            <TouchableOpacity
+            <ScalePressable
                 style={styles.linkContainer}
-                onPress={onPress}
-                activeOpacity={0.7}
+                onPress={() => {
+                    triggerSubtleHaptic();
+                    onPress?.();
+                }}
+                pressedScale={0.96}
             >
                 <View style={[styles.iconContainer, isRTL && styles.iconContainerRTL]}>
                     <Text style={styles.icon}>ⓘ</Text>
@@ -22,7 +27,7 @@ export default function HelpLink({ onPress }: Props) {
                 <Text style={[styles.linkText, { textAlign: isRTL ? 'right' : 'left' }]}>
                     {t('help_link_text')}
                 </Text>
-            </TouchableOpacity>
+            </ScalePressable>
             <Text style={styles.conversionText}>{t('xp_conversion_text')}</Text>
         </View>
     );

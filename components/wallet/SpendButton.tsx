@@ -1,6 +1,8 @@
-import { I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { I18nManager, StyleSheet, Text, View } from 'react-native';
+import ScalePressable from '../ScalePressable';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useTranslation } from 'react-i18next';
 
 type Props = {
@@ -12,13 +14,16 @@ export default function SpendButton({ onPress }: Props) {
     const isRTL = I18nManager.isRTL;
     return (
         <View style={styles.container}>
-            <TouchableOpacity
+            <ScalePressable
                 style={[styles.button, isRTL && styles.buttonRTL]}
-                onPress={onPress}
-                activeOpacity={0.85}
+                onPress={() => {
+                    triggerSubtleHaptic();
+                    onPress?.();
+                }}
+                pressedScale={0.975}
             >
                 <Text style={styles.buttonText}>{t('spend_button_text')}</Text>
-            </TouchableOpacity>
+            </ScalePressable>
         </View>
     );
 }

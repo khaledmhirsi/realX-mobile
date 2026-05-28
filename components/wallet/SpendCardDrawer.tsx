@@ -15,14 +15,15 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    TouchableOpacity,
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { logger } from '../../utils/logger';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import { triggerSubtleHaptic } from '../../utils/haptics';
 import PhonkText from '../PhonkText';
+import ScalePressable from '../ScalePressable';
 import RedeemGiftCard from './RedeemGiftCard';
 import type { WalletBrand } from './types';
 import { useTranslation } from 'react-i18next';
@@ -56,14 +57,14 @@ function BrandListItem({
     isArabic: boolean;
 }) {
     return (
-        <TouchableOpacity
+        <ScalePressable
             style={[
                 styles.brandItem,
                 isRTL && styles.brandItemRTL,
                 isSelected && styles.brandItemSelected,
             ]}
             onPress={onSelect}
-            activeOpacity={0.7}
+            pressedScale={0.985}
         >
             <View
                 style={[
@@ -83,7 +84,7 @@ function BrandListItem({
             <Text style={[styles.brandName, { textAlign: isRTL ? 'right' : 'left' }]}>
                 {isArabic && brand.nameAr ? brand.nameAr : brand.name}
             </Text>
-        </TouchableOpacity>
+        </ScalePressable>
     );
 }
 
@@ -200,6 +201,7 @@ export default function SpendCardDrawer({
     };
 
     const handleClearSearch = () => {
+        triggerSubtleHaptic();
         const hadCommittedQuery = searchQueryRef.current.length > 0;
 
         setSearchInput('');
@@ -212,10 +214,17 @@ export default function SpendCardDrawer({
     };
 
     const handleBrandSelect = (brandId: string) => {
+        if (selectedBrandId !== brandId) {
+            triggerSubtleHaptic();
+        }
         setSelectedBrandId(brandId);
     };
 
     const selectedBrand = brands.find(b => b.id === selectedBrandId);
+    const handleClose = () => {
+        triggerSubtleHaptic();
+        onClose();
+    };
     const searchText = normalizeSearchText(searchQuery);
     const emptyTitle = errorMessage
         ? t('failed_to_load_brands')
@@ -233,7 +242,7 @@ export default function SpendCardDrawer({
             visible={visible}
             animationType="slide"
             transparent={false}
-            onRequestClose={onClose}
+            onRequestClose={handleClose}
         >
             <View style={[styles.container, { paddingTop: insets.top }]}>
                 {selectedBrand ? (
@@ -248,13 +257,13 @@ export default function SpendCardDrawer({
                     <>
                         {/* Header */}
                         <View style={[styles.header, isRTL && styles.headerRTL]}>
-                        <TouchableOpacity
-                            style={styles.backButton}
-                            onPress={onClose}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={styles.backArrow}>{isRTL ? '→' : '←'}</Text>
-                        </TouchableOpacity>
+                            <ScalePressable
+                                style={styles.backButton}
+                                onPress={handleClose}
+                                pressedScale={0.9}
+                            >
+                                <Text style={styles.backArrow}>{isRTL ? '→' : '←'}</Text>
+                            </ScalePressable>
                             <View style={styles.logoContainer}>
                                 <PhonkText style={styles.logoX}>{t('xcard_title_x')}</PhonkText>
                                 <PhonkText style={styles.logoCard}>{t('xcard_title_card')}</PhonkText>
@@ -289,15 +298,15 @@ export default function SpendCardDrawer({
                                 blurOnSubmit={false}
                             />
                             {(searchInput.length > 0 || searchQuery.length > 0) ? (
-                                <TouchableOpacity
+                                <ScalePressable
                                     style={[styles.clearButton, isRTL && styles.clearButtonRTL]}
                                     onPress={handleClearSearch}
-                                    activeOpacity={0.7}
+                                    pressedScale={0.9}
                                     accessibilityRole="button"
                                     accessibilityLabel="Clear search"
                                 >
                                     <Ionicons name="close-circle" size={18} color="#7A7A7A" />
-                                </TouchableOpacity>
+                                </ScalePressable>
                             ) : null}
                         </View>
 
@@ -347,13 +356,16 @@ export default function SpendCardDrawer({
                                                 {emptyBody}
                                             </Text>
                                             {errorMessage ? (
-                                                <TouchableOpacity
-                                                    onPress={() => void fetchBrands(true, searchQueryRef.current)}
-                                                    activeOpacity={0.8}
+                                                <ScalePressable
+                                                    onPress={() => {
+                                                        triggerSubtleHaptic();
+                                                        void fetchBrands(true, searchQueryRef.current);
+                                                    }}
+                                                    pressedScale={0.96}
                                                     style={styles.retryButton}
                                                 >
                                                     <Text style={styles.retryButtonText}>{t('retry')}</Text>
-                                                </TouchableOpacity>
+                                                </ScalePressable>
                                             ) : null}
                                         </View>
                                     }
