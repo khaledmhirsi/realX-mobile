@@ -413,7 +413,7 @@ export default function VendorScreen() {
                                 <View style={[styles.offerInfoContainer, { backgroundColor: theme.cardMuted }]}>
                                     <View style={styles.offerContent}>
                                         <PhonkText style={[{ color: theme.text }, styles.offerTitle]}>
-                                            {t('online_vendor_title')}
+                                            {pickLocalizedText(isArabic, vendor.brandOfferNameAr, vendor.brandOfferName, t('online_vendor_title'))}
                                         </PhonkText>
                                         <Text style={[styles.descriptionText, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>
                                             {t('online_vendor_description')}
