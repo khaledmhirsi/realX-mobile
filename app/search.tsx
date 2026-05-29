@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView} from 'react-native-safe-area-context';
 import { RestaurantCard } from '../components/category';
-import { Colors } from '../constants/Colors';
+import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
 import { triggerSubtleHaptic } from '../utils/haptics';
 
@@ -24,6 +24,7 @@ export default function SearchScreen() {
     const { q } = useLocalSearchParams<{ q: string }>();
     const router = useRouter();
     const { i18n } = useTranslation();
+    const { isDark, theme } = useAppTheme();
     const isArabic = i18n.language === 'ar';
 
     const [searchQuery, setSearchQuery] = useState(q || '');
@@ -162,34 +163,34 @@ export default function SearchScreen() {
         if (!loadingMore) return <View style={{ height: 20 }} />;
         return (
             <View style={styles.loaderFooter}>
-                <ActivityIndicator size="small" color={Colors.brandGreen} />
+                <ActivityIndicator size="small" color={theme.brand} />
             </View>
         );
     };
 
     return (
-        <SafeAreaView style={[styles.safeArea, { backgroundColor: Colors.light.background }]} edges={['top']}>
-            <StatusBar barStyle="dark-content" backgroundColor={Colors.light.background} />
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
+            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={theme.background} />
 
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity
-                    style={[styles.backButton, { backgroundColor: '#FFF' }]}
+                    style={[styles.backButton, { backgroundColor: theme.card, shadowColor: theme.shadow }]}
                     onPress={() => {
                         triggerSubtleHaptic();
                         router.back();
                     }}
                     activeOpacity={0.8}
                 >
-                    <Ionicons name="arrow-back" size={22} color="#000" />
+                    <Ionicons name="arrow-back" size={22} color={theme.icon} />
                 </TouchableOpacity>
 
-                <View style={[styles.searchContainer, { backgroundColor: '#F5F5F5', borderColor: '#E0E0E0' }]}>
-                    <Ionicons name="search" size={18} color={Colors.brandGreen} style={styles.searchIcon} />
+                <View style={[styles.searchContainer, { backgroundColor: theme.cardMuted, borderColor: theme.border }]}>
+                    <Ionicons name="search" size={18} color={theme.brand} style={styles.searchIcon} />
                     <TextInput
-                        style={[styles.searchInput, { color: Colors.light.text }]}
+                        style={[styles.searchInput, { color: theme.text }]}
                         placeholder="Search for offers..."
-                        placeholderTextColor={Colors.light.tabIconDefault}
+                        placeholderTextColor={theme.inputPlaceholder}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                         returnKeyType="search"
@@ -205,7 +206,7 @@ export default function SearchScreen() {
                             }}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
-                            <Ionicons name="close-circle" size={18} color="#AAA" />
+                            <Ionicons name="close-circle" size={18} color={theme.iconMuted} />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -214,15 +215,15 @@ export default function SearchScreen() {
             {/* Results */}
             {loading ? (
                 <View style={styles.centeredContainer}>
-                    <ActivityIndicator size="large" color={Colors.brandGreen} />
+                    <ActivityIndicator size="large" color={theme.brand} />
                 </View>
             ) : results.length === 0 ? (
                 <View style={styles.centeredContainer}>
-                    <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.emptyEmoji]}>🔍</Text>
-                    <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.emptyTitle]}>
+                    <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, styles.emptyEmoji]}>🔍</Text>
+                    <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, styles.emptyTitle]}>
                         {committedQuery ? 'No offers found' : 'Search for offers'}
                     </Text>
-                    <Text style={[{ color: Colors.light.tabIconDefault, fontFamily: Typography.poppins.medium }, styles.emptySubtitle]}>
+                    <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium }, styles.emptySubtitle]}>
                         {committedQuery
                             ? `We couldn't find any offers matching "${committedQuery}"`
                             : 'Type a keyword to find deals and discounts'}
@@ -240,7 +241,7 @@ export default function SearchScreen() {
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={renderFooter}
                     ListHeaderComponent={
-                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.resultCount]}>
+                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium }, styles.resultCount]}>
                             {results.length} {results.length === 1 ? 'result' : 'results'}
                         </Text>
                     }
@@ -316,7 +317,6 @@ const styles = StyleSheet.create({
     resultCount: {
         fontSize: 14,
         fontFamily: Typography.poppins.medium,
-        color: '#8E8E93',
         paddingHorizontal: 20,
         paddingTop: 8,
         paddingBottom: 16,

@@ -20,14 +20,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../utils/logger';
-import { Colors } from '../constants/Colors';
+import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
 import PhonkText from '../components/PhonkText';
 import UserAvatar from '../components/UserAvatar';
 
 export default function ProfileDetailsScreen() {
     const router = useRouter();
-    const BRAND_GREEN = Colors.brandGreen;
+    const { theme } = useAppTheme();
     const { t } = useTranslation();
     const isRTL = I18nManager.isRTL;
     const backIconName: keyof typeof Ionicons.glyphMap = isRTL ? 'arrow-forward' : 'arrow-back';
@@ -195,16 +195,22 @@ export default function ProfileDetailsScreen() {
     };
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: Colors.light.background }]} edges={['top']}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
         <View style={[styles.header, isRTL && styles.rowReverse]}>
-            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-                <Ionicons name={backIconName} size={24} color={Colors.light.text} />
+            <TouchableOpacity
+                onPress={handleBack}
+                style={[styles.backButton, { backgroundColor: theme.cardMuted }]}
+            >
+                <Ionicons name={backIconName} size={24} color={theme.icon} />
             </TouchableOpacity>
-                <PhonkText style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'center' }]}>
+                <PhonkText style={[styles.headerTitle, { color: theme.text, textAlign: isRTL ? 'right' : 'center' }]}>
                     {t('profile_details_title')}
                 </PhonkText>
-            <TouchableOpacity onPress={handleToggleEdit} style={styles.editButton}>
-                <PhonkText style={[styles.editButtonText, isEditing && { color: BRAND_GREEN }]}>
+            <TouchableOpacity
+                onPress={handleToggleEdit}
+                style={[styles.editButton, { backgroundColor: theme.cardMuted }]}
+            >
+                <PhonkText style={[styles.editButtonText, { color: isEditing ? theme.brand : theme.text }]}>
                     {isEditing ? t('save') : t('edit')}
                 </PhonkText>
             </TouchableOpacity>
@@ -235,87 +241,82 @@ export default function ProfileDetailsScreen() {
                     {/* Form Fields */}
                     <View style={styles.form}>
                         {isLoading || isSaving ? (
-                            <ActivityIndicator size="large" color={BRAND_GREEN} style={{ marginTop: 20 }} />
+                            <ActivityIndicator size="large" color={theme.brand} style={{ marginTop: 20 }} />
                         ) : (
                             <>
                                 {/* First Name Field */}
                                 <View style={styles.inputGroup}>
-                                    <PhonkText style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
+                                    <PhonkText style={[styles.label, { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' }]}>
                                         {t('first_name')}
                                     </PhonkText>
-                                    <View style={[styles.inputWrapper, !isEditing && styles.disabledInput]}>
+                                    <View style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, !isEditing && styles.disabledInput]}>
                                         <TextInput
                                             style={[
                                                 styles.input,
-                                                !isEditing && styles.disabledText,
-                                                { color: Colors.light.text, textAlign: isRTL ? 'right' : 'left' },
+                                                { color: isEditing ? theme.text : theme.subtleText, textAlign: isRTL ? 'right' : 'left' },
                                             ]}
                                             value={firstName}
                                             onChangeText={setFirstName}
                                             editable={isEditing}
                                             placeholder={t('first_name_placeholder')}
-                                            placeholderTextColor="#999"
+                                            placeholderTextColor={theme.inputPlaceholder}
                                         />
                                     </View>
                                 </View>
 
                                 {/* Last Name Field */}
                                 <View style={styles.inputGroup}>
-                                    <PhonkText style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
+                                    <PhonkText style={[styles.label, { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' }]}>
                                         {t('last_name')}
                                     </PhonkText>
-                                    <View style={[styles.inputWrapper, !isEditing && styles.disabledInput]}>
+                                    <View style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, !isEditing && styles.disabledInput]}>
                                         <TextInput
                                             style={[
                                                 styles.input,
-                                                !isEditing && styles.disabledText,
-                                                { color: Colors.light.text, textAlign: isRTL ? 'right' : 'left' },
+                                                { color: isEditing ? theme.text : theme.subtleText, textAlign: isRTL ? 'right' : 'left' },
                                             ]}
                                             value={lastName}
                                             onChangeText={setLastName}
                                             editable={isEditing}
                                             placeholder={t('last_name_placeholder')}
-                                            placeholderTextColor="#999"
+                                            placeholderTextColor={theme.inputPlaceholder}
                                         />
                                     </View>
                                 </View>
 
                                 {/* Email Field */}
                                 <View style={styles.inputGroup}>
-                                    <PhonkText style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
+                                    <PhonkText style={[styles.label, { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' }]}>
                                         {t('email_address')}
                                     </PhonkText>
-                                    <View style={[styles.inputWrapper, styles.disabledInput]}>
+                                    <View style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, styles.disabledInput]}>
                                         <TextInput
                                             style={[
                                                 styles.input,
-                                                styles.disabledText,
-                                                { color: Colors.light.text, textAlign: isRTL ? 'right' : 'left' },
+                                                { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' },
                                             ]}
                                             value={email}
                                             editable={false}
                                             placeholder={t('email_address_placeholder')}
-                                            placeholderTextColor="#999"
+                                            placeholderTextColor={theme.inputPlaceholder}
                                         />
                                     </View>
                                 </View>
 
                                 {/* Date of Birth Field */}
                                 <View style={styles.inputGroup}>
-                                    <PhonkText style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
+                                    <PhonkText style={[styles.label, { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' }]}>
                                         {t('date_of_birth')}
                                     </PhonkText>
                                     <TouchableOpacity
-                                        style={[styles.inputWrapper, !isEditing && styles.disabledInput]}
+                                        style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, !isEditing && styles.disabledInput]}
                                         onPress={() => isEditing && setShowDatePicker(true)}
                                         disabled={!isEditing}
                                     >
                                         <Text
                                             style={[
                                                 styles.input,
-                                                !isEditing && styles.disabledText,
-                                                !dob && { color: '#999' },
-                                                { textAlign: isRTL ? 'right' : 'left' },
+                                                { color: !dob || !isEditing ? theme.subtleText : theme.text, textAlign: isRTL ? 'right' : 'left' },
                                             ]}
                                         >
                                             {formatDate(dob)}
@@ -330,7 +331,7 @@ export default function ProfileDetailsScreen() {
                                         display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                                         onChange={onDateChange}
                                         maximumDate={new Date()}
-                                        textColor="black"
+                                        textColor={theme.text}
                                     />
                                 )}
                             </>
@@ -340,7 +341,7 @@ export default function ProfileDetailsScreen() {
                     {/* Action Buttons */}
                     <View style={styles.actions}>
                         <TouchableOpacity 
-                            style={styles.deleteAccountPill} 
+                            style={[styles.deleteAccountPill, { backgroundColor: '#FFF1F0', borderColor: '#FFD5D2' }]}
                             onPress={handleDeleteAccount}
                             activeOpacity={0.7}
                         >
@@ -374,7 +375,6 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: '#F5F5F7',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -385,7 +385,6 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     editButton: {
-        backgroundColor: '#F5F5F7',
         borderRadius: 24,
         paddingVertical: 10,
         paddingHorizontal: 20,
@@ -405,7 +404,6 @@ const styles = StyleSheet.create({
     },
     avatarMain: {
         borderWidth: 4,
-        borderColor: '#F5F5F7',
     },
     form: {
         gap: 24,
@@ -415,13 +413,11 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 12,
-        color: '#8E8E93',
         paddingLeft: 4,
     },
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F5F5F7',
         borderRadius: 24,
         paddingHorizontal: 20,
         height: 60,
@@ -435,7 +431,6 @@ const styles = StyleSheet.create({
         opacity: 0.8,
     },
     disabledText: {
-        color: '#8E8E93',
     },
     actions: {
         marginTop: 24,

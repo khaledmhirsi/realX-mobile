@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { memo, useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, type ViewStyle } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 
 export type SubCategory = {
@@ -31,6 +31,8 @@ const SubCategoryChip = memo(({
     isSelected: boolean;
     onPress: (item: SubCategory) => void;
 }) => {
+    const { theme } = useAppTheme();
+
     const renderIcon = () => {
         const { icon } = item;
 
@@ -63,7 +65,7 @@ const SubCategoryChip = memo(({
             {renderIcon()}
             <Text style={[
                 styles.chipText,
-                { color: isSelected ? Colors.brandGreen : Colors.light.text },
+                { color: isSelected ? theme.brand : theme.text },
                 isSelected && styles.chipTextSelected,
             ]}>
                 {item.name}

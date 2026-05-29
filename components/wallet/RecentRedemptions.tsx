@@ -9,6 +9,7 @@ import { Typography } from '../../constants/Typography';
 import RedemptionItem, { RedemptionData } from './RedemptionItem';
 import { logger } from '../../utils/logger';
 import { toArabicDigits } from '../../utils/numbers';
+import { useAppTheme } from '../../context/AppThemeContext';
 
 const LOGO_COLORS = ['#3D5A80', '#C41E3A', '#8B4513', '#2A9D8F', '#E76F51', '#E9C46A'];
 
@@ -16,6 +17,7 @@ export default function RecentRedemptions() {
     const [redemptions, setRedemptions] = useState<RedemptionData[]>([]);
     const [loading, setLoading] = useState(true);
     const { t, i18n } = useTranslation();
+    const { theme } = useAppTheme();
     const isRTL = I18nManager.isRTL;
     const isArabic = i18n.language === 'ar' || isRTL;
 
@@ -126,7 +128,7 @@ export default function RecentRedemptions() {
     if (loading) {
         return (
             <View style={styles.container}>
-                <Text style={[styles.sectionTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[styles.sectionTitle, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
                     {t('recent_redemptions')}
                 </Text>
                 <ActivityIndicator
@@ -140,7 +142,7 @@ export default function RecentRedemptions() {
 
     return (
         <View style={styles.container}>
-            <Text style={[styles.sectionTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
                 {t('recent_redemptions')}
             </Text>
             {redemptions.length > 0 ? (
@@ -150,10 +152,10 @@ export default function RecentRedemptions() {
                     keyExtractor={(item) => item.id}
                     ItemSeparatorComponent={renderSeparator}
                     scrollEnabled={false}
-                    contentContainerStyle={styles.listContent}
+                    contentContainerStyle={[styles.listContent, { backgroundColor: theme.background }]}
                 />
             ) : (
-                <Text style={[styles.emptyText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[styles.emptyText, { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' }]}>
                     {t('no_recent_redemptions')}
                 </Text>
             )}
@@ -168,12 +170,10 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 20,
         fontFamily: Typography.poppins.semiBold,
-        color: Colors.light.text,
         paddingHorizontal: 20,
         marginBottom: 16,
     },
     listContent: {
-        backgroundColor: '#FFFFFF',
     },
     separator: {
         height: 1,
@@ -187,7 +187,6 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: 14,
         fontFamily: Typography.poppins.medium,
-        color: '#999999',
         paddingHorizontal: 20,
         paddingTop: 10,
     },

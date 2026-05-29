@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 import {
@@ -40,6 +41,7 @@ export default function VerifyOtpScreen() {
   const params = useLocalSearchParams<{ email?: string; purpose?: string; role?: string }>();
   const { email, purpose, role } = params;
   const { t } = useTranslation();
+  const { theme } = useAppTheme();
 
   const isRTL = I18nManager.isRTL;
   const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
@@ -224,45 +226,45 @@ export default function VerifyOtpScreen() {
   const titleSuffix = titleWords[titleWords.length - 1];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <StatusBar style="light" />
 
       <OnboardingScreenMotion style={styles.headerBackground}>
         <SafeAreaView edges={['top']} style={styles.headerContent}>
           <View style={[styles.topButtons, isRTL && styles.topButtonsRTL]}>
-            <TouchableOpacity onPress={handleBack} style={styles.iconButton}>
-              <Ionicons name={arrowIconName} size={24} color="black" />
+            <TouchableOpacity onPress={handleBack} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
+              <Ionicons name={arrowIconName} size={24} color={theme.logoTileText} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.replace('/')} style={styles.iconButton}>
-              <Ionicons name="close" size={24} color="black" />
+            <TouchableOpacity onPress={() => router.replace('/')} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
+              <Ionicons name="close" size={24} color={theme.logoTileText} />
             </TouchableOpacity>
           </View>
         </SafeAreaView>
       </OnboardingScreenMotion>
 
-      <OnboardingCardMotion style={[styles.cardContainer, { flex: 1 }]}>
+      <OnboardingCardMotion style={[styles.cardContainer, { backgroundColor: theme.background, flex: 1 }]}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.card}>
             <OnboardingStaggerItem delay={120}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="mail-open-outline" size={40} color={Colors.brandGreen} />
+            <View style={[styles.iconCircle, { backgroundColor: theme.brandSoft }]}>
+              <Ionicons name="mail-open-outline" size={40} color={theme.brand} />
             </View>
             </OnboardingStaggerItem>
 
             <OnboardingStaggerItem delay={170}>
             <View style={styles.textContainer}>
-              <Text style={styles.titleSmall}>{titlePrefix}</Text>
+              <Text style={[styles.titleSmall, { color: theme.mutedText }]}>{titlePrefix}</Text>
               <PhonkText style={styles.titleLarge}>
-                <Text style={styles.greenText}>{titleSuffix}</Text>
+                <Text style={[styles.greenText, { color: theme.brand }]}>{titleSuffix}</Text>
               </PhonkText>
             </View>
             </OnboardingStaggerItem>
 
             <OnboardingStaggerItem delay={220}>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.subtitle, { color: theme.subtleText }]}>
               {t('onboarding_otp_subtitle', { email: '' })}
             </Text>
-            {email ? <Text style={styles.emailText}>{email}</Text> : null}
+            {email ? <Text style={[styles.emailText, { color: theme.text }]}>{email}</Text> : null}
             </OnboardingStaggerItem>
 
             <OnboardingShakeMotion trigger={errorAnimationKey}>
@@ -270,12 +272,16 @@ export default function VerifyOtpScreen() {
               {Array.from({ length: OTP_LENGTH }).map((_, index) => (
                 <OnboardingStateMotion key={index} delay={260 + index * 25} style={[
                   styles.otpBox,
-                  otp[index] ? styles.otpBoxFilled : null,
-                  !otp[index] && index === otp.findIndex(d => d === '') ? styles.otpBoxActive : null,
+                  {
+                    backgroundColor: otp[index] ? theme.brandSoft : theme.cardMuted,
+                    borderColor: otp[index]
+                      ? theme.brand
+                      : (!otp[index] && index === otp.findIndex(d => d === '') ? theme.borderStrong : 'transparent'),
+                  },
                 ]}>
                   <TextInput
                     ref={(ref) => { inputRefs.current[index] = ref; }}
-                    style={styles.otpInput}
+                    style={[styles.otpInput, { color: theme.text }]}
                     keyboardType="number-pad"
                     maxLength={OTP_LENGTH}
                     value={otp[index]}
@@ -302,15 +308,15 @@ export default function VerifyOtpScreen() {
             <OnboardingStaggerItem delay={430}>
             <View style={styles.resendContainer}>
               {cooldownSeconds > 0 ? (
-                <Text style={styles.cooldownText}>
+                <Text style={[styles.cooldownText, { color: theme.subtleText }]}>
                   {t('onboarding_otp_resend_in', { seconds: cooldownSeconds })}
                 </Text>
               ) : (
                 <TouchableOpacity onPress={handleResend} disabled={resendLoading} style={styles.resendButton}>
                   {resendLoading ? (
-                    <ActivityIndicator size="small" color={Colors.brandGreen} />
+                    <ActivityIndicator size="small" color={theme.brand} />
                   ) : (
-                    <Text style={styles.resendText}>{t('onboarding_otp_resend')}</Text>
+                    <Text style={[styles.resendText, { color: theme.brandText }]}>{t('onboarding_otp_resend')}</Text>
                   )}
                 </TouchableOpacity>
               )}
@@ -320,7 +326,7 @@ export default function VerifyOtpScreen() {
         </TouchableWithoutFeedback>
       </OnboardingCardMotion>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: theme.background }]}>
         <OnboardingButtonMotion enabled={Boolean(isOtpComplete && !isLoading)}>
         <TouchableOpacity
           style={[styles.button, isOtpComplete && !isLoading && styles.buttonEnabled]}
@@ -329,9 +335,9 @@ export default function VerifyOtpScreen() {
           activeOpacity={0.8}
         >
           {isLoading ? (
-            <ActivityIndicator color="white" />
+            <ActivityIndicator color={theme.onActionSolid} />
           ) : (
-            <Text style={styles.buttonText}>{t('onboarding_otp_verify_button')}</Text>
+            <Text style={[styles.buttonText, { color: theme.onActionSolid }]}>{t('onboarding_otp_verify_button')}</Text>
           )}
         </TouchableOpacity>
         </OnboardingButtonMotion>
@@ -341,7 +347,7 @@ export default function VerifyOtpScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.brandGreen },
+  container: { flex: 1 },
   headerBackground: { height: 250, backgroundColor: Colors.brandGreen },
   headerContent: { paddingHorizontal: 20, paddingTop: 10 },
   topButtons: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 },
@@ -350,7 +356,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 1)',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -361,7 +366,6 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     flex: 1,
-    backgroundColor: 'white',
     borderTopLeftRadius: 50,
     borderTopRightRadius: 50,
     marginTop: -80,
@@ -373,7 +377,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#F0F9F0',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
@@ -383,17 +386,15 @@ const styles = StyleSheet.create({
   titleSmall: {
     fontSize: 16,
     fontFamily: Typography.poppins.medium,
-    color: '#666',
     textTransform: 'uppercase',
     letterSpacing: 2,
     marginBottom: 4,
     textAlign: 'center',
   },
   titleLarge: { fontSize: 36, textAlign: 'center', lineHeight: 42 },
-  greenText: { color: Colors.brandGreen },
+  greenText: {},
   subtitle: {
     fontSize: 14,
-    color: '#999',
     textAlign: 'center',
     lineHeight: 20,
     fontFamily: Typography.poppins.medium,
@@ -402,7 +403,6 @@ const styles = StyleSheet.create({
   },
   emailText: {
     fontSize: 14,
-    color: '#333',
     textAlign: 'center',
     fontFamily: Typography.poppins.semiBold,
     marginBottom: 28,
@@ -420,25 +420,18 @@ const styles = StyleSheet.create({
     width: 50,
     height: 58,
     borderRadius: 14,
-    backgroundColor: '#F5F5F5',
     borderWidth: 2,
     borderColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  otpBoxFilled: {
-    backgroundColor: '#F0F9F0',
-    borderColor: Colors.brandGreen,
-  },
-  otpBoxActive: {
-    borderColor: '#CCC',
-  },
+  otpBoxFilled: {},
+  otpBoxActive: {},
   otpInput: {
     width: '100%',
     height: '100%',
     fontSize: 24,
     fontFamily: Typography.poppins.semiBold,
-    color: '#000',
     textAlign: 'center',
     backgroundColor: 'transparent',
     paddingVertical: 0,
@@ -472,12 +465,10 @@ const styles = StyleSheet.create({
   },
   cooldownText: {
     fontSize: 14,
-    color: '#999',
     fontFamily: Typography.poppins.medium,
   },
   resendText: {
     fontSize: 14,
-    color: Colors.brandGreen,
     fontFamily: Typography.poppins.semiBold,
   },
   footer: {
@@ -487,7 +478,6 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 28,
     paddingBottom: 40,
-    backgroundColor: 'white',
   },
   button: {
     backgroundColor: Colors.brandGreen,
@@ -506,7 +496,6 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   buttonText: {
-    color: '#FFFFFF',
     fontSize: 17,
     fontFamily: Typography.poppins.semiBold,
   },

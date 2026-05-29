@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 import {
@@ -51,6 +52,7 @@ const normalizeEmail = (email: string): string => {
 export default function LoginScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { theme } = useAppTheme();
   const isRTL = I18nManager.isRTL;
   const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
   const inputTextAlign: 'left' | 'right' = isRTL ? 'right' : 'left';
@@ -106,7 +108,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <StatusBar style="light" />
 
       <KeyboardAvoidingView
@@ -117,41 +119,46 @@ export default function LoginScreen() {
         <OnboardingScreenMotion style={styles.headerBackground}>
           <SafeAreaView edges={['top']} style={styles.headerContent}>
             <View style={[styles.topButtons, isRTL && styles.topButtonsRTL]}>
-              <TouchableOpacity onPress={handleBack} style={styles.iconButton}>
-                <Ionicons name={arrowIconName} size={24} color="black" />
+              <TouchableOpacity onPress={handleBack} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
+                <Ionicons name={arrowIconName} size={24} color={theme.logoTileText} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => router.replace('/')} style={styles.iconButton}>
-                <Ionicons name="close" size={24} color="black" />
+              <TouchableOpacity onPress={() => router.replace('/')} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
+                <Ionicons name="close" size={24} color={theme.logoTileText} />
               </TouchableOpacity>
             </View>
           </SafeAreaView>
         </OnboardingScreenMotion>
 
-        <OnboardingCardMotion style={[styles.cardContainer, { backgroundColor: '#FFFFFF' }]}>
+        <OnboardingCardMotion style={[styles.cardContainer, { backgroundColor: theme.background }]}>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.card}>
               <OnboardingStaggerItem delay={120}>
-              <View style={styles.iconCircle}>
-                <Ionicons name="log-in-outline" size={36} color={Colors.brandGreen} />
+              <View style={[styles.iconCircle, { backgroundColor: theme.brandSoft }]}>
+                <Ionicons name="log-in-outline" size={36} color={theme.brand} />
               </View>
               </OnboardingStaggerItem>
 
               <OnboardingStaggerItem delay={170}>
               <View style={styles.textContainer}>
                 <PhonkText style={styles.titleLarge}>
-                  <Text style={styles.greenText}>{t('onboarding_login_title')}</Text>
+                  <Text style={[styles.greenText, { color: theme.brand }]}>{t('onboarding_login_title')}</Text>
                 </PhonkText>
               </View>
               </OnboardingStaggerItem>
 
               <OnboardingStaggerItem delay={220} style={styles.inputWrapper}>
-                <View style={[styles.singleInputContainer, email ? styles.inputFocused : null]}>
-                  <Ionicons name="mail-outline" size={20} color={email ? Colors.brandGreen : '#999'} style={styles.inputIcon} />
+                <View
+                  style={[
+                    styles.singleInputContainer,
+                    { backgroundColor: email ? theme.brandSoft : theme.cardMuted, borderColor: email ? theme.brand : 'transparent' },
+                  ]}
+                >
+                  <Ionicons name="mail-outline" size={20} color={email ? theme.brand : theme.iconMuted} style={styles.inputIcon} />
                   <TextInput
                     ref={inputRef}
-                    style={[styles.input, { color: '#000000', textAlign: inputTextAlign, flex: 1 }]}
+                    style={[styles.input, { color: theme.text, textAlign: inputTextAlign, flex: 1 }]}
                     placeholder={t('onboarding_email_placeholder')}
-                    placeholderTextColor="#999999"
+                    placeholderTextColor={theme.inputPlaceholder}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -164,7 +171,7 @@ export default function LoginScreen() {
               </OnboardingStaggerItem>
 
               <OnboardingStaggerItem delay={270}>
-              <Text style={styles.infoText}>
+              <Text style={[styles.infoText, { color: theme.subtleText }]}>
                 {t('onboarding_login_info')}
               </Text>
               </OnboardingStaggerItem>
@@ -173,7 +180,7 @@ export default function LoginScreen() {
         </OnboardingCardMotion>
       </KeyboardAvoidingView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: theme.background }]}>
         <OnboardingButtonMotion enabled={Boolean(email && !isLoading)}>
         <TouchableOpacity
           style={[styles.button, email && !isLoading && styles.buttonEnabled]}
@@ -182,9 +189,9 @@ export default function LoginScreen() {
           activeOpacity={0.8}
         >
           {isLoading ? (
-            <ActivityIndicator color="white" />
+            <ActivityIndicator color={theme.onActionSolid} />
           ) : (
-            <Text style={styles.buttonText}>
+            <Text style={[styles.buttonText, { color: theme.onActionSolid }]}>
               {t('onboarding_login_title')}
             </Text>
           )}
@@ -199,12 +206,12 @@ export default function LoginScreen() {
         onRequestClose={() => setShowSignUpModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <OnboardingStateMotion style={styles.modalContent}>
-            <View style={styles.modalIconContainer}>
-              <Ionicons name="person-add-outline" size={40} color={Colors.brandGreen} />
+          <OnboardingStateMotion style={[styles.modalContent, { backgroundColor: theme.card }]}>
+            <View style={[styles.modalIconContainer, { backgroundColor: theme.brandSoft }]}>
+              <Ionicons name="person-add-outline" size={40} color={theme.brand} />
             </View>
-            <PhonkText style={styles.modalTitle}>{t('onboarding_account_not_found_title')}</PhonkText>
-            <Text style={styles.modalText}>{t('onboarding_account_not_found_message')}</Text>
+            <PhonkText style={[styles.modalTitle, { color: theme.brand }]}>{t('onboarding_account_not_found_title')}</PhonkText>
+            <Text style={[styles.modalText, { color: theme.mutedText }]}>{t('onboarding_account_not_found_message')}</Text>
 
             <TouchableOpacity
               style={styles.modalPrimaryButton}
@@ -213,14 +220,14 @@ export default function LoginScreen() {
                 router.push({ pathname: '/(onboarding)/email', params: { role: 'student', mode: 'signup' } });
               }}
             >
-              <Text style={styles.modalPrimaryButtonText}>{t('onboarding_sign_up')}</Text>
+              <Text style={[styles.modalPrimaryButtonText, { color: theme.onActionSolid }]}>{t('onboarding_sign_up')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.modalSecondaryButton}
               onPress={() => setShowSignUpModal(false)}
             >
-              <Text style={styles.modalSecondaryButtonText}>{t('cancel')}</Text>
+              <Text style={[styles.modalSecondaryButtonText, { color: theme.subtleText }]}>{t('cancel')}</Text>
             </TouchableOpacity>
           </OnboardingStateMotion>
         </View>
@@ -232,7 +239,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   contentArea: {
     flex: 1,
@@ -256,13 +262,12 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 1)',
     justifyContent: 'center', alignItems: 'center',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
   },
   cardContainer: {
-    flex: 1, backgroundColor: 'white',
+    flex: 1,
     borderTopLeftRadius: 50, borderTopRightRadius: 50,
     marginTop: -80, paddingHorizontal: 28, paddingTop: 36,
   },
@@ -271,7 +276,6 @@ const styles = StyleSheet.create({
   },
   iconCircle: {
     width: 72, height: 72, borderRadius: 36,
-    backgroundColor: '#F0F9F0',
     justifyContent: 'center', alignItems: 'center',
     marginBottom: 16, marginTop: 8,
   },
@@ -283,20 +287,16 @@ const styles = StyleSheet.create({
     fontSize: 32, textAlign: 'center', lineHeight: 38,
   },
   greenText: {
-    color: Colors.brandGreen,
   },
   inputWrapper: {
     marginBottom: 20, width: '100%',
   },
   singleInputContainer: {
-    backgroundColor: '#F5F5F5', borderRadius: 16,
+    borderRadius: 16,
     height: 58, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 18, borderWidth: 2, borderColor: 'transparent',
   },
-  inputFocused: {
-    borderColor: Colors.brandGreen,
-    backgroundColor: '#F0F9F0',
-  },
+  inputFocused: {},
   inputIcon: { marginRight: 10 },
   input: {
     fontSize: 16,
@@ -306,7 +306,6 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 14,
-    color: '#999',
     textAlign: 'center',
     lineHeight: 20,
     paddingHorizontal: 10,
@@ -315,7 +314,6 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: 28,
     paddingBottom: 40,
-    backgroundColor: 'white',
   },
   button: {
     backgroundColor: Colors.brandGreen, height: 62, borderRadius: 31,
@@ -328,7 +326,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
   buttonText: {
-    color: '#FFFFFF', fontSize: 17, fontFamily: Typography.poppins.semiBold,
+    fontSize: 17, fontFamily: Typography.poppins.semiBold,
   },
   modalOverlay: {
     flex: 1,
@@ -338,7 +336,6 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: 'white',
     borderRadius: 30,
     padding: 30,
     width: '100%',
@@ -354,20 +351,17 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#F0F9F0',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
   },
   modalTitle: {
     fontSize: 24,
-    color: Colors.brandGreen,
     marginBottom: 15,
     textAlign: 'center',
   },
   modalText: {
     fontSize: 16,
-    color: '#666',
     textAlign: 'center',
     marginBottom: 30,
     fontFamily: Typography.poppins.medium,
@@ -383,7 +377,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   modalPrimaryButtonText: {
-    color: 'white',
     fontSize: 16,
     fontFamily: Typography.poppins.semiBold,
   },
@@ -394,7 +387,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalSecondaryButtonText: {
-    color: '#999',
     fontSize: 16,
     fontFamily: Typography.poppins.medium,
   },

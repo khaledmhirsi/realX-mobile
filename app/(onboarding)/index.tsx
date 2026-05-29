@@ -19,7 +19,7 @@ import {
     OnboardingScreenMotion,
     OnboardingStaggerItem,
 } from '../../components/onboarding/OnboardingMotion';
-import { Colors } from '../../constants/Colors';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 import { setStoredLanguage } from '../../src/localization/i18n';
 import { applyRTL } from '../../src/localization/rtl';
@@ -31,6 +31,7 @@ export default function OnboardingScreen() {
     const [step, setStep] = useState(0); // Set to 1 to show the screen in the screenshot directly, or as starting point
 
     const { t, i18n } = useTranslation();
+    const { theme } = useAppTheme();
     const isRTL = I18nManager.isRTL;
 
     const changeLanguage = async (lang: 'en' | 'ar') => {
@@ -57,7 +58,7 @@ export default function OnboardingScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: Colors.brandGreen }]}>
+        <View style={[styles.container, { backgroundColor: theme.brand }]}>
             <StatusBar style="light" />
 
             <SafeAreaView style={styles.safeArea}>
@@ -110,13 +111,13 @@ export default function OnboardingScreen() {
                             </View>
                             <OnboardingButtonMotion enabled>
                                 <TouchableOpacity
-                                    style={[styles.button, isRTL ? styles.buttonRTL : styles.buttonLTR]}
+                                    style={[styles.button, { backgroundColor: theme.logoTile }, isRTL ? styles.buttonRTL : styles.buttonLTR]}
                                     onPress={handleGetStarted}
                                     activeOpacity={0.9}
                                 >
-                                    <PhonkText style={styles.buttonText}>{t('onboarding_get_started')}</PhonkText>
+                                    <PhonkText style={[styles.buttonText, { color: theme.brand }]}>{t('onboarding_get_started')}</PhonkText>
                                     <OnboardingPulseMotion>
-                                        <View style={styles.arrowCircle}>
+                                        <View style={[styles.arrowCircle, { backgroundColor: theme.brand }]}>
                                             <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={24} color="white" />
                                         </View>
                                     </OnboardingPulseMotion>
@@ -141,7 +142,7 @@ export default function OnboardingScreen() {
                         <View style={styles.cardsWrapper}>
                             <OnboardingStaggerItem delay={80}>
                             <TouchableOpacity
-                                style={[styles.roleCard, isRTL && styles.rowReverse]}
+                                style={[styles.roleCard, { backgroundColor: theme.logoTile }, isRTL && styles.rowReverse]}
                                 activeOpacity={0.9}
                                 onPress={() => handleSelectRole('student')}
                             >
@@ -153,18 +154,18 @@ export default function OnboardingScreen() {
                                     />
                                 </View>
                                 <View style={[styles.roleTextContainer, isRTL && styles.roleTextContainerRTL]}>
-                                    <PhonkText style={styles.roleTitle}>{t('onboarding_join_as_student')}</PhonkText>
-                                    <Text style={[styles.roleDescription, isRTL && styles.subtextRTL]}>
+                                    <PhonkText style={[styles.roleTitle, { color: theme.logoTileText }]}>{t('onboarding_join_as_student')}</PhonkText>
+                                    <Text style={[styles.roleDescription, { color: theme.logoTileText }, isRTL && styles.subtextRTL]}>
                                         {t('onboarding_student_role_description')}
                                     </Text>
                                 </View>
-                                <Ionicons name={isRTL ? 'chevron-back-outline' : 'chevron-forward-outline'} size={32} color="#AAAAAA" />
+                                <Ionicons name={isRTL ? 'chevron-back-outline' : 'chevron-forward-outline'} size={32} color={theme.iconMuted} />
                             </TouchableOpacity>
                             </OnboardingStaggerItem>
 
                             <OnboardingStaggerItem delay={150}>
                             <TouchableOpacity
-                                style={[styles.roleCard, isRTL && styles.rowReverse]}
+                                style={[styles.roleCard, { backgroundColor: theme.logoTile }, isRTL && styles.rowReverse]}
                                 activeOpacity={0.9}
                                 onPress={() => handleSelectRole('creator')}
                             >
@@ -176,12 +177,12 @@ export default function OnboardingScreen() {
                                     />
                                 </View>
                                 <View style={[styles.roleTextContainer, isRTL && styles.roleTextContainerRTL]}>
-                                    <PhonkText style={styles.roleTitle}>{t('onboarding_join_as_creator')}</PhonkText>
-                                    <Text style={[styles.roleDescription, isRTL && styles.subtextRTL]}>
+                                    <PhonkText style={[styles.roleTitle, { color: theme.logoTileText }]}>{t('onboarding_join_as_creator')}</PhonkText>
+                                    <Text style={[styles.roleDescription, { color: theme.logoTileText }, isRTL && styles.subtextRTL]}>
                                         {t('onboarding_creator_role_description')}
                                     </Text>
                                 </View>
-                                <Ionicons name={isRTL ? 'chevron-back-outline' : 'chevron-forward-outline'} size={32} color="#AAAAAA" />
+                                <Ionicons name={isRTL ? 'chevron-back-outline' : 'chevron-forward-outline'} size={32} color={theme.iconMuted} />
                             </TouchableOpacity>
                             </OnboardingStaggerItem>
                         </View>
@@ -196,8 +197,8 @@ export default function OnboardingScreen() {
                                 style={styles.loginPill}
                                 glassEffectStyle="regular"
                             >
-                                <Text style={[styles.loginText, isRTL && styles.subtextRTL]}>
-                                    {t('onboarding_login_prompt')} <Text style={styles.loginBold}>{t('onboarding_login_action')}</Text>
+                                <Text style={[styles.loginText, { color: theme.logoTileText }, isRTL && styles.subtextRTL]}>
+                                    {t('onboarding_login_prompt')} <Text style={[styles.loginBold, { color: theme.brand }]}>{t('onboarding_login_action')}</Text>
                                 </Text>
                             </GlassView>
                         </TouchableOpacity>
@@ -279,7 +280,6 @@ const styles = StyleSheet.create({
         lineHeight: 24,
     },
     button: {
-        backgroundColor: '#FFFFFF',
         width: '100%',
         height: 72,
         borderRadius: 40,
@@ -302,7 +302,6 @@ const styles = StyleSheet.create({
         width: 54,
         height: 54,
         borderRadius: 27,
-        backgroundColor: '#18B852',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -347,7 +346,6 @@ const styles = StyleSheet.create({
         gap: 16,
     },
     roleCard: {
-        backgroundColor: '#FFFFFF',
         borderRadius: 45,
         paddingVertical: 8,
         flexDirection: 'row',
@@ -372,13 +370,11 @@ const styles = StyleSheet.create({
     },
     roleTitle: {
         fontSize: 20,
-        color: '#000000',
         marginBottom: 8,
     },
     roleDescription: {
         fontFamily: Typography.poppins.medium,
         fontSize: 12,
-        color: '#000000',
         lineHeight: 16,
         paddingRight: 10,
     },
@@ -417,15 +413,12 @@ const styles = StyleSheet.create({
         borderRadius: 100,
         marginTop: 50,
         overflow: 'hidden',
-        backgroundColor: '#FFFFFF'
     },
     loginText: {
-        color: '#000000',
         fontFamily: Typography.poppins.medium,
         fontSize: 16,
     },
     loginBold: {
         fontFamily: Typography.poppins.semiBold,
-        color: "#18B852",
     },
 });

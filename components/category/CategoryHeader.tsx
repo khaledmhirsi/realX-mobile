@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { memo, useMemo } from 'react';
 import { ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 
 type Props = {
@@ -12,6 +12,7 @@ type Props = {
 };
 
 function CategoryHeader({ title, icon, onBackPress }: Props) {
+    const { theme } = useAppTheme();
     const imageSource = useMemo(() => {
         if (typeof icon === 'string') {
             return { uri: icon };
@@ -26,7 +27,7 @@ function CategoryHeader({ title, icon, onBackPress }: Props) {
                 onPress={onBackPress}
                 activeOpacity={0.7}
             >
-                <Ionicons name="arrow-back" size={24} color={Colors.light.text} />
+                <Ionicons name="arrow-back" size={24} color={theme.icon} />
             </TouchableOpacity>
 
 
@@ -39,7 +40,7 @@ function CategoryHeader({ title, icon, onBackPress }: Props) {
                         contentFit="cover"
                     />
                 )}
-                <Text style={styles.title}>{title}</Text>
+                <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
             </View>
         </View>
     );
@@ -70,7 +71,6 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 22,
         fontFamily: Typography.poppins.semiBold,
-        color: Colors.light.text,
     },
     imageIcon: {
         width: 48,
@@ -78,4 +78,3 @@ const styles = StyleSheet.create({
         borderRadius: 24,
     },
 });
-

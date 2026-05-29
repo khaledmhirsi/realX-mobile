@@ -18,7 +18,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '../constants/Colors';
+import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
 import PhonkText from '../components/PhonkText';
 import { triggerSubtleHaptic } from '../utils/haptics';
@@ -58,6 +58,7 @@ interface Transaction {
 
 export default function RedemptionHistoryScreen() {
   const { t, i18n } = useTranslation();
+  const { theme } = useAppTheme();
   const isArabic = i18n.language === 'ar';
   const currency = t('currency_qar');
   const fmt = (n: number, decimals = 0) => isArabic ? toArabicDigits(n.toFixed(decimals)) : n.toFixed(decimals);
@@ -160,21 +161,21 @@ export default function RedemptionHistoryScreen() {
 
     return (
       <View style={{ marginBottom: 24 }}>
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.cardMuted }]}>
           <View style={styles.cardHeader}>
             <View style={styles.vendorInfo}>
-              <View style={styles.logoContainer}>
+              <View style={[styles.logoContainer, { backgroundColor: theme.logoTile, borderColor: theme.logoTileBorder }]}>
                 {logoUri ? (
                   <Image source={{ uri: logoUri }} style={styles.logo} contentFit="contain" />
                 ) : (
-                  <Ionicons name="storefront" size={24} color="#CCC" />
+                  <Ionicons name="storefront" size={24} color={theme.iconMuted} />
                 )}
               </View>
               <View style={styles.vendorTextContainer}>
-                <Text style={styles.vendorName} numberOfLines={1}>
+                <Text style={[styles.vendorName, { color: theme.text }]} numberOfLines={1}>
                   {isArabic ? (item.vendorNameAr || item.vendorName || 'VENDOR') : (item.vendorName || 'VENDOR')}
                 </Text>
-                <Text style={[styles.savingsText, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                <Text style={[styles.savingsText, { color: theme.mutedText, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                   {t('estimated_savings', {
                     amount: t('amount_with_currency', { amount: fmt(savings), currency }),
                   })}
@@ -183,26 +184,26 @@ export default function RedemptionHistoryScreen() {
             </View>
 
             <View style={styles.paidInfo}>
-              <Text style={styles.paidLabel}>{t('total_paid')}</Text>
-              <PhonkText style={[styles.paidAmount, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+              <Text style={[styles.paidLabel, { color: theme.mutedText }]}>{t('total_paid')}</Text>
+              <PhonkText style={[styles.paidAmount, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                 {t('amount_with_currency', { amount: fmt(paid), currency })}
               </PhonkText>
             </View>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
           <View style={styles.cardFooter}>
             <View style={styles.offerInfo}>
-              <Text style={styles.offerLabel}>{t('offer_redeemed_label')}</Text>
-              <Text style={[styles.offerValue, { writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={1}>
+              <Text style={[styles.offerLabel, { color: theme.mutedText }]}>{t('offer_redeemed_label')}</Text>
+              <Text style={[styles.offerValue, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={1}>
                 {discountText}
               </Text>
             </View>
 
             {item.vendorId && (
               <TouchableOpacity
-                style={styles.redeemButton}
+                style={[styles.redeemButton, { backgroundColor: theme.actionSolid }]}
                 activeOpacity={0.8}
                 onPress={() => {
                   triggerSubtleHaptic();
@@ -212,19 +213,19 @@ export default function RedemptionHistoryScreen() {
                   });
                 }}
               >
-                <Text style={styles.redeemButtonText}>{t('redeem_again')}</Text>
+                <Text style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>{t('redeem_again')}</Text>
               </TouchableOpacity>
             )}
           </View>
         </View>
 
-        <Text style={[styles.dateText, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{t('redeemed_on', { date: dateStr })}</Text>
+        <Text style={[styles.dateText, { color: theme.mutedText, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{t('redeemed_on', { date: dateStr })}</Text>
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -233,14 +234,14 @@ export default function RedemptionHistoryScreen() {
             router.back();
           }}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color={theme.icon} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('redemption_history')}</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>{t('redemption_history')}</Text>
       </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.brandGreen} />
+          <ActivityIndicator size="large" color={theme.brand} />
         </View>
       ) : (
         <FlatList
@@ -251,7 +252,7 @@ export default function RedemptionHistoryScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>{t('no_redemptions_found')}</Text>
+              <Text style={[styles.emptyText, { color: theme.mutedText }]}>{t('no_redemptions_found')}</Text>
             </View>
           }
         />
@@ -263,7 +264,6 @@ export default function RedemptionHistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
@@ -278,7 +278,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontFamily: Typography.poppins.medium,
-    color: '#000',
   },
   loadingContainer: {
     flex: 1,
@@ -291,7 +290,6 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   card: {
-    backgroundColor: '#F9F9F9',
     borderRadius: 24,
     padding: 20,
     marginBottom: 8,
@@ -310,6 +308,8 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 50,
     height: 50,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -324,13 +324,11 @@ const styles = StyleSheet.create({
   vendorName: {
     fontSize: 18,
     fontFamily: Typography.poppins.semiBold,
-    color: '#000',
     marginBottom: 4,
   },
   savingsText: {
     fontSize: 12,
     fontFamily: Typography.poppins.medium,
-    color: '#888',
   },
   paidInfo: {
     alignItems: 'flex-end',
@@ -338,16 +336,13 @@ const styles = StyleSheet.create({
   paidLabel: {
     fontSize: 12,
     fontFamily: Typography.poppins.medium,
-    color: '#000',
     marginBottom: 4,
   },
   paidAmount: {
     fontSize: 16,
-    color: '#000',
   },
   divider: {
     height: 1,
-    backgroundColor: '#EAEAEA',
     marginVertical: 16,
   },
   cardFooter: {
@@ -362,29 +357,24 @@ const styles = StyleSheet.create({
   offerLabel: {
     fontSize: 12,
     fontFamily: Typography.poppins.medium,
-    color: '#000',
     marginBottom: 4,
   },
   offerValue: {
     fontSize: 14,
     fontFamily: Typography.poppins.semiBold,
-    color: '#000',
   },
   redeemButton: {
-    backgroundColor: Colors.brandGreen || '#1AD04F',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
   },
   redeemButtonText: {
-    color: '#FFF',
     fontSize: 14,
     fontFamily: Typography.poppins.semiBold,
   },
   dateText: {
     fontSize: 12,
     fontFamily: Typography.poppins.medium,
-    color: '#888',
     marginLeft: 8,
   },
   emptyContainer: {
@@ -394,6 +384,5 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontFamily: Typography.poppins.medium,
-    color: '#888',
   },
 });

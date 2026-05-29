@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Colors } from '../../constants/Colors';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 import {
@@ -34,6 +35,7 @@ const MAX_SIZE_BYTES = 3 * 1024 * 1024; // 3MB
 export default function UploadIdScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { theme } = useAppTheme();
   const isRTL = I18nManager.isRTL;
   const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
   const { role } = useLocalSearchParams<{ role?: string }>();
@@ -95,50 +97,54 @@ export default function UploadIdScreen() {
   const bothUploaded = frontImage && backImage;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <StatusBar style="light" />
 
       <OnboardingScreenMotion style={styles.headerBackground}>
         <SafeAreaView edges={['top']} style={styles.headerContent}>
           <View style={[styles.topButtons, isRTL && styles.topButtonsRTL]}>
-            <TouchableOpacity onPress={handleBack} style={styles.iconButton}>
-              <Ionicons name={arrowIconName} size={24} color="black" />
+            <TouchableOpacity onPress={handleBack} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
+              <Ionicons name={arrowIconName} size={24} color={theme.logoTileText} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.replace('/')} style={styles.iconButton}>
-              <Ionicons name="close" size={24} color="black" />
+            <TouchableOpacity onPress={() => router.replace('/')} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
+              <Ionicons name="close" size={24} color={theme.logoTileText} />
             </TouchableOpacity>
           </View>
         </SafeAreaView>
       </OnboardingScreenMotion>
 
-      <OnboardingCardMotion style={styles.cardContainer}>
+      <OnboardingCardMotion style={[styles.cardContainer, { backgroundColor: theme.background }]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.card}
         >
           <OnboardingStaggerItem delay={120}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="card-outline" size={32} color={Colors.brandGreen} />
+          <View style={[styles.iconCircle, { backgroundColor: theme.brandSoft }]}>
+            <Ionicons name="card-outline" size={32} color={theme.brand} />
           </View>
           </OnboardingStaggerItem>
 
           <OnboardingStaggerItem delay={170}>
           <View style={styles.textContainer}>
-            <Text style={styles.titleSmall}>{t('onboarding_upload_id_title_prefix')}</Text>
+            <Text style={[styles.titleSmall, { color: theme.mutedText }]}>{t('onboarding_upload_id_title_prefix')}</Text>
             <PhonkText style={styles.titleLarge}>
-              <Text style={styles.greenText}>{t('onboarding_upload_id_title_suffix')}</Text>
+              <Text style={[styles.greenText, { color: theme.brand }]}>{t('onboarding_upload_id_title_suffix')}</Text>
             </PhonkText>
           </View>
           </OnboardingStaggerItem>
 
           <OnboardingStaggerItem delay={220}>
-          <Text style={styles.subtitle}>{t('onboarding_upload_id_description')}</Text>
+          <Text style={[styles.subtitle, { color: theme.mutedText }]}>{t('onboarding_upload_id_description')}</Text>
           </OnboardingStaggerItem>
 
           <OnboardingStaggerItem delay={270} style={styles.uploadContainer}>
             {/* Front upload */}
             <TouchableOpacity
-              style={[styles.uploadZone, frontImage && styles.uploadZoneFilled]}
+              style={[
+                styles.uploadZone,
+                { backgroundColor: theme.cardMuted, borderColor: theme.border },
+                frontImage && { backgroundColor: theme.brandSoft, borderColor: theme.brand, borderStyle: 'solid' },
+              ]}
               onPress={() => pickImage('front')}
               activeOpacity={0.7}
             >
@@ -151,15 +157,19 @@ export default function UploadIdScreen() {
                 </OnboardingStateMotion>
               ) : (
                 <OnboardingStateMotion key="front-placeholder" style={styles.uploadPlaceholder}>
-                  <Ionicons name="camera-outline" size={32} color="#999" />
-                  <Text style={styles.uploadLabel}>{t('onboarding_upload_front')}</Text>
+                  <Ionicons name="camera-outline" size={32} color={theme.iconMuted} />
+                  <Text style={[styles.uploadLabel, { color: theme.subtleText }]}>{t('onboarding_upload_front')}</Text>
                 </OnboardingStateMotion>
               )}
             </TouchableOpacity>
 
             {/* Back upload */}
             <TouchableOpacity
-              style={[styles.uploadZone, backImage && styles.uploadZoneFilled]}
+              style={[
+                styles.uploadZone,
+                { backgroundColor: theme.cardMuted, borderColor: theme.border },
+                backImage && { backgroundColor: theme.brandSoft, borderColor: theme.brand, borderStyle: 'solid' },
+              ]}
               onPress={() => pickImage('back')}
               activeOpacity={0.7}
             >
@@ -172,15 +182,15 @@ export default function UploadIdScreen() {
                 </OnboardingStateMotion>
               ) : (
                 <OnboardingStateMotion key="back-placeholder" style={styles.uploadPlaceholder}>
-                  <Ionicons name="camera-outline" size={32} color="#999" />
-                  <Text style={styles.uploadLabel}>{t('onboarding_upload_back')}</Text>
+                  <Ionicons name="camera-outline" size={32} color={theme.iconMuted} />
+                  <Text style={[styles.uploadLabel, { color: theme.subtleText }]}>{t('onboarding_upload_back')}</Text>
                 </OnboardingStateMotion>
               )}
             </TouchableOpacity>
           </OnboardingStaggerItem>
 
           <OnboardingStaggerItem delay={330}>
-          <Text style={styles.infoText}>{t('onboarding_upload_id_info')}</Text>
+          <Text style={[styles.infoText, { color: theme.subtleText }]}>{t('onboarding_upload_id_info')}</Text>
           </OnboardingStaggerItem>
         </KeyboardAvoidingView>
 
@@ -193,9 +203,9 @@ export default function UploadIdScreen() {
             activeOpacity={0.8}
           >
             {isLoading ? (
-              <ActivityIndicator color="white" />
+              <ActivityIndicator color={theme.onActionSolid} />
             ) : (
-              <Text style={styles.buttonText}>{t('onboarding_continue')}</Text>
+              <Text style={[styles.buttonText, { color: theme.onActionSolid }]}>{t('onboarding_continue')}</Text>
             )}
           </TouchableOpacity>
           </OnboardingButtonMotion>
@@ -206,7 +216,7 @@ export default function UploadIdScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.brandGreen },
+  container: { flex: 1 },
   headerBackground: { height: 250, backgroundColor: Colors.brandGreen },
   headerContent: { paddingHorizontal: 20, paddingTop: 10 },
   topButtons: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 },
@@ -219,27 +229,26 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
   },
   cardContainer: {
-    flex: 1, backgroundColor: 'white',
+    flex: 1,
     borderTopLeftRadius: 50, borderTopRightRadius: 50,
     marginTop: -80, paddingHorizontal: 28, paddingTop: 36,
   },
   card: { flex: 1, alignItems: 'center' },
   iconCircle: {
     width: 72, height: 72, borderRadius: 36,
-    backgroundColor: '#F0F9F0',
     justifyContent: 'center', alignItems: 'center',
     marginBottom: 12, marginTop: 4,
   },
   textContainer: { marginBottom: 12, alignItems: 'center' },
   titleSmall: {
     fontSize: 14, fontFamily: Typography.poppins.medium,
-    color: '#666', textTransform: 'uppercase', letterSpacing: 2,
+    textTransform: 'uppercase', letterSpacing: 2,
     marginBottom: 4, textAlign: 'center',
   },
   titleLarge: { fontSize: 32, textAlign: 'center', lineHeight: 38 },
-  greenText: { color: Colors.brandGreen },
+  greenText: {},
   subtitle: {
-    fontSize: 14, color: '#666', textAlign: 'center',
+    fontSize: 14, textAlign: 'center',
     lineHeight: 20, fontFamily: Typography.poppins.medium,
     marginBottom: 24, paddingHorizontal: 10,
   },
@@ -248,19 +257,18 @@ const styles = StyleSheet.create({
   },
   uploadZone: {
     flex: 1, height: 170, borderRadius: 20,
-    borderWidth: 2, borderColor: '#E0E0E0', borderStyle: 'dashed',
+    borderWidth: 2, borderStyle: 'dashed',
     justifyContent: 'center', alignItems: 'center',
-    backgroundColor: '#FAFAFA', overflow: 'hidden',
+    overflow: 'hidden',
   },
   uploadZoneFilled: {
-    borderWidth: 2, borderColor: Colors.brandGreen,
-    borderStyle: 'solid', backgroundColor: '#F0F9F0',
+    borderWidth: 2,
   },
   uploadPlaceholder: {
     justifyContent: 'center', alignItems: 'center', gap: 8,
   },
   uploadLabel: {
-    fontSize: 13, color: '#999', fontFamily: Typography.poppins.medium,
+    fontSize: 13, fontFamily: Typography.poppins.medium,
     textAlign: 'center',
   },
   previewContainer: {
@@ -278,7 +286,7 @@ const styles = StyleSheet.create({
     color: '#fff', fontSize: 11, fontFamily: Typography.poppins.semiBold,
   },
   infoText: {
-    fontSize: 13, color: '#999', textAlign: 'center',
+    fontSize: 13, textAlign: 'center',
     lineHeight: 18, fontFamily: Typography.poppins.medium,
     paddingHorizontal: 10,
   },
@@ -293,5 +301,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
-  buttonText: { color: '#FFFFFF', fontSize: 17, fontFamily: Typography.poppins.semiBold },
+  buttonText: { fontSize: 17, fontFamily: Typography.poppins.semiBold },
 });

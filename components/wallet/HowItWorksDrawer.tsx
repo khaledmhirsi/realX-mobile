@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
+import { useAppTheme } from '../../context/AppThemeContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -33,13 +34,15 @@ type StepItemProps = {
 };
 
 function StepItem({ step, isRTL }: StepItemProps) {
+    const { theme } = useAppTheme();
+
     return (
-        <View style={[styles.stepItem, isRTL && styles.stepItemRTL]}>
-            <PhonkText style={styles.stepNumber}>
+        <View style={[styles.stepItem, { backgroundColor: theme.cardMuted }, isRTL && styles.stepItemRTL]}>
+            <PhonkText style={[styles.stepNumber, { color: theme.brand }]}>
                 {step.number}
             </PhonkText>
             <View style={styles.stepNumberSpacer} />
-            <Text style={[styles.stepText, { textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text style={[styles.stepText, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
                 {step.text}
                 {step.emoji && ` ${step.emoji}`}
             </Text>
@@ -50,6 +53,7 @@ function StepItem({ step, isRTL }: StepItemProps) {
 export default function HowItWorksDrawer({ visible, onClose }: Props) {
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
+    const { theme } = useAppTheme();
     const isRTL = I18nManager.isRTL;
 
     const steps: StepData[] = [
@@ -68,17 +72,18 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
             onRequestClose={onClose}
         >
             <Pressable style={styles.overlay} onPress={onClose}>
-                <GlassView style={StyleSheet.absoluteFill} glassEffectStyle="regular" colorScheme="dark" tintColor="rgba(0,0,0,0.3)" />
+                <GlassView style={StyleSheet.absoluteFill} glassEffectStyle="regular" colorScheme="dark" tintColor={theme.overlay} />
                 <Pressable
                     style={[
                         styles.drawerContainer,
+                        { backgroundColor: theme.surfaceElevated },
                         { paddingBottom: insets.bottom + 20 },
                     ]}
                     onPress={(e) => e.stopPropagation()}
                 >
                     {/* Drawer Handle */}
                     <View style={styles.handleContainer}>
-                        <View style={styles.handle} />
+                        <View style={[styles.handle, { backgroundColor: theme.borderStrong }]} />
                     </View>
 
                     <ScrollView
@@ -88,12 +93,12 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                     >
                         {/* Logo */}
                         <View style={[styles.logoContainer, isRTL && styles.logoContainerRTL]}>
-                            <PhonkText style={styles.logoX}>{t('xcard_title_x')}</PhonkText>
-                            <PhonkText style={styles.logoCard}>{t('xcard_title_card')}</PhonkText>
+                            <PhonkText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</PhonkText>
+                            <PhonkText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</PhonkText>
                         </View>
 
                         {/* Divider */}
-                        <View style={styles.divider} />
+                        <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
                         {/* Title */}
                         <View
@@ -102,9 +107,9 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                                 isRTL && styles.titleContainerRTL,
                             ]}
                         >
-                            <PhonkText style={styles.titleText}>{t('how_it_works_title_prefix')}</PhonkText>
-                            <PhonkText style={styles.titleHighlight}>{t('how_it_works_title_highlight')}</PhonkText>
-                            <PhonkText style={styles.titleText}>{t('how_it_works_title_suffix')}</PhonkText>
+                            <PhonkText style={[styles.titleText, { color: theme.text }]}>{t('how_it_works_title_prefix')}</PhonkText>
+                            <PhonkText style={[styles.titleHighlight, { color: theme.brand }]}>{t('how_it_works_title_highlight')}</PhonkText>
+                            <PhonkText style={[styles.titleText, { color: theme.text }]}>{t('how_it_works_title_suffix')}</PhonkText>
                         </View>
 
                         {/* Steps */}
@@ -127,7 +132,6 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     drawerContainer: {
-        backgroundColor: '#FFFFFF',
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         maxHeight: SCREEN_HEIGHT * 0.85,
@@ -140,7 +144,6 @@ const styles = StyleSheet.create({
     handle: {
         width: 40,
         height: 4,
-        backgroundColor: '#E0E0E0',
         borderRadius: 2,
     },
     content: {
@@ -158,15 +161,12 @@ const styles = StyleSheet.create({
     },
     logoX: {
         fontSize: 28,
-        color: '#18B852',
     },
     logoCard: {
         fontSize: 28,
-        color: '#000000',
     },
     divider: {
         height: 1,
-        backgroundColor: '#E8E8E8',
         marginHorizontal: 20,
     },
     titleContainer: {
@@ -181,11 +181,9 @@ const styles = StyleSheet.create({
     },
     titleText: {
         fontSize: 22,
-        color: '#000000',
     },
     titleHighlight: {
         fontSize: 22,
-        color: '#18B852',
     },
     stepsContainer: {
         gap: 12,
@@ -194,7 +192,6 @@ const styles = StyleSheet.create({
     stepItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F8F8F8',
         borderRadius: 16,
         paddingVertical: 18,
         paddingHorizontal: 20,
@@ -205,7 +202,6 @@ const styles = StyleSheet.create({
     },
     stepNumber: {
         fontSize: 22,
-        color: '#18B852',
     },
     stepNumberRTL: {
     },
@@ -215,7 +211,6 @@ const styles = StyleSheet.create({
     stepText: {
         fontSize: 16,
         fontFamily: Typography.poppins.medium,
-        color: '#000000',
         flex: 1,
     },
 });

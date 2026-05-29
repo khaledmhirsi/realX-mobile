@@ -9,7 +9,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "reelx",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -19,6 +19,8 @@
       "googleServicesFile": "./GoogleService-Info.plist",
       "associatedDomains": [],
       "infoPlist": {
+        "EXDevMenuIsOnboardingFinished": true,
+        "EXDevMenuShowFloatingActionButton": true,
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "realX uses your location to show nearby vendors and discounts on the map."
       },

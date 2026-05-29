@@ -19,7 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import PhonkText from '../components/PhonkText';
-import { Colors } from '../constants/Colors';
+import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
 
 const { width } = Dimensions.get('window');
@@ -36,6 +36,7 @@ type University = {
 export default function XAcademyScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
+  const { theme } = useAppTheme();
   const isRTL = I18nManager.isRTL;
 
   const [universities, setUniversities] = useState<(University & { id: string })[]>([]);
@@ -69,21 +70,21 @@ export default function XAcademyScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: Colors.light.background }]}
+      style={[styles.container, { backgroundColor: theme.background }]}
       edges={['top']}
     >
-      <View style={[styles.header, isRTL && styles.rowReverse]}>
+      <View style={[styles.header, { borderBottomColor: theme.border }, isRTL && styles.rowReverse]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons
             name={isRTL ? 'arrow-forward' : 'arrow-back'}
             size={28}
-            color={Colors.light.text}
+            color={theme.icon}
           />
         </TouchableOpacity>
 
         <PhonkText style={styles.headerTitle}>
-          <Text style={{ color: Colors.brandGreen }}>{t('x_academy_title_x')} </Text>
-          <Text style={{ color: Colors.light.text }}>{t('x_academy_title_academy')}</Text>
+          <Text style={{ color: theme.brand }}>{t('x_academy_title_x')} </Text>
+          <Text style={{ color: theme.text }}>{t('x_academy_title_academy')}</Text>
         </PhonkText>
       </View>
 
@@ -92,7 +93,7 @@ export default function XAcademyScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {loading ? (
-          <ActivityIndicator size="large" color={Colors.brandGreen} style={styles.loader} />
+          <ActivityIndicator size="large" color={theme.brand} style={styles.loader} />
         ) : (
           <>
             {/* Banners */}
@@ -128,9 +129,8 @@ export default function XAcademyScreen() {
             <View style={styles.sectionHeader}>
               <PhonkText
                 style={[
-                  { color: Colors.light.text },
                   styles.sectionTitle,
-                  { textAlign: isRTL ? 'right' : 'left' },
+                  { color: theme.text, textAlign: isRTL ? 'right' : 'left' },
                 ]}
               >
                 {t('universities')}
@@ -162,7 +162,7 @@ export default function XAcademyScreen() {
                     </View>
 
                     <View style={[styles.uniCardContent, isRTL && styles.rowReverse]}>
-                      <View style={styles.logoContainer}>
+                      <View style={[styles.logoContainer, { backgroundColor: theme.logoTile }]}>
                         <Image
                           source={{ uri: uni.logoUrl }}
                           style={styles.uniLogo}
@@ -186,8 +186,8 @@ export default function XAcademyScreen() {
                           {uniName}
                         </Text>
 
-                        <View style={[styles.applyButton, isRTL && styles.rowReverse]}>
-                          <Text style={styles.applyButtonText}>
+                        <View style={[styles.applyButton, { backgroundColor: theme.logoTile }, isRTL && styles.rowReverse]}>
+                          <Text style={[styles.applyButtonText, { color: theme.logoTileText }]}>
                             {t('apply_now').toUpperCase()}
                           </Text>
                           <Ionicons
@@ -197,7 +197,7 @@ export default function XAcademyScreen() {
                                 : 'arrow-forward-outline'
                             }
                             size={16}
-                            color="#000"
+                            color={theme.logoTileText}
                             style={
                               isRTL
                                 ? { marginRight: 4 }
@@ -228,7 +228,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F2',
   },
 
   backButton: { marginRight: 16 },
@@ -300,7 +299,6 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 80,
     height: 80,
-    backgroundColor: '#FFF',
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
@@ -323,14 +321,12 @@ const styles = StyleSheet.create({
   applyButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF',
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 100,
   },
 
   applyButtonText: {
-    color: '#000',
     fontFamily: Typography.hanson.bold,
     fontSize: 10,
   },

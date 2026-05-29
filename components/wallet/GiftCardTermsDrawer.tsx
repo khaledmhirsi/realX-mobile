@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { Colors } from '../../constants/Colors';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
 
@@ -27,6 +27,7 @@ export default function GiftCardTermsDrawer({
     onClose,
 }: GiftCardTermsDrawerProps) {
     const insets = useSafeAreaInsets();
+    const { isDark, theme } = useAppTheme();
     const { t } = useTranslation();
     const isRTL = I18nManager.isRTL;
 
@@ -41,33 +42,33 @@ export default function GiftCardTermsDrawer({
                 <GlassView
                     style={StyleSheet.absoluteFill}
                     glassEffectStyle="regular"
-                    colorScheme="dark"
+                    colorScheme={isDark ? 'dark' : 'light'}
                     tintColor="rgba(0,0,0,0.3)"
                 />
                 <Pressable
                     style={[
                         styles.drawerContainer,
                         {
-                            backgroundColor: '#FFFFFF',
+                            backgroundColor: theme.card,
                             paddingBottom: insets.bottom + 20,
                         },
                     ]}
                     onPress={(e) => e.stopPropagation()}
-                >
+                    >
                     <View style={styles.handleContainer}>
-                        <View style={styles.handle} />
+                        <View style={[styles.handle, { backgroundColor: theme.borderStrong }]} />
                     </View>
 
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
-                            <PhonkText style={[styles.modalTitleText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                            <PhonkText style={[styles.modalTitleText, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
                                 {t('terms_and_conditions_caps')}
                             </PhonkText>
                             <TouchableOpacity
                                 onPress={onClose}
                                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             >
-                                <Ionicons name="close-circle" size={28} color="#000" />
+                                <Ionicons name="close-circle" size={28} color={theme.icon} />
                             </TouchableOpacity>
                         </View>
 
@@ -76,38 +77,38 @@ export default function GiftCardTermsDrawer({
                             style={styles.modalBody}
                             contentContainerStyle={styles.modalBodyContent}
                         >
-                            <Text style={[styles.descriptionText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                            <Text style={[styles.descriptionText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
                                 {t('no_specific_terms')}
                             </Text>
 
-                            <View style={styles.commonTerms}>
+                            <View style={[styles.commonTerms, { borderTopColor: theme.border }]}>
                                 <View style={styles.termRow}>
-                                    <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
-                                    <Text style={[styles.termText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                    <Text style={[styles.termText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
                                         {t('in_store_only')}
                                     </Text>
                                 </View>
                                 <View style={styles.termRow}>
-                                    <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
-                                    <Text style={[styles.termText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                    <Text style={[styles.termText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
                                         {t('cannot_be_combined')}
                                     </Text>
                                 </View>
                                 <View style={styles.termRow}>
-                                    <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
-                                    <Text style={[styles.termText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                    <Text style={[styles.termText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
                                         {t('xp_promotional_reward')}
                                     </Text>
                                 </View>
                                 <View style={styles.termRow}>
-                                    <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
-                                    <Text style={[styles.termText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                    <Text style={[styles.termText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
                                         {t('xp_no_cash_withdrawal')}
                                     </Text>
                                 </View>
                                 <View style={styles.termRow}>
-                                    <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
-                                    <Text style={[styles.termText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                    <Text style={[styles.termText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
                                         {t('xp_in_app_only')}
                                     </Text>
                                 </View>
@@ -139,7 +140,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 5,
         borderRadius: 2.5,
-        backgroundColor: '#E0E0E0',
     },
     modalContent: {
         paddingHorizontal: 24,
@@ -164,14 +164,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: Typography.poppins.medium,
         lineHeight: 24,
-        color: '#8E8E93',
     },
     commonTerms: {
         marginTop: 4,
         gap: 12,
         paddingTop: 24,
         borderTopWidth: 1,
-        borderTopColor: '#F0F0F0',
     },
     termRow: {
         flexDirection: 'row',
@@ -181,7 +179,6 @@ const styles = StyleSheet.create({
     termText: {
         fontSize: 14,
         fontFamily: Typography.poppins.medium,
-        color: '#666',
         flex: 1,
     },
 });

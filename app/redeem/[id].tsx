@@ -26,7 +26,7 @@ import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PhonkText from '../../components/PhonkText';
 import TransactionLoadingOverlay from '../../components/TransactionLoadingOverlay';
-import { Colors } from '../../constants/Colors';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { normalizeDigits } from '../../utils/numbers';
@@ -65,6 +65,7 @@ export default function RedeemScreen() {
     const { id, vendorId, offerIndex: offerIndexParam } = useLocalSearchParams<{ id: string; vendorId: string; offerIndex: string }>();
     const router = useRouter();
     const { t, i18n } = useTranslation();
+    const { isDark, theme } = useAppTheme();
     const isArabic = i18n.language === 'ar';
     const [vendor, setVendor] = useState<VendorData | null>(null);
     const [offer, setOffer] = useState<OfferData | null>(null);
@@ -304,23 +305,23 @@ export default function RedeemScreen() {
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={Colors.brandGreen} />
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.brand} />
             </View>
         );
     }
 
     if (!vendor || (!offer && !isOnlineVendor)) {
         return (
-            <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{t('redemption_info_not_found')}</Text>
+            <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
+                <Text style={[styles.errorText, { color: theme.mutedText }]}>{t('redemption_info_not_found')}</Text>
                 <TouchableOpacity
                     onPress={() => {
                         triggerSubtleHaptic();
                         router.back();
                     }}
                 >
-                    <Text style={styles.backLink}>{t('go_back')}</Text>
+                    <Text style={[styles.backLink, { color: theme.brandText }]}>{t('go_back')}</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -331,18 +332,18 @@ export default function RedeemScreen() {
         const remainingToday = onlinePreview?.remainingToday ?? 0;
 
         return (
-            <SafeAreaView style={styles.container}>
-                <StatusBar barStyle="dark-content" />
+            <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+                <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
                 <View style={styles.innerContainer}>
                     <View style={styles.header}>
                         <TouchableOpacity
-                            style={styles.backButton}
+                            style={[styles.backButton, { backgroundColor: theme.card, shadowColor: theme.shadow }]}
                             onPress={() => {
                                 triggerSubtleHaptic();
                                 router.back();
                             }}
                         >
-                            <Ionicons name={isArabic ? "arrow-forward" : "arrow-back"} size={24} color="#000" />
+                            <Ionicons name={isArabic ? "arrow-forward" : "arrow-back"} size={24} color={theme.icon} />
                         </TouchableOpacity>
                     </View>
 
@@ -352,17 +353,17 @@ export default function RedeemScreen() {
                         showsVerticalScrollIndicator={false}
                     >
                         <View style={styles.offerCardWrapper}>
-                            <View style={styles.onlineCard}>
-                                <Ionicons name="globe-outline" size={30} color={Colors.brandGreen} />
-                                <Text style={[styles.onlineKicker, { textAlign: isArabic ? 'right' : 'left' }]}>
+                            <View style={[styles.onlineCard, { backgroundColor: theme.cardMuted }]}>
+                                <Ionicons name="globe-outline" size={30} color={theme.brand} />
+                                <Text style={[styles.onlineKicker, { color: theme.brandText, textAlign: isArabic ? 'right' : 'left' }]}>
                                     {t('online_vendor_label')}
                                 </Text>
-                                <PhonkText style={[styles.onlineTitle, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                                <PhonkText style={[styles.onlineTitle, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                                     {vendorName || t('unknown_vendor')}
                                 </PhonkText>
                             </View>
 
-                            <View style={styles.logoContainer}>
+                            <View style={[styles.logoContainer, { backgroundColor: theme.logoTile, borderColor: theme.logoTile, shadowColor: theme.shadow }]}>
                                 <Image
                                     source={{ uri: vendor.profilePicture }}
                                     style={styles.logoImage}
@@ -371,29 +372,32 @@ export default function RedeemScreen() {
                             </View>
                         </View>
 
-                        <View style={styles.onlineRedemptionCard}>
-                            <Text style={[styles.inputLabel, { textAlign: isArabic ? 'right' : 'left' }]}>
+                        <View style={[styles.onlineRedemptionCard, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }]}>
+                            <Text style={[styles.inputLabel, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>
                                 {t('online_discount_code_label')}
                             </Text>
                             <TouchableOpacity
-                                style={[styles.onlineCodeBox, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}
+                                style={[
+                                    styles.onlineCodeBox,
+                                    { backgroundColor: theme.brandSoft, borderColor: theme.brand, flexDirection: isArabic ? 'row-reverse' : 'row' },
+                                ]}
                                 activeOpacity={0.85}
                                 onPress={handleCopyOnlineCode}
                                 disabled={!onlinePreview?.discountCode}
                             >
-                                <Text style={styles.onlineCodeText}>
+                                <Text style={[styles.onlineCodeText, { color: theme.brandText }]}>
                                     {onlinePreview?.discountCode || '----'}
                                 </Text>
-                                <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={24} color={Colors.brandGreen} />
+                                <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={24} color={theme.brand} />
                             </TouchableOpacity>
 
-                            <Text style={[styles.onlineHint, { textAlign: isArabic ? 'right' : 'left' }]}>
+                            <Text style={[styles.onlineHint, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>
                                 {onlineError || (copied ? t('online_code_copied') : t('online_copy_hint'))}
                             </Text>
 
-                            <View style={[styles.onlineLimitRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                <Ionicons name="calendar-outline" size={18} color="#666" />
-                                <Text style={[styles.onlineLimitText, { textAlign: isArabic ? 'right' : 'left' }]}>
+                            <View style={[styles.onlineLimitRow, { borderTopColor: theme.border, flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                <Ionicons name="calendar-outline" size={18} color={theme.iconMuted} />
+                                <Text style={[styles.onlineLimitText, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>
                                     {t('online_remaining_today', {
                                         count: remainingToday,
                                         limit: onlinePreview?.dailyLimitPerUser ?? 0,
@@ -405,6 +409,7 @@ export default function RedeemScreen() {
                         <TouchableOpacity
                             style={[
                                 styles.redeemButton,
+                                { backgroundColor: theme.actionSolid, shadowColor: theme.actionSolid },
                                 { flexDirection: isArabic ? 'row-reverse' : 'row' },
                                 (!onlinePreview?.discountCode || remainingToday <= 0) && styles.redeemButtonDisabled,
                             ]}
@@ -413,11 +418,11 @@ export default function RedeemScreen() {
                             disabled={!onlinePreview?.discountCode || remainingToday <= 0 || onlineLoading}
                         >
                             {onlineLoading ? (
-                                <ActivityIndicator size="small" color="#FFF" />
+                                <ActivityIndicator size="small" color={theme.onActionSolid} />
                             ) : (
                                 <>
-                                    <Ionicons name="cart" size={20} color="#FFF" />
-                                    <PhonkText style={styles.redeemButtonText}>
+                                    <Ionicons name="cart" size={20} color={theme.onActionSolid} />
+                                    <PhonkText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>
                                         {t('online_purchase_caps')}
                                     </PhonkText>
                                 </>
@@ -443,18 +448,18 @@ export default function RedeemScreen() {
         const currency = t('currency_qar');
 
         return (
-            <SafeAreaView style={styles.successContainer}>
+            <SafeAreaView style={[styles.successContainer, { backgroundColor: theme.brand }]}>
                 <StatusBar barStyle="light-content" />
 
                 {/* Close Button */}
                 <TouchableOpacity
-                    style={styles.successCloseButton}
+                    style={[styles.successCloseButton, { backgroundColor: theme.logoTile }]}
                     onPress={() => {
                         triggerSubtleHaptic();
                         router.replace('/');
                     }}
                 >
-                    <Ionicons name="close" size={22} color="#666" />
+                    <Ionicons name="close" size={22} color={theme.logoTileText} />
                 </TouchableOpacity>
 
                 {/* Watermark Background */}
@@ -472,21 +477,21 @@ export default function RedeemScreen() {
                 <View style={styles.successPillWrapper}>
                     {/* Top Pill — Vendor + Title */}
                     <View style={styles.successTopPillWrapper}>
-                        <View style={styles.successTopPill}>
+                        <View style={[styles.successTopPill, { backgroundColor: theme.logoTile }]}>
                             {/* Title */}
-                            <Text style={styles.successTitle}>{t('redemption_title_line')}</Text>
-                            <PhonkText style={styles.successTitleGreen}>{t('redemption_successful_exclaim')}</PhonkText>
+                            <Text style={[styles.successTitle, { color: theme.logoTileText }]}>{t('redemption_title_line')}</Text>
+                            <PhonkText style={[styles.successTitleGreen, { color: theme.brand }]}>{t('redemption_successful_exclaim')}</PhonkText>
 
                             {/* Discount Badge */}
-                            <View style={styles.successBadge}>
-                                <Text style={styles.successBadgeText}>
+                            <View style={[styles.successBadge, { backgroundColor: theme.brand }]}>
+                                <Text style={[styles.successBadgeText, { color: theme.onActionSolid }]}>
                                     {t('flat_off_prefix')}{inStoreOffer.discountType === 'buy1get1' ? t('buy1get1_label') : `${inStoreOffer.discountValue}${inStoreOffer.discountType === 'percentage' ? '%' : ''}`}{t('flat_off_suffix')}
                                 </Text>
                             </View>
                         </View>
 
                         {/* Vendor Logo — half in, half out */}
-                                <View style={styles.successLogoOverlay}>
+                                <View style={[styles.successLogoOverlay, { backgroundColor: theme.logoTile }]}>
                                     <Image
                                         source={{ uri: vendor.profilePicture }}
                                         style={styles.successLogoImage}
@@ -496,7 +501,7 @@ export default function RedeemScreen() {
                     </View>
 
                     {/* Bottom Pill — Breakdown */}
-                    <View style={styles.successBottomPill}>
+                    <View style={[styles.successBottomPill, { backgroundColor: theme.logoTile }]}>
                         {/* You Saved */}
                         <View
                             style={[
@@ -507,11 +512,12 @@ export default function RedeemScreen() {
                                 },
                             ]}
                         >
-                            <Ionicons name="pricetag" size={18} color={Colors.brandGreen} />
+                            <Ionicons name="pricetag" size={18} color={theme.brand} />
                             <Text
                                 style={[
                                     styles.successSavedLabel,
                                     {
+                                        color: theme.brandText,
                                         textAlign: isArabic ? 'right' : 'left',
                                     },
                                 ]}
@@ -530,11 +536,12 @@ export default function RedeemScreen() {
                                 },
                             ]}
                         >
-                            <Ionicons name="card" size={18} color="#000" />
+                            <Ionicons name="card" size={18} color={theme.logoTileText} />
                             <Text
                                 style={[
                                     styles.successPayLabel,
                                     {
+                                        color: theme.logoTileText,
                                         textAlign: isArabic ? 'right' : 'left',
                                     },
                                 ]}
@@ -549,6 +556,7 @@ export default function RedeemScreen() {
                                 style={[
                                     styles.successCashbackRow,
                                     {
+                                        borderTopColor: theme.logoTileBorder,
                                         flexDirection: isArabic ? 'row-reverse' : 'row',
                                         justifyContent: isArabic ? 'flex-end' : 'flex-start',
                                     },
@@ -570,7 +578,7 @@ export default function RedeemScreen() {
 
                         {/* Creator credit */}
                         {redemptionResult.creatorName && redemptionResult.cashbackAmount > 0 && (
-                            <Text style={styles.successCreatorText}>
+                            <Text style={[styles.successCreatorText, { color: theme.subtleText }]}>
                                 {t('thanks_to_creator', { creator: redemptionResult.creatorName })}
                             </Text>
                         )}
@@ -581,8 +589,8 @@ export default function RedeemScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" />
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
             <KeyboardAvoidingView
                 style={styles.keyboardAware}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -591,7 +599,7 @@ export default function RedeemScreen() {
                         {/* Header */}
                         <View style={styles.header}>
                             <TouchableOpacity
-                                style={styles.backButton}
+                                style={[styles.backButton, { backgroundColor: theme.card, shadowColor: theme.shadow }]}
                                 onPress={() => {
                                     triggerSubtleHaptic();
                                     if (step === 'pin' && vendor.xcard === true) {
@@ -602,7 +610,7 @@ export default function RedeemScreen() {
                                     }
                                 }}
                             >
-                                <Ionicons name={isArabic ? "arrow-forward" : "arrow-back"} size={24} color="#000" />
+                                <Ionicons name={isArabic ? "arrow-forward" : "arrow-back"} size={24} color={theme.icon} />
                             </TouchableOpacity>
                         </View>
 
@@ -616,16 +624,16 @@ export default function RedeemScreen() {
                         >
                             {/* Offer Card */}
                             <View style={styles.offerCardWrapper}>
-                                <View style={styles.offerCard}>
-                                    <PhonkText style={[styles.offerTitle, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
-                                        {t('flat_off_prefix')}<Text style={styles.greenText}>
+                                <View style={[styles.offerCard, { backgroundColor: theme.cardMuted }]}>
+                                    <PhonkText style={[styles.offerTitle, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                                        {t('flat_off_prefix')}<Text style={[styles.greenText, { color: theme.brand }]}>
                                             {inStoreOffer.discountType === 'buy1get1' ? t('buy1get1_label') : `${inStoreOffer.discountValue}${inStoreOffer.discountType === 'percentage' ? '%' : ''}`}
                                         </Text>{t('flat_off_suffix')}
                                     </PhonkText>
                                 </View>
 
                                 {/* Logo Overlay */}
-                                <View style={styles.logoContainer}>
+                                <View style={[styles.logoContainer, { backgroundColor: theme.logoTile, borderColor: theme.logoTile, shadowColor: theme.shadow }]}>
                                     <Image
                                         source={{ uri: vendor.profilePicture }}
                                         style={styles.logoImage}
@@ -636,17 +644,17 @@ export default function RedeemScreen() {
 
                             {/* Creator Code Step (xcard vendors only) */}
                             {step === 'creator' && (
-                                <View style={styles.creatorCard}>
-                                    <Text style={[styles.inputLabel, { textAlign: isArabic ? 'right' : 'left' }]}>
-                                        {t('have_creator_code')} <Text style={styles.optionalText}>{t('optional')}</Text>
+                                <View style={[styles.creatorCard, { backgroundColor: theme.cardMuted }]}>
+                                    <Text style={[styles.inputLabel, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>
+                                        {t('have_creator_code')} <Text style={[styles.optionalText, { color: theme.subtleText }]}>{t('optional')}</Text>
                                     </Text>
-                                    <View style={[styles.creatorInputContainer, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                    <View style={[styles.creatorInputContainer, { backgroundColor: theme.card, shadowColor: theme.shadow, flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                         <TextInput
-                                            style={[styles.creatorInput, { textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]}
+                                            style={[styles.creatorInput, { color: theme.text, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]}
                                             value={creatorCode}
                                             onChangeText={(text) => setCreatorCode(normalizeDigits(text).toUpperCase())}
                                             placeholder={t('creator_code_placeholder')}
-                                            placeholderTextColor="#CCC"
+                                            placeholderTextColor={theme.inputPlaceholder}
                                             autoCapitalize="characters"
                                             maxLength={4}
                                             returnKeyType="next"
@@ -659,8 +667,8 @@ export default function RedeemScreen() {
 
                             {/* PIN + Amount Step */}
                             {step === 'pin' && (
-                                <View style={styles.redemptionCard}>
-                                    <Text style={[styles.inputLabel, { textAlign: isArabic ? 'right' : 'left' }]}>{t('enter_vendor_pin')}</Text>
+                                <View style={[styles.redemptionCard, { backgroundColor: theme.cardMuted }]}>
+                                    <Text style={[styles.inputLabel, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>{t('enter_vendor_pin')}</Text>
                                     <View style={styles.pinContainer}>
                                         <TouchableOpacity
                                             activeOpacity={1}
@@ -671,8 +679,15 @@ export default function RedeemScreen() {
                                             }}
                                         >
                                             {[0, 1, 2, 3].map((index) => (
-                                                <View key={index} style={[styles.pinBox, pin.length === index && styles.pinBoxActive]}>
-                                                    <Text style={[styles.pinText, pin.length > index && { color: '#000', marginTop: 0 }]}>
+                                                <View
+                                                    key={index}
+                                                    style={[
+                                                        styles.pinBox,
+                                                        { backgroundColor: theme.card, shadowColor: theme.shadow },
+                                                        pin.length === index && { borderColor: theme.brand },
+                                                    ]}
+                                                >
+                                                    <Text style={[styles.pinText, { color: theme.subtleText }, pin.length > index && { color: theme.text, marginTop: 0 }]}>
                                                         {pin.length > index ? '●' : '*'}
                                                     </Text>
                                                 </View>
@@ -699,12 +714,12 @@ export default function RedeemScreen() {
                                         />
                                     </View>
 
-                                    <Text style={[styles.inputLabel, { textAlign: isArabic ? 'right' : 'left' }]}>{t('total_bill')}:</Text>
-                                    <View style={[styles.amountInputContainer, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Text style={[styles.currencyPrefix, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{t('currency_qar')}</Text>
+                                    <Text style={[styles.inputLabel, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>{t('total_bill')}:</Text>
+                                    <View style={[styles.amountInputContainer, { backgroundColor: theme.card, shadowColor: theme.shadow, flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                        <Text style={[styles.currencyPrefix, { color: theme.mutedText, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{t('currency_qar')}</Text>
                                         <TextInput
                                             ref={amountInputRef}
-                                            style={[styles.amountInput, { textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]}
+                                            style={[styles.amountInput, { color: theme.text, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]}
                                             value={amount}
                                             onFocus={() => {
                                                 setTimeout(() => {
@@ -724,34 +739,34 @@ export default function RedeemScreen() {
                                             }}
                                             keyboardType="decimal-pad"
                                             placeholder="0"
-                                            placeholderTextColor="#CCC"
+                                            placeholderTextColor={theme.inputPlaceholder}
                                             onSubmitEditing={handleAction}
                                         />
                                     </View>
 
                                     {/* Breakdown */}
                                     {totalAmount > 0 && (
-                                        <View style={styles.breakdownContainer}>
+                                        <View style={[styles.breakdownContainer, { backgroundColor: theme.card }]}>
                                             <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                                <Text style={[styles.breakdownLabel, { textAlign: isArabic ? 'right' : 'left' }]}>{t('total_bill')}</Text>
-                                                <Text style={[styles.breakdownValue, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                                                <Text style={[styles.breakdownLabel, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>{t('total_bill')}</Text>
+                                                <Text style={[styles.breakdownValue, { color: theme.mutedText, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                                                     {t('amount_with_currency', { amount: totalAmount.toFixed(2), currency: t('currency_qar') })}
                                                 </Text>
                                             </View>
                                             {inStoreOffer.discountType !== 'buy1get1' && (
                                             <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                                <Text style={[styles.breakdownLabelGreen, { textAlign: isArabic ? 'right' : 'left' }]}>
+                                                <Text style={[styles.breakdownLabelGreen, { color: theme.brandText, textAlign: isArabic ? 'right' : 'left' }]}>
                                                     {t('home_title')} ({inStoreOffer.discountType === 'buy1get1' ? t('buy1get1_label') : `${inStoreOffer.discountValue}${inStoreOffer.discountType === 'percentage' ? '%' : ''}`})
                                                 </Text>
-                                                <Text style={[styles.breakdownValueGreen, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                                                <Text style={[styles.breakdownValueGreen, { color: theme.brandText, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                                                     {t('amount_with_currency_negative', { amount: discountAmount.toFixed(2), currency: t('currency_qar') })}
                                                 </Text>
                                             </View>
                                             )}
-                                            <View style={styles.breakdownDivider} />
+                                            <View style={[styles.breakdownDivider, { backgroundColor: theme.border }]} />
                                             <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                                <Text style={[styles.breakdownLabelBold, { textAlign: isArabic ? 'right' : 'left' }]}>{t('amount_to_pay_label')}</Text>
-                                                <PhonkText style={[styles.breakdownValueBold, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                                                <Text style={[styles.breakdownLabelBold, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>{t('amount_to_pay_label')}</Text>
+                                                <PhonkText style={[styles.breakdownValueBold, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                                                     {t('amount_with_currency', { amount: finalAmount.toFixed(2), currency: t('currency_qar') })}
                                                 </PhonkText>
                                             </View>
@@ -774,6 +789,7 @@ export default function RedeemScreen() {
                             <TouchableOpacity
                                 style={[
                                     styles.redeemButton,
+                                    { backgroundColor: theme.actionSolid, shadowColor: theme.actionSolid },
                                     { flexDirection: isArabic ? 'row-reverse' : 'row' },
                                     step === 'pin' && !canRedeem && styles.redeemButtonDisabled,
                                 ]}
@@ -782,11 +798,11 @@ export default function RedeemScreen() {
                                 disabled={(step === 'pin' && !canRedeem) || isRedeeming}
                             >
                                 {isRedeeming ? (
-                                    <ActivityIndicator size="small" color="#FFF" />
+                                    <ActivityIndicator size="small" color={theme.onActionSolid} />
                                 ) : (
                                     <>
-                                        <Ionicons name="flash" size={20} color="#FFF" />
-                                        <PhonkText style={styles.redeemButtonText}>
+                                        <Ionicons name="flash" size={20} color={theme.onActionSolid} />
+                                        <PhonkText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>
                                             {step === 'creator' ? t('continue_caps') : t('redeem_caps')}
                                         </PhonkText>
                                     </>
@@ -804,7 +820,6 @@ export default function RedeemScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
     },
     keyboardAware: {
         flex: 1,
@@ -825,12 +840,10 @@ const styles = StyleSheet.create({
     },
     errorText: {
         fontSize: 16,
-        color: '#666',
         fontFamily: Typography.poppins.medium,
         marginBottom: 10,
     },
     backLink: {
-        color: Colors.brandGreen,
         fontFamily: Typography.poppins.semiBold,
     },
     header: {
@@ -843,7 +856,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#FFF',
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
@@ -864,7 +876,6 @@ const styles = StyleSheet.create({
         marginTop: 50,
     },
     offerCard: {
-        backgroundColor: '#F7F7F7',
         borderRadius: 35,
         paddingTop: 70,
         paddingBottom: 40,
@@ -873,7 +884,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     onlineCard: {
-        backgroundColor: '#F7F7F7',
         borderRadius: 35,
         paddingTop: 70,
         paddingBottom: 36,
@@ -885,21 +895,17 @@ const styles = StyleSheet.create({
     onlineKicker: {
         fontSize: 13,
         fontFamily: Typography.poppins.semiBold,
-        color: Colors.brandGreen,
         textTransform: 'uppercase',
         letterSpacing: 1,
     },
     onlineTitle: {
         fontSize: 30,
-        color: '#000',
         textAlign: 'center',
     },
     onlineRedemptionCard: {
-        backgroundColor: '#FFFFFF',
         borderRadius: 28,
         padding: 22,
         borderWidth: 1,
-        borderColor: '#EFEFEF',
         marginTop: 24,
         marginBottom: 20,
         shadowColor: '#000',
@@ -911,8 +917,6 @@ const styles = StyleSheet.create({
     onlineCodeBox: {
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#F6FFF8',
-        borderColor: Colors.brandGreen,
         borderWidth: 1.5,
         borderRadius: 20,
         paddingHorizontal: 20,
@@ -922,14 +926,12 @@ const styles = StyleSheet.create({
     onlineCodeText: {
         fontSize: 28,
         fontFamily: Typography.poppins.semiBold,
-        color: Colors.brandGreen,
         letterSpacing: 3,
     },
     onlineHint: {
         marginTop: 10,
         fontSize: 13,
         fontFamily: Typography.poppins.medium,
-        color: '#777',
     },
     onlineLimitRow: {
         alignItems: 'center',
@@ -937,13 +939,11 @@ const styles = StyleSheet.create({
         marginTop: 18,
         paddingTop: 18,
         borderTopWidth: 1,
-        borderTopColor: '#F0F0F0',
     },
     onlineLimitText: {
         flex: 1,
         fontSize: 13,
         fontFamily: Typography.poppins.medium,
-        color: '#666',
     },
     logoContainer: {
         position: 'absolute',
@@ -952,9 +952,7 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 25,
-        backgroundColor: '#1E2a38',
         borderWidth: 4,
-        borderColor: '#FFFFFF',
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
@@ -970,20 +968,16 @@ const styles = StyleSheet.create({
     },
     offerTitle: {
         fontSize: 32,
-        color: '#000',
         textAlign: 'center',
     },
     greenText: {
-        color: Colors.brandGreen,
     },
     redemptionCard: {
-        backgroundColor: '#F7F7F7',
         borderRadius: 35,
         padding: 24,
     },
     inputLabel: {
         fontSize: 16,
-        color: '#444',
         fontFamily: Typography.poppins.semiBold,
         marginBottom: 12,
     },
@@ -998,7 +992,6 @@ const styles = StyleSheet.create({
     pinBox: {
         width: 65,
         height: 65,
-        backgroundColor: '#FFF',
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
@@ -1011,7 +1004,6 @@ const styles = StyleSheet.create({
         borderColor: 'transparent',
     },
     pinBoxActive: {
-        borderColor: Colors.brandGreen,
     },
     pinText: {
         fontSize: 30,
@@ -1029,7 +1021,6 @@ const styles = StyleSheet.create({
     amountInputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFF',
         borderRadius: 25,
         height: 55,
         paddingHorizontal: 20,
@@ -1041,19 +1032,16 @@ const styles = StyleSheet.create({
     },
     currencyPrefix: {
         fontSize: 16,
-        color: '#AAA',
         fontFamily: Typography.poppins.semiBold,
         marginRight: 10,
     },
     amountInput: {
         flex: 1,
         fontSize: 18,
-        color: '#000',
         fontFamily: Typography.poppins.semiBold,
     },
     breakdownContainer: {
         marginTop: 20,
-        backgroundColor: '#FFFFFF',
         borderRadius: 20,
         padding: 20,
     },
@@ -1065,37 +1053,30 @@ const styles = StyleSheet.create({
     },
     breakdownLabel: {
         fontSize: 14,
-        color: '#666',
         fontFamily: Typography.poppins.medium,
     },
     breakdownValue: {
         fontSize: 14,
-        color: '#666',
         fontFamily: Typography.poppins.semiBold,
     },
     breakdownLabelGreen: {
         fontSize: 14,
-        color: Colors.brandGreen,
         fontFamily: Typography.poppins.medium,
     },
     breakdownValueGreen: {
         fontSize: 14,
-        color: Colors.brandGreen,
         fontFamily: Typography.poppins.semiBold,
     },
     breakdownDivider: {
         height: 1,
-        backgroundColor: '#F0F0F0',
         marginVertical: 4,
     },
     breakdownLabelBold: {
         fontSize: 16,
-        color: '#000',
         fontFamily: Typography.poppins.semiBold,
     },
     breakdownValueBold: {
         fontSize: 16,
-        color: '#000',
     },
     cashbackLabel: {
         fontSize: 13,
@@ -1108,7 +1089,6 @@ const styles = StyleSheet.create({
         fontFamily: Typography.poppins.semiBold,
     },
     redeemButton: {
-        backgroundColor: Colors.brandGreen,
         borderRadius: 35,
         height: 65,
         flexDirection: 'row',
@@ -1116,7 +1096,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 12,
         margin: 12,
-        shadowColor: Colors.brandGreen,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
@@ -1126,17 +1105,14 @@ const styles = StyleSheet.create({
         opacity: 0.5,
     },
     redeemButtonText: {
-        color: '#FFF',
         fontSize: 22,
         letterSpacing: 1,
     },
     creatorCard: {
-        backgroundColor: '#F7F7F7',
         borderRadius: 35,
         padding: 24,
     },
     creatorInputContainer: {
-        backgroundColor: '#FFF',
         borderRadius: 25,
         height: 55,
         paddingHorizontal: 20,
@@ -1149,18 +1125,15 @@ const styles = StyleSheet.create({
     },
     creatorInput: {
         fontSize: 18,
-        color: '#000',
         fontFamily: Typography.poppins.semiBold,
     },
     optionalText: {
-        color: '#888',
         fontFamily: Typography.poppins.medium,
         fontSize: 14,
     },
     // Success Screen Styles
     successContainer: {
         flex: 1,
-        backgroundColor: Colors.brandGreen,
     },
     successCloseButton: {
         position: 'absolute',
@@ -1169,7 +1142,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#FFFFFF',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 10,
@@ -1186,7 +1158,6 @@ const styles = StyleSheet.create({
         marginTop: 40,
     },
     successTopPill: {
-        backgroundColor: '#FFFFFF',
         borderRadius: 30,
         paddingTop: 50,
         paddingBottom: 24,
@@ -1194,7 +1165,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     successBottomPill: {
-        backgroundColor: '#FFFFFF',
         borderRadius: 30,
         paddingVertical: 24,
         paddingHorizontal: 24,
@@ -1220,24 +1190,20 @@ const styles = StyleSheet.create({
     },
     successTitle: {
         fontSize: 26,
-        color: '#000',
         fontFamily: Typography.poppins.semiBold,
         textAlign: 'center',
     },
     successTitleGreen: {
         fontSize: 26,
-        color: Colors.brandGreen,
         textAlign: 'center',
         marginBottom: 16,
     },
     successBadge: {
-        backgroundColor: Colors.brandGreen,
         borderRadius: 30,
         paddingVertical: 10,
         paddingHorizontal: 24,
     },
     successBadgeText: {
-        color: '#FFF',
         fontSize: 16,
         fontFamily: Typography.poppins.semiBold,
     },
@@ -1250,7 +1216,6 @@ const styles = StyleSheet.create({
     },
     successSavedLabel: {
         fontSize: 15,
-        color: Colors.brandGreen,
         fontFamily: Typography.poppins.semiBold,
         flex: 1,
     },
@@ -1260,12 +1225,10 @@ const styles = StyleSheet.create({
         gap: 10,
         paddingVertical: 10,
         borderTopWidth: 1,
-        borderTopColor: '#E8E8E8',
         width: '88%',
     },
     successPayLabel: {
         fontSize: 15,
-        color: '#000',
         fontFamily: Typography.poppins.semiBold,
         flex: 1,
     },
@@ -1275,7 +1238,6 @@ const styles = StyleSheet.create({
         gap: 10,
         paddingVertical: 10,
         borderTopWidth: 1,
-        borderTopColor: '#E8E8E8',
         width: '88%',
     },
     successCashbackLabel: {
@@ -1286,7 +1248,6 @@ const styles = StyleSheet.create({
     },
     successCreatorText: {
         fontSize: 13,
-        color: '#999',
         fontFamily: Typography.poppins.medium,
         textAlign: 'center',
         marginTop: 8,

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 import {
@@ -30,6 +31,7 @@ export default function PendingVerificationScreen() {
   const params = useLocalSearchParams<{ email?: string; role?: string }>();
   const { email } = params;
   const { t } = useTranslation();
+  const { theme } = useAppTheme();
 
   const [status, setStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
@@ -94,38 +96,38 @@ export default function PendingVerificationScreen() {
 
   const renderPending = () => (
     <>
-      <View style={styles.iconCircle}>
-        <Ionicons name="time-outline" size={48} color={Colors.brandGreen} />
+      <View style={[styles.iconCircle, { backgroundColor: theme.brandSoft }]}>
+        <Ionicons name="time-outline" size={48} color={theme.brand} />
       </View>
       <PhonkText style={styles.titleLarge}>
-        <Text style={styles.greenText}>{t('onboarding_pending_title')}</Text>
+        <Text style={[styles.greenText, { color: theme.brand }]}>{t('onboarding_pending_title')}</Text>
       </PhonkText>
-      <Text style={styles.subtitle}>{t('onboarding_pending_email_notification')}</Text>
+      <Text style={[styles.subtitle, { color: theme.mutedText }]}>{t('onboarding_pending_email_notification')}</Text>
 
       {email && (
-        <View style={styles.emailBadge}>
-          <Ionicons name="mail-outline" size={16} color="#666" />
-          <Text style={styles.emailText}>{email}</Text>
+        <View style={[styles.emailBadge, { backgroundColor: theme.cardMuted }]}>
+          <Ionicons name="mail-outline" size={16} color={theme.iconMuted} />
+          <Text style={[styles.emailText, { color: theme.text }]}>{email}</Text>
         </View>
       )}
 
       <OnboardingButtonMotion enabled={!checking} disabledOpacity={0.7}>
         <TouchableOpacity
-          style={styles.checkButton}
+          style={[styles.checkButton, { backgroundColor: theme.brandSoft }]}
           onPress={handleCheckNow}
           disabled={checking}
           activeOpacity={0.7}
         >
           {checking ? (
-            <ActivityIndicator color={Colors.brandGreen} size="small" />
+            <ActivityIndicator color={theme.brand} size="small" />
           ) : (
-            <Text style={styles.checkButtonText}>{t('onboarding_pending_check_status')}</Text>
+            <Text style={[styles.checkButtonText, { color: theme.brandText }]}>{t('onboarding_pending_check_status')}</Text>
           )}
         </TouchableOpacity>
       </OnboardingButtonMotion>
 
       {lastChecked && (
-        <Text style={styles.lastCheckedText}>
+        <Text style={[styles.lastCheckedText, { color: theme.subtleText }]}>
           {t('onboarding_pending_last_checked', {
             time: lastChecked.toLocaleTimeString(),
           })}
@@ -136,14 +138,14 @@ export default function PendingVerificationScreen() {
 
   const renderApproved = () => (
     <>
-      <View style={[styles.iconCircle, { backgroundColor: '#E8F5E9' }]}>
-        <Ionicons name="checkmark-circle-outline" size={56} color={Colors.brandGreen} />
+      <View style={[styles.iconCircle, { backgroundColor: theme.brandSoft }]}>
+        <Ionicons name="checkmark-circle-outline" size={56} color={theme.brand} />
       </View>
       <PhonkText style={styles.titleLarge}>
-        <Text style={styles.greenText}>{t('onboarding_pending_approved_title')}</Text>
+        <Text style={[styles.greenText, { color: theme.brand }]}>{t('onboarding_pending_approved_title')}</Text>
       </PhonkText>
-      <Text style={styles.subtitle}>{t('onboarding_pending_approved_message')}</Text>
-      <ActivityIndicator color={Colors.brandGreen} size="large" style={styles.spinner} />
+      <Text style={[styles.subtitle, { color: theme.mutedText }]}>{t('onboarding_pending_approved_message')}</Text>
+      <ActivityIndicator color={theme.brand} size="large" style={styles.spinner} />
     </>
   );
 
@@ -155,21 +157,21 @@ export default function PendingVerificationScreen() {
       <PhonkText style={styles.titleLarge}>
         <Text style={styles.redText}>{t('onboarding_pending_rejected_title')}</Text>
       </PhonkText>
-      <Text style={styles.subtitle}>
+      <Text style={[styles.subtitle, { color: theme.mutedText }]}>
         {rejectionReason
           ? t('onboarding_pending_rejection_reason', { reason: rejectionReason })
           : t('onboarding_pending_rejected_default')}
       </Text>
       <OnboardingButtonMotion enabled={true}>
-        <TouchableOpacity style={styles.tryAgainButton} onPress={handleTryAgain} activeOpacity={0.8}>
-          <Text style={styles.tryAgainButtonText}>{t('onboarding_pending_try_again')}</Text>
+        <TouchableOpacity style={[styles.tryAgainButton, { backgroundColor: theme.actionSolid }]} onPress={handleTryAgain} activeOpacity={0.8}>
+          <Text style={[styles.tryAgainButtonText, { color: theme.onActionSolid }]}>{t('onboarding_pending_try_again')}</Text>
         </TouchableOpacity>
       </OnboardingButtonMotion>
     </>
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <StatusBar style="light" />
 
       <OnboardingScreenMotion style={styles.headerBackground}>
@@ -178,7 +180,7 @@ export default function PendingVerificationScreen() {
         </SafeAreaView>
       </OnboardingScreenMotion>
 
-      <OnboardingCardMotion style={styles.cardContainer}>
+      <OnboardingCardMotion style={[styles.cardContainer, { backgroundColor: theme.background }]}>
         <View style={styles.card}>
           <View style={styles.centerContent}>
             {status === 'pending' && (
@@ -204,12 +206,11 @@ export default function PendingVerificationScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.brandGreen },
+  container: { flex: 1 },
   headerBackground: { height: 250, backgroundColor: Colors.brandGreen },
   headerContent: { paddingHorizontal: 20, paddingTop: 10 },
   cardContainer: {
     flex: 1,
-    backgroundColor: 'white',
     borderTopLeftRadius: 50,
     borderTopRightRadius: 50,
     marginTop: -80,
@@ -231,17 +232,15 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#F0F9F0',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 28,
   },
   titleLarge: { fontSize: 28, textAlign: 'center', lineHeight: 34, marginBottom: 16 },
-  greenText: { color: Colors.brandGreen },
+  greenText: {},
   redText: { color: '#E53935' },
   subtitle: {
     fontSize: 15,
-    color: '#666',
     textAlign: 'center',
     lineHeight: 22,
     fontFamily: Typography.poppins.medium,
@@ -249,7 +248,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   emailBadge: {
-    backgroundColor: '#F5F5F5',
     borderRadius: 16,
     paddingHorizontal: 18,
     paddingVertical: 12,
@@ -261,10 +259,8 @@ const styles = StyleSheet.create({
   emailText: {
     fontSize: 15,
     fontFamily: Typography.poppins.medium,
-    color: '#333',
   },
   checkButton: {
-    backgroundColor: '#F0F9F0',
     borderRadius: 20,
     paddingHorizontal: 24,
     paddingVertical: 12,
@@ -273,24 +269,20 @@ const styles = StyleSheet.create({
   checkButtonText: {
     fontSize: 14,
     fontFamily: Typography.poppins.semiBold,
-    color: Colors.brandGreen,
   },
   lastCheckedText: {
     fontSize: 12,
-    color: '#999',
     fontFamily: Typography.poppins.medium,
   },
   spinner: {
     marginTop: 16,
   },
   tryAgainButton: {
-    backgroundColor: Colors.brandGreen,
     borderRadius: 28,
     paddingHorizontal: 32,
     paddingVertical: 14,
   },
   tryAgainButtonText: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontFamily: Typography.poppins.semiBold,
   },

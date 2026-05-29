@@ -36,6 +36,7 @@ import {
   rememberRegionCacheKey,
   toGeohash
 } from '../../utils/mapGeo';
+import { useAppTheme } from '../../context/AppThemeContext';
 
 function clampRegion(region: Region): Region {
   const minLatDelta = 0.05;
@@ -135,6 +136,7 @@ function clusterColorForCount(pointCount: number) {
 
 export default function MapScreen() {
   const { t, i18n } = useTranslation();
+  const { isDark, theme } = useAppTheme();
   const router = useRouter();
   const isArabic = i18n.language === 'ar';
   const insets = useSafeAreaInsets();
@@ -683,20 +685,23 @@ export default function MapScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.light.background} />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={theme.background}
+      />
 
-      <View style={[styles.titleBar, isArabic && { alignItems: 'flex-start' }]}>
+      <View style={[styles.titleBar, { backgroundColor: theme.background }, isArabic && { alignItems: 'flex-start' }]}>
         <PhonkText style={[styles.headerTitle]}>
           {isArabic ? (
             <>
-              <Text style={{ color: Colors.light.text }}>الخريطة </Text>
-              <Text style={{ color: Colors.brandGreen }}>إكس</Text>
+              <Text style={{ color: theme.text }}>الخريطة </Text>
+              <Text style={{ color: theme.brand }}>إكس</Text>
             </>
           ) : (
             <>
-              <Text style={{ color: Colors.brandGreen }}>X </Text>
-              <Text style={{ color: Colors.light.text }}>MAP</Text>
+              <Text style={{ color: theme.brand }}>X </Text>
+              <Text style={{ color: theme.text }}>MAP</Text>
             </>
           )}
         </PhonkText>
@@ -772,50 +777,63 @@ export default function MapScreen() {
         </MapView>
 
         <View style={styles.floatingSearch} pointerEvents="box-none">
-          <View style={styles.searchContainer} pointerEvents="auto">
+          <View
+            style={[
+              styles.searchContainer,
+              {
+                backgroundColor: theme.inputBackground,
+                borderColor: theme.inputBorder,
+                shadowColor: theme.shadow,
+              },
+            ]}
+            pointerEvents="auto"
+          >
             <Ionicons
               name="search"
               size={20}
-              color={isSearchActive ? Colors.brandGreen : Colors.light.tabIconDefault}
+              color={isSearchActive ? theme.brand : theme.iconMuted}
               style={styles.searchIcon}
             />
             <TextInput
-              style={[styles.searchInput, isSearchActive && styles.searchInputActive]}
+              style={[styles.searchInput, { color: isSearchActive ? theme.brand : theme.inputText }]}
               placeholder={isSearchActive ? '' : (animatedSearchPlaceholder ?? searchPlaceholder)}
-              placeholderTextColor={Colors.light.tabIconDefault}
+              placeholderTextColor={theme.inputPlaceholder}
               value={searchQuery}
               onChangeText={setSearchQuery}
               returnKeyType="search"
               onSubmitEditing={handleSubmitMapSearch}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
-              selectionColor={Colors.brandGreen}
-              cursorColor={Colors.brandGreen}
+              selectionColor={theme.brand}
+              cursorColor={theme.brand}
             />
             {isSearching ? (
-              <ActivityIndicator size="small" color={Colors.brandGreen} />
+              <ActivityIndicator size="small" color={theme.brand} />
             ) : searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => {
                 setSearchQuery('');
                 setSubmittedSearchQuery('');
               }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="close-circle" size={18} color="#AAA" />
+                <Ionicons name="close-circle" size={18} color={theme.iconMuted} />
               </TouchableOpacity>
             )}
           </View>
         </View>
 
-        <Pressable style={styles.locationButton} onPress={() => void centerOnUser()}>
-          <Ionicons name="locate" size={18} color={Colors.brandGreen} />
+        <Pressable
+          style={[styles.locationButton, { backgroundColor: theme.surfaceElevated, shadowColor: theme.shadow }]}
+          onPress={() => void centerOnUser()}
+        >
+          <Ionicons name="locate" size={18} color={theme.brand} />
         </Pressable>
 
         {navigationTarget && (
           <TouchableOpacity
-            style={styles.cancelNavButton}
+            style={[styles.cancelNavButton, { backgroundColor: theme.surfaceElevated, shadowColor: theme.shadow }]}
             onPress={() => setNavigationTarget(null)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="close" size={16} color={Colors.brandGreen} />
+            <Ionicons name="close" size={16} color={theme.brand} />
           </TouchableOpacity>
         )}
 
@@ -826,16 +844,19 @@ export default function MapScreen() {
               setSelectedMapVendor(null);
             }}
           >
-            <Pressable style={styles.calloutCard} onPress={(e) => e.stopPropagation()}>
+            <Pressable
+              style={[styles.calloutCard, { backgroundColor: theme.surfaceElevated, shadowColor: theme.shadow }]}
+              onPress={(e) => e.stopPropagation()}
+            >
               <View style={styles.calloutHeader}>
                 <View style={styles.calloutTitleBlock}>
-                  <PhonkText style={styles.calloutVendorName} numberOfLines={1}>
+                  <PhonkText style={[styles.calloutVendorName, { color: theme.text }]} numberOfLines={1}>
                     {isArabic
                       ? (selectedMapVendor.nameAr || selectedMapVendor.name)
                       : selectedMapVendor.name}
                   </PhonkText>
                   {(selectedMapVendor.branchName || selectedMapVendor.address) && (
-                    <Text style={styles.calloutBranchText} numberOfLines={1}>
+                    <Text style={[styles.calloutBranchText, { color: theme.mutedText }]} numberOfLines={1}>
                       {isArabic
                         ? (selectedMapVendor.branchNameAr || selectedMapVendor.branchName || selectedMapVendor.addressAr || selectedMapVendor.address)
                         : (selectedMapVendor.branchName || selectedMapVendor.branchNameAr || selectedMapVendor.address || selectedMapVendor.addressAr)}
@@ -848,14 +869,14 @@ export default function MapScreen() {
                   }}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <Ionicons name="close" size={20} color="#666" />
+                  <Ionicons name="close" size={20} color={theme.iconMuted} />
                 </TouchableOpacity>
               </View>
 
               {selectedMapVendor.firstOffer && (
-                <View style={styles.calloutOfferPill}>
-                  <Ionicons name="pricetag" size={14} color={Colors.brandGreen} />
-                  <PhonkText style={styles.calloutOfferText} numberOfLines={1}>
+                <View style={[styles.calloutOfferPill, { backgroundColor: theme.cardMuted }]}>
+                  <Ionicons name="pricetag" size={14} color={theme.brand} />
+                  <PhonkText style={[styles.calloutOfferText, { color: theme.brandText }]} numberOfLines={1}>
                     {isArabic
                       ? (selectedMapVendor.firstOffer.titleAr || selectedMapVendor.firstOffer.titleEn || '')
                       : (selectedMapVendor.firstOffer.titleEn || selectedMapVendor.firstOffer.titleAr || '')}
@@ -865,8 +886,8 @@ export default function MapScreen() {
 
               {userLocation && (
                 <View style={styles.calloutDistanceRow}>
-                  <Ionicons name="navigate-outline" size={14} color="#8E8E93" />
-                  <Text style={styles.calloutDistanceText}>
+                  <Ionicons name="navigate-outline" size={14} color={theme.iconMuted} />
+                  <Text style={[styles.calloutDistanceText, { color: theme.subtleText }]}>
                     {haversineDistanceKm(userLocation, { latitude: selectedMapVendor.latitude, longitude: selectedMapVendor.longitude }).toFixed(1)} km
                   </Text>
                 </View>
@@ -874,7 +895,7 @@ export default function MapScreen() {
 
               <View style={styles.calloutActions}>
                 <TouchableOpacity
-                  style={styles.calloutIconBtn}
+                  style={[styles.calloutIconBtn, { backgroundColor: theme.cardMuted }]}
                   onPress={() => void toggleSavedMapPlace(selectedMapVendor)}
                   disabled={savingMapPlaceIds.has(`${selectedMapVendor.vendorId}_${selectedMapVendor.locationId}_map`)}
                   activeOpacity={0.7}
@@ -882,20 +903,20 @@ export default function MapScreen() {
                   <Ionicons
                     name={savedMapPlaceIds.has(`${selectedMapVendor.vendorId}_${selectedMapVendor.locationId}_map`) ? 'bookmark' : 'bookmark-outline'}
                     size={18}
-                    color={Colors.brandGreen}
+                    color={theme.brand}
                   />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.calloutViewBtn}
+                  style={[styles.calloutViewBtn, { backgroundColor: theme.cardMuted }]}
                   onPress={() => router.push({ pathname: '/vendor/[id]', params: { id: selectedMapVendor.vendorId } })}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="storefront-outline" size={16} color={Colors.light.text} />
-                  <Text style={[styles.calloutBtnText, { color: Colors.light.text }]}>{t('map_callout_view')}</Text>
+                  <Ionicons name="storefront-outline" size={16} color={theme.text} />
+                  <Text style={[styles.calloutBtnText, { color: theme.text }]}>{t('map_callout_view')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.calloutDirectionsBtn}
+                  style={[styles.calloutDirectionsBtn, { backgroundColor: theme.actionSolid }]}
                   onPress={() => {
                     const lat = selectedMapVendor.latitude;
                     const lng = selectedMapVendor.longitude;
@@ -920,42 +941,47 @@ export default function MapScreen() {
         )}
 
         {selectedClusterPreview.length > 0 && !selectedMapVendor && (
-          <View style={[styles.clusterPreviewCard, { bottom: insets.bottom + 50 }]}>
+          <View
+            style={[
+              styles.clusterPreviewCard,
+              { backgroundColor: theme.surfaceElevated, shadowColor: theme.shadow, bottom: insets.bottom + 50 },
+            ]}
+          >
             <View style={styles.clusterPreviewHeader}>
-              <Text style={styles.clusterPreviewTitle}>{selectedClusterPreview.length} nearby places</Text>
+              <Text style={[styles.clusterPreviewTitle, { color: theme.text }]}>{selectedClusterPreview.length} nearby places</Text>
               <TouchableOpacity onPress={() => setSelectedClusterPreview([])}>
-                <Ionicons name="close" size={18} color="#666" />
+                <Ionicons name="close" size={18} color={theme.iconMuted} />
               </TouchableOpacity>
             </View>
             {selectedClusterPreview.map((vendor) => (
               <TouchableOpacity key={vendor.id} style={styles.clusterPreviewRow} onPress={() => selectMapVendor(vendor)}>
                 <View style={[styles.clusterPreviewDot, { backgroundColor: markerColorForVendor(vendor) }]} />
-                <Text style={styles.clusterPreviewName} numberOfLines={1}>
+                <Text style={[styles.clusterPreviewName, { color: theme.text }]} numberOfLines={1}>
                   {isArabic ? (vendor.nameAr || vendor.name) : vendor.name}
                 </Text>
-                {vendor.distanceKm != null && <Text style={styles.clusterPreviewDistance}>{vendor.distanceKm.toFixed(1)} km</Text>}
+                {vendor.distanceKm != null && <Text style={[styles.clusterPreviewDistance, { color: theme.brandText }]}>{vendor.distanceKm.toFixed(1)} km</Text>}
               </TouchableOpacity>
             ))}
           </View>
         )}
 
         {loading && (
-          <View style={styles.overlayCard}>
-            <ActivityIndicator size="small" color={Colors.brandGreen} />
-            <Text style={styles.overlayText}>{t('map_loading')}</Text>
+          <View style={[styles.overlayCard, { backgroundColor: theme.surfaceElevated }]}>
+            <ActivityIndicator size="small" color={theme.brand} />
+            <Text style={[styles.overlayText, { color: theme.text }]}>{t('map_loading')}</Text>
           </View>
         )}
 
         {searchQuery.length > 0 && !isSearching && searchedVendorIds?.size === 0 && (
-          <View style={styles.overlayCard}>
-            <Ionicons name="search-outline" size={18} color={Colors.light.tabIconDefault} />
-            <Text style={styles.overlayText}>{t('no_search_results')}</Text>
+          <View style={[styles.overlayCard, { backgroundColor: theme.surfaceElevated }]}>
+            <Ionicons name="search-outline" size={18} color={theme.iconMuted} />
+            <Text style={[styles.overlayText, { color: theme.text }]}>{t('no_search_results')}</Text>
           </View>
         )}
 
         {!loading && error && (
-          <View style={styles.overlayError}>
-            <Text style={styles.overlayErrorText}>{error}</Text>
+          <View style={[styles.overlayError, { backgroundColor: theme.surfaceElevated }]}>
+            <Text style={[styles.overlayErrorText, { color: theme.text }]}>{error}</Text>
           </View>
         )}
       </View>
@@ -1054,13 +1080,11 @@ function parseMapLocations(locationsData: Record<string, any> | undefined): Vend
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.light.background,
   },
   titleBar: {
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 4,
-    backgroundColor: Colors.light.background,
     flexDirection: 'column',
   },
   floatingSearch: {
@@ -1072,21 +1096,17 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    color: Colors.light.text,
   },
   headerMeta: {
     marginTop: 4,
-    color: Colors.light.subtitle,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
     marginTop: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1101,11 +1121,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontFamily: Typography.poppins.medium,
-    color: Colors.light.text,
     padding: 0,
-  },
-  searchInputActive: {
-    color: Colors.brandGreen,
   },
   mapContainer: {
     flex: 1,
@@ -1117,7 +1133,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -1145,7 +1160,6 @@ const styles = StyleSheet.create({
     fontFamily: Typography.poppins.semiBold,
   },
   vendorDot: {
-    backgroundColor: '#FFFFFF',
     width: 24,
     height: 24,
     borderRadius: 12,
@@ -1165,7 +1179,6 @@ const styles = StyleSheet.create({
     left: 14,
     right: 14,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1174,7 +1187,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   overlayText: {
-    color: Colors.light.text,
     fontFamily: Typography.poppins.medium,
     fontSize: 13,
   },
@@ -1189,7 +1201,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   overlayErrorText: {
-    color: Colors.light.text,
     textAlign: 'center',
     fontFamily: Typography.poppins.medium,
     fontSize: 13,
@@ -1201,7 +1212,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -1217,7 +1227,6 @@ const styles = StyleSheet.create({
     right: 0,
   },
   calloutCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     paddingHorizontal: 20,
     paddingVertical: 16,
@@ -1235,7 +1244,6 @@ const styles = StyleSheet.create({
   },
   calloutVendorName: {
     fontSize: 20,
-    color: Colors.light.text,
   },
   calloutTitleBlock: {
     flex: 1,
@@ -1251,7 +1259,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#F5F5F5',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -1260,7 +1267,6 @@ const styles = StyleSheet.create({
   },
   calloutOfferText: {
     fontSize: 14,
-    color: Colors.brandGreen,
   },
   calloutDistanceRow: {
     flexDirection: 'row',
@@ -1271,7 +1277,6 @@ const styles = StyleSheet.create({
   calloutDistanceText: {
     fontSize: 13,
     fontFamily: Typography.poppins.medium,
-    color: '#8E8E93',
   },
   calloutActions: {
     flexDirection: 'row',
@@ -1283,7 +1288,6 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F5F5F5',
   },
   calloutViewBtn: {
     flex: 1,
@@ -1291,7 +1295,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#F5F5F5',
     paddingVertical: 12,
     borderRadius: 24,
   },
@@ -1301,7 +1304,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: Colors.brandGreen,
     paddingVertical: 12,
     borderRadius: 24,
   },
@@ -1313,7 +1315,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 14,
     right: 14,
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 14,
     gap: 8,
@@ -1330,7 +1331,6 @@ const styles = StyleSheet.create({
   },
   clusterPreviewTitle: {
     fontSize: 14,
-    color: Colors.light.text,
     fontFamily: Typography.poppins.semiBold,
   },
   clusterPreviewRow: {
@@ -1347,12 +1347,10 @@ const styles = StyleSheet.create({
   clusterPreviewName: {
     flex: 1,
     fontSize: 13,
-    color: Colors.light.text,
     fontFamily: Typography.poppins.medium,
   },
   clusterPreviewDistance: {
     fontSize: 12,
-    color: Colors.brandGreen,
     fontFamily: Typography.poppins.semiBold,
   },
 });

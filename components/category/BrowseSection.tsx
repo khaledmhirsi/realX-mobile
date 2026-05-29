@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, View, I18nManager } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 import RestaurantCard from './RestaurantCard';
 
@@ -30,6 +30,7 @@ export default function BrowseSection({
     onRestaurantPress,
 }: Props) {
     const { t, i18n } = useTranslation();
+    const { theme } = useAppTheme();
     const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
 
     const displayTitle = title || (mainCategory 
@@ -42,6 +43,7 @@ export default function BrowseSection({
                 <Text style={[
                     styles.headerTitle,
                     { 
+                      color: theme.text,
                       textAlign: isArabic ? 'right' : 'left',
                       writingDirection: isArabic ? 'rtl' : 'ltr'
                     }
@@ -85,7 +87,6 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 20,
         fontFamily: Typography.poppins.semiBold,
-        color: Colors.light.text,
     },
     scrollContent: {
         paddingHorizontal: 20,

@@ -10,11 +10,11 @@ import {
     StyleSheet,
     View,
 } from 'react-native';
-import { Colors } from '../../constants/Colors';
 import PhonkText from '../PhonkText';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../../utils/logger';
+import { useAppTheme } from '../../context/AppThemeContext';
 
 type BrandItem = {
     id: string;
@@ -35,6 +35,7 @@ function BrandRow({
     items: BrandItem[];
     onPressBrand: (brand: BrandItem) => void;
 }) {
+    const { theme } = useAppTheme();
     const renderBrand = (brand: BrandItem) => (
         <Pressable
             key={brand.id}
@@ -46,7 +47,10 @@ function BrandRow({
         >
             <Image
                 source={{ uri: brand.logoUrl }}
-                style={styles.imageContainer}
+                style={[
+                    styles.imageContainer,
+                    { backgroundColor: theme.logoTile, borderColor: theme.logoTileBorder },
+                ]}
                 contentFit="contain"
                 cachePolicy="memory-disk"
             />
@@ -78,6 +82,7 @@ function BrandRow({
 
 export default function BrandGrid() {
     const { t } = useTranslation();
+    const { theme } = useAppTheme();
     const isRTL = I18nManager.isRTL;
     const [brands, setBrands] = useState<BrandItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -150,7 +155,7 @@ export default function BrandGrid() {
     if (loading) {
         return (
             <View style={[ styles.loaderContainer]}>
-                <ActivityIndicator size="small" color={Colors.brandGreen} />
+                <ActivityIndicator size="small" color={theme.brand} />
             </View>
         );
     }
@@ -163,10 +168,10 @@ export default function BrandGrid() {
         <View>
             <View style={styles.headerContainer}>
                 <View style={styles.headerTitle}>
-                    <PhonkText style={[styles.shopByText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                    <PhonkText style={[styles.shopByText, { color: theme.text, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                         {brandLabelPrefix}
                     </PhonkText>
-                    <PhonkText style={[styles.brandText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                    <PhonkText style={[styles.brandText, { color: theme.brand, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                         {brandLabelHighlight}
                     </PhonkText>
                 </View>
@@ -192,12 +197,10 @@ const styles = StyleSheet.create({
     },
     shopByText: {
         fontSize: 20,
-        color: Colors.light.text,
         letterSpacing: 1,
     },
     brandText: {
         fontSize: 20,
-        color: Colors.brandGreen,
         fontStyle: 'italic',
         letterSpacing: 1,
     },
@@ -233,6 +236,7 @@ const styles = StyleSheet.create({
         width: 64,
         height: 64,
         borderRadius: 14,
+        borderWidth: StyleSheet.hairlineWidth,
         backgroundColor: 'transparent',
     },
 });

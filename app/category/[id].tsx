@@ -15,7 +15,7 @@ import {
 } from '../../components/category';
 import { useTranslation } from 'react-i18next';
 import { SearchBar } from '../../components/home';
-import { Colors } from '../../constants/Colors';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 
 const BACKGROUND_ICONS = [
@@ -123,65 +123,69 @@ const HeaderContent = memo(({
     t,
     showComingSoon,
     loadingVendors,
-}: HeaderContentProps) => (
-    <>
-        <CategoryHeader
-            title={headerTitle}
-            icon={headerIcon}
-            onBackPress={handleBackPress}
-        />
+}: HeaderContentProps) => {
+    const { theme } = useAppTheme();
 
-        {isCategoryActive && !showComingSoon && (
-            <SearchBar
-                placeholder={t('search_placeholder_category', { category: headerTitle.toLowerCase() })}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                onSubmit={handleSearch}
-                onClear={onClearSearch}
+    return (
+        <>
+            <CategoryHeader
+                title={headerTitle}
+                icon={headerIcon}
+                onBackPress={handleBackPress}
             />
-        )}
 
-        {loading ? (
-            <View style={styles.comingSoonContainer}>
-                <ActivityIndicator size="large" color={Colors.brandGreen} />
-            </View>
-        ) : !showComingSoon ? (
-            <>
-                <FilterTabs
-                    selectedFilter={selectedFilter}
-                    onFilterChange={handleFilterChange}
+            {isCategoryActive && !showComingSoon && (
+                <SearchBar
+                    placeholder={t('search_placeholder_category', { category: headerTitle.toLowerCase() })}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    onSubmit={handleSearch}
+                    onClear={onClearSearch}
                 />
+            )}
 
-                {hasSubCategories && (
-                    <SubCategoryChips
-                        subCategories={subCategories}
-                        selectedId={selectedSubCategory}
-                        onSelect={handleSubCategorySelect}
+            {loading ? (
+                <View style={styles.comingSoonContainer}>
+                    <ActivityIndicator size="large" color={theme.brand} />
+                </View>
+            ) : !showComingSoon ? (
+                <>
+                    <FilterTabs
+                        selectedFilter={selectedFilter}
+                        onFilterChange={handleFilterChange}
                     />
-                )}
-                <BrowseSection
-                    mainCategory={headerTitle}
-                    restaurants={config.restaurants}
-                    onRestaurantPress={handleRestaurantPress}
-                />
-            </>
-        ) : (
-            <View style={styles.comingSoonContainer}>
-                <Image 
-                    source={require('../../assets/images/comingsoon.png')} 
-                    style={styles.comingSoonImage} 
-                    resizeMode="contain"
-                />
-                 <Text style={styles.comingSoonTitle}>
-                    {t('coming_soon_title')} <Text style={styles.comingSoonTitleGreen}>{t('coming_soon_accent')}</Text> 🚀
-                </Text>
-                <Text style={styles.comingSoonSubtitle}>
-                    {t('coming_soon_subtitle')}
-                </Text>
-            </View>
-        )}
-    </>
-));
+
+                    {hasSubCategories && (
+                        <SubCategoryChips
+                            subCategories={subCategories}
+                            selectedId={selectedSubCategory}
+                            onSelect={handleSubCategorySelect}
+                        />
+                    )}
+                    <BrowseSection
+                        mainCategory={headerTitle}
+                        restaurants={config.restaurants}
+                        onRestaurantPress={handleRestaurantPress}
+                    />
+                </>
+            ) : (
+                <View style={styles.comingSoonContainer}>
+                    <Image
+                        source={require('../../assets/images/comingsoon.png')}
+                        style={styles.comingSoonImage}
+                        resizeMode="contain"
+                    />
+                    <Text style={[styles.comingSoonTitle, { color: theme.text }]}>
+                        {t('coming_soon_title')} <Text style={[styles.comingSoonTitleGreen, { color: theme.brand }]}>{t('coming_soon_accent')}</Text> 🚀
+                    </Text>
+                    <Text style={[styles.comingSoonSubtitle, { color: theme.mutedText }]}>
+                        {t('coming_soon_subtitle')}
+                    </Text>
+                </View>
+            )}
+        </>
+    );
+});
 
 HeaderContent.displayName = 'HeaderContent';
 
@@ -189,6 +193,7 @@ export default function CategoryScreen() {
     const { id, name, englishName } = useLocalSearchParams<{ id: string; name?: string; englishName?: string }>();
     const router = useRouter();
     const { t, i18n } = useTranslation();
+    const { isDark, theme } = useAppTheme();
     const isArabic = i18n.language === 'ar';
 
     const [categoryData, setCategoryData] = useState<any>(null);
@@ -413,13 +418,13 @@ export default function CategoryScreen() {
 
     const renderFooter = () => (
         <View style={{ height: 40, alignItems: 'center', justifyContent: 'center' }}>
-            {loadingVendors && <ActivityIndicator size="small" color={Colors.brandGreen} />}
+            {loadingVendors && <ActivityIndicator size="small" color={theme.brand} />}
         </View>
     );
 
     return (
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-            <StatusBar barStyle="dark-content" backgroundColor={Colors.light.background} />
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
+            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={theme.background} />
             {showComingSoon && !loading && (
                 <View style={styles.backgroundIconsOverlay} pointerEvents="none">
                     {BACKGROUND_ICONS.map((icon, i) => (
@@ -427,7 +432,7 @@ export default function CategoryScreen() {
                             key={i}
                             name={icon.name}
                             size={icon.size}
-                            color={icon.color}
+                            color={icon.color === '#53C268' ? theme.brand : theme.iconMuted}
                             style={{
                                 position: 'absolute',
                                 top: icon.top as any,
@@ -499,7 +504,7 @@ export default function CategoryScreen() {
                 />
             ) : (
                 <ScrollView
-                    style={styles.container}
+                    style={[styles.container, { backgroundColor: theme.background }]}
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.contentContainer}
                 >
@@ -534,11 +539,9 @@ export default function CategoryScreen() {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: Colors.light.background,
     },
     container: {
         flex: 1,
-        backgroundColor: Colors.light.background,
     },
     contentContainer: {
         paddingBottom: 20,
@@ -567,19 +570,16 @@ const styles = StyleSheet.create({
     comingSoonTitle: {
         fontSize: 28,
         fontFamily: Typography.poppins.semiBold,
-        color: '#000000',
         textAlign: 'center',
         marginBottom: 12,
         zIndex: 10,
     },
     comingSoonTitleGreen: {
-        color: '#53C268',
         fontStyle: 'italic',
     },
     comingSoonSubtitle: {
         fontSize: 16,
         fontFamily: Typography.poppins.medium,
-        color: '#8E8E93',
         textAlign: 'center',
         lineHeight: 24,
         zIndex: 10,

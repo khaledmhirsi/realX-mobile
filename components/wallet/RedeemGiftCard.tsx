@@ -8,7 +8,7 @@ import {
     Text,
     View,
 } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 import ScalePressable from '../ScalePressable';
 import PhonkText from '../PhonkText';
@@ -35,6 +35,7 @@ export default function RedeemGiftCard({
     onSuccess,
 }: RedeemGiftCardProps) {
     const amounts = brand.loyalty && brand.loyalty.length > 0 ? brand.loyalty : [25, 50, 75];
+    const { theme } = useAppTheme();
     const [selectedAmount, setSelectedAmount] = useState(amounts[0]);
     const [showCheckout, setShowCheckout] = useState(false);
     const [showTerms, setShowTerms] = useState(false);
@@ -54,22 +55,22 @@ export default function RedeemGiftCard({
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header */}
             <View style={[styles.header, isRTL && styles.headerRTL]}>
                 <ScalePressable
-                    style={styles.backButton}
+                    style={[styles.backButton, { backgroundColor: theme.cardMuted }]}
                     onPress={() => {
                         triggerSubtleHaptic();
                         onBack();
                     }}
                     pressedScale={0.9}
                 >
-                    <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color="#000000" />
+                    <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={theme.icon} />
                 </ScalePressable>
                 <View style={styles.logoContainer}>
-                    <PhonkText style={styles.logoX}>X</PhonkText>
-                    <PhonkText style={styles.logoCard}>CARD</PhonkText>
+                    <PhonkText style={[styles.logoX, { color: theme.brand }]}>X</PhonkText>
+                    <PhonkText style={[styles.logoCard, { color: theme.text }]}>CARD</PhonkText>
                 </View>
                 <View style={styles.headerSpacer} />
             </View>
@@ -79,37 +80,38 @@ export default function RedeemGiftCard({
                 showsVerticalScrollIndicator={false}
             >
                 {/* Main Card */}
-                <View style={styles.mainCard}>
+                <View style={[styles.mainCard, { backgroundColor: theme.cardMuted }]}>
                     <Text
                         style={[
                             styles.inStoreBadge,
+                            { color: theme.subtleText },
                             isRTL ? styles.inStoreBadgeRTL : undefined,
                         ]}
                     >
                         {t('in_store_badge')}
                     </Text>
 
-                    <View style={styles.logoWrapper}>
-                        <View style={[styles.brandLogoContainer, { backgroundColor: brand.backgroundColor || '#F0F0F0' }]}>
+                    <View style={[styles.logoWrapper, { backgroundColor: theme.logoTile, shadowColor: theme.shadow }]}>
+                        <View style={[styles.brandLogoContainer, { backgroundColor: brand.backgroundColor || theme.logoTile }]}>
                             {brand.logo ? (
                                 <Image source={{ uri: brand.logo }} style={styles.brandLogo} />
                             ) : (
-                                <Text style={styles.brandLogoPlaceholder}>
+                                <Text style={[styles.brandLogoPlaceholder, { color: theme.logoTileText }]}>
                                     {brand.name.charAt(0)}
                                 </Text>
                             )}
                         </View>
                     </View>
 
-                    <Text style={styles.brandName}>{brand.name}</Text>
+                    <Text style={[styles.brandName, { color: theme.text }]}>{brand.name}</Text>
 
                     <View style={styles.generateGiftCardWrapper}>
-                        <PhonkText style={styles.generateText}>{t('generate_text')}</PhonkText>
-                        <PhonkText style={styles.giftCardText}>{t('gift_card_text')}</PhonkText>
+                        <PhonkText style={[styles.generateText, { color: theme.text }]}>{t('generate_text')}</PhonkText>
+                        <PhonkText style={[styles.giftCardText, { color: theme.brand }]}>{t('gift_card_text')}</PhonkText>
                     </View>
 
-                    <View style={styles.selectedAmountContainer}>
-                        <PhonkText style={styles.selectedAmountText}>
+                    <View style={[styles.selectedAmountContainer, { backgroundColor: theme.card }]}>
+                        <PhonkText style={[styles.selectedAmountText, { color: theme.text }]}>
                             {currency} {selectedAmount.toFixed(2)}
                         </PhonkText>
                     </View>
@@ -123,8 +125,8 @@ export default function RedeemGiftCard({
                     }}
                     pressedScale={0.985}
                 >
-                    <Ionicons name="information-circle-outline" size={18} color="#999999" />
-                    <Text style={[styles.tcButtonText, isRTL && styles.tcButtonTextRTL]}>{t('view_tc')}</Text>
+                    <Ionicons name="information-circle-outline" size={18} color={theme.iconMuted} />
+                    <Text style={[styles.tcButtonText, { color: theme.subtleText }, isRTL && styles.tcButtonTextRTL]}>{t('view_tc')}</Text>
                 </ScalePressable>
 
                 {/* Amount Selection */}
@@ -137,6 +139,11 @@ export default function RedeemGiftCard({
                                 key={amount}
                                 style={[
                                     styles.amountOption,
+                                    {
+                                        backgroundColor: selectedAmount === amount ? theme.card : theme.cardMuted,
+                                        borderColor: selectedAmount === amount ? theme.border : 'transparent',
+                                        shadowColor: theme.shadow,
+                                    },
                                     selectedAmount === amount && styles.amountOptionSelected,
                                 ]}
                                 onPress={() => {
@@ -147,7 +154,7 @@ export default function RedeemGiftCard({
                             >
                                 <PhonkText style={[
                                     styles.amountOptionText,
-                                    selectedAmount === amount && styles.amountOptionTextSelected,
+                                    { color: selectedAmount === amount ? theme.text : theme.mutedText },
                                 ]}>
                                     {amount.toFixed(2)}
                                 </PhonkText>
@@ -158,9 +165,9 @@ export default function RedeemGiftCard({
 
                 {/* Insufficient Balance Warning */}
                 {selectedAmount > maxLimit && (
-                    <View style={styles.insufficientContainer}>
-                        <Ionicons name="alert-circle" size={18} color="#E53935" />
-                        <Text style={[styles.insufficientText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                    <View style={[styles.insufficientContainer, { backgroundColor: theme.cardMuted }]}>
+                        <Ionicons name="alert-circle" size={18} color={theme.danger} />
+                        <Text style={[styles.insufficientText, { color: theme.danger, textAlign: isRTL ? 'right' : 'left' }]}>
                             {t('insufficient_balance_warning', {
                                 currency,
                                 selectedAmount: selectedAmount.toFixed(2),
@@ -172,7 +179,11 @@ export default function RedeemGiftCard({
 
                 {/* Redeem Button */}
                 <ScalePressable
-                    style={[styles.redeemButton, selectedAmount > maxLimit && styles.redeemButtonDisabled]}
+                    style={[
+                        styles.redeemButton,
+                        { backgroundColor: theme.actionSolid },
+                        selectedAmount > maxLimit && styles.redeemButtonDisabled,
+                    ]}
                     onPress={() => {
                         triggerSubtleHaptic();
                         setShowCheckout(true);
@@ -180,8 +191,8 @@ export default function RedeemGiftCard({
                     disabled={selectedAmount > maxLimit}
                     pressedScale={0.975}
                 >
-                    <Ionicons name="flash" size={20} color="#FFFFFF" style={styles.redeemIcon} />
-                    <PhonkText style={styles.redeemButtonText}>{t('redeem_button_text')}</PhonkText>
+                    <Ionicons name="flash" size={20} color={theme.onActionSolid} style={styles.redeemIcon} />
+                    <PhonkText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>{t('redeem_button_text')}</PhonkText>
                 </ScalePressable>
             </ScrollView>
 
@@ -196,7 +207,6 @@ export default function RedeemGiftCard({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
     },
     header: {
         flexDirection: 'row',
@@ -212,7 +222,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#F5F5F5',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -222,11 +231,9 @@ const styles = StyleSheet.create({
     },
     logoX: {
         fontSize: 24,
-        color: Colors.brandGreen,
     },
     logoCard: {
         fontSize: 24,
-        color: '#000000',
     },
     headerSpacer: {
         width: 40,
@@ -236,7 +243,6 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
     },
     mainCard: {
-        backgroundColor: '#F8F9FA',
         borderRadius: 40,
         padding: 30,
         alignItems: 'center',
@@ -248,7 +254,6 @@ const styles = StyleSheet.create({
         top: 30,
         left: 30,
         fontSize: 14,
-        color: '#999999',
         fontFamily: Typography.poppins.medium,
     },
     inStoreBadgeRTL: {
@@ -259,7 +264,6 @@ const styles = StyleSheet.create({
     logoWrapper: {
         marginTop: -70, // Offset to make logo pop out
         padding: 10,
-        backgroundColor: '#FFFFFF',
         borderRadius: 30,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -282,12 +286,10 @@ const styles = StyleSheet.create({
     brandLogoPlaceholder: {
         fontSize: 40,
         fontFamily: Typography.poppins.semiBold,
-        color: '#FFFFFF',
     },
     brandName: {
         fontSize: 18,
         fontFamily: Typography.poppins.medium,
-        color: '#000000',
         marginTop: 16,
     },
     generateGiftCardWrapper: {
@@ -296,16 +298,13 @@ const styles = StyleSheet.create({
     },
     generateText: {
         fontSize: 28,
-        color: '#000000',
         lineHeight: 32,
     },
     giftCardText: {
         fontSize: 28,
-        color: Colors.brandGreen,
         lineHeight: 32,
     },
     selectedAmountContainer: {
-        backgroundColor: '#FFFFFF',
         paddingHorizontal: 40,
         paddingVertical: 16,
         borderRadius: 30,
@@ -315,7 +314,6 @@ const styles = StyleSheet.create({
     },
     selectedAmountText: {
         fontSize: 24,
-        color: '#000000',
     },
     selectionSection: {
         marginTop: 30,
@@ -331,17 +329,12 @@ const styles = StyleSheet.create({
     amountOption: {
         flex: 1,
         height: 56,
-        backgroundColor: '#F8F9FA',
         borderRadius: 30,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'transparent',
     },
     amountOptionSelected: {
-        backgroundColor: '#FFFFFF',
-        borderColor: '#F0F0F0',
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 4,
@@ -349,13 +342,8 @@ const styles = StyleSheet.create({
     },
     amountOptionText: {
         fontSize: 14,
-        color: '#666666',
-    },
-    amountOptionTextSelected: {
-        color: '#000000',
     },
     redeemButton: {
-        backgroundColor: Colors.brandGreen,
         height: 60,
         borderRadius: 30,
         flexDirection: 'row',
@@ -369,7 +357,6 @@ const styles = StyleSheet.create({
     insufficientContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFEBEE',
         borderRadius: 12,
         padding: 12,
         marginTop: 16,
@@ -379,14 +366,12 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 13,
         fontFamily: Typography.poppins.medium,
-        color: '#E53935',
     },
     redeemIcon: {
         marginRight: 10,
     },
     redeemButtonText: {
         fontSize: 18,
-        color: '#FFFFFF',
     },
     tcButton: {
         flexDirection: 'row',
@@ -401,7 +386,6 @@ const styles = StyleSheet.create({
     tcButtonText: {
         fontSize: 13,
         fontFamily: Typography.poppins.medium,
-        color: '#999999',
         marginLeft: 6,
     },
     tcButtonTextRTL: {

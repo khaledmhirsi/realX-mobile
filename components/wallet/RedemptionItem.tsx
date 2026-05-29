@@ -4,6 +4,7 @@ import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useTranslation } from 'react-i18next';
 import { toArabicDigits } from '../../utils/numbers';
+import { useAppTheme } from '../../context/AppThemeContext';
 
 export type RedemptionData = {
     id: string;
@@ -26,11 +27,12 @@ type Props = {
 export default function RedemptionItem({ item }: Props) {
     const isRTL = I18nManager.isRTL;
     const { t, i18n } = useTranslation();
+    const { theme } = useAppTheme();
     const isArabic = i18n.language === 'ar';
     const fmt = (n: number) => isArabic ? toArabicDigits(n.toFixed(2)) : n.toFixed(2);
 
     return (
-        <View style={[styles.container, isRTL && styles.containerRTL]}>
+        <View style={[styles.container, { backgroundColor: theme.background }, isRTL && styles.containerRTL]}>
             {/* Merchant Logo */}
             <View style={[
                 styles.logoContainer,
@@ -48,13 +50,13 @@ export default function RedemptionItem({ item }: Props) {
 
             {/* Merchant Info */}
             <View style={styles.infoContainer}>
-                <Text style={[styles.dateText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[styles.dateText, { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' }]}>
                     {item.date}
                 </Text>
-                <Text style={[styles.merchantName, { textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[styles.merchantName, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
                     {item.merchantName}
                 </Text>
-                <Text style={[styles.offerType, { textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[styles.offerType, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
                     {item.offerType}
                 </Text>
             </View>
@@ -64,7 +66,7 @@ export default function RedemptionItem({ item }: Props) {
                 <Text style={styles.savedLabel}>
                     {fmt(item.savedAmount)} {item.currency}
                 </Text>
-                <Text style={[styles.totalBillText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[styles.totalBillText, { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' }]}>
                     {t('instead_of', {
                         total: fmt(item.totalBill),
                         currency: item.currency,
@@ -81,7 +83,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 14,
         paddingHorizontal: 20,
-        backgroundColor: '#FFFFFF',
     },
     containerRTL: {
         flexDirection: 'row-reverse',
@@ -110,19 +111,16 @@ const styles = StyleSheet.create({
     dateText: {
         fontSize: 11,
         fontFamily: Typography.poppins.medium,
-        color: '#999999',
         marginBottom: 2,
     },
     merchantName: {
         fontSize: 16,
         fontFamily: Typography.poppins.semiBold,
-        color: Colors.light.text,
         marginBottom: 2,
     },
     offerType: {
         fontSize: 12,
         fontFamily: Typography.poppins.medium,
-        color: '#666666',
     },
     savedContainer: {
         alignItems: 'flex-end',
@@ -136,6 +134,5 @@ const styles = StyleSheet.create({
     totalBillText: {
         fontSize: 11,
         fontFamily: Typography.poppins.medium,
-        color: '#999999',
     },
 });

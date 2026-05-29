@@ -17,7 +17,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
@@ -53,6 +53,7 @@ export default function GiftCardCheckout({
     const [isRedeeming, setIsRedeeming] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const pinInputRef = useRef<TextInput>(null);
+    const { theme } = useAppTheme();
 
     const totalBillNum = parseFloat(totalBill) || 0;
     const remainingAmount = Math.max(0, totalBillNum - selectedAmount);
@@ -120,18 +121,18 @@ export default function GiftCardCheckout({
         const savedStr = Math.min(selectedAmount, totalBillNum).toFixed(2);
 
         return (
-            <View style={styles.successContainer}>
+            <View style={[styles.successContainer, { backgroundColor: theme.brand }]}>
                 <StatusBar barStyle="light-content" />
 
                 {/* Close Button */}
                 <TouchableOpacity
-                    style={styles.successCloseButton}
+                    style={[styles.successCloseButton, { backgroundColor: theme.logoTile }]}
                     onPress={() => {
                         triggerSubtleHaptic();
                         onSuccess?.();
                     }}
                 >
-                    <Ionicons name="close" size={22} color="#666" />
+                    <Ionicons name="close" size={22} color={theme.logoTileText} />
                 </TouchableOpacity>
 
                 {/* Watermark Background */}
@@ -149,14 +150,14 @@ export default function GiftCardCheckout({
                 <View style={styles.successPillWrapper}>
                     {/* Top Pill — Brand + Title */}
                     <View style={styles.successTopPillWrapper}>
-                        <View style={styles.successTopPill}>
+                        <View style={[styles.successTopPill, { backgroundColor: theme.logoTile }]}>
                             {/* Title */}
-                            <Text style={styles.successTitle}>{t('redemption_title_line')}</Text>
-                            <PhonkText style={styles.successTitleGreen}>{t('redemption_successful_exclaim')}</PhonkText>
+                            <Text style={[styles.successTitle, { color: theme.logoTileText }]}>{t('redemption_title_line')}</Text>
+                            <PhonkText style={[styles.successTitleGreen, { color: theme.brand }]}>{t('redemption_successful_exclaim')}</PhonkText>
 
                             {/* Gift Card Amount Badge */}
-                            <View style={styles.successBadge}>
-                                <Text style={styles.successBadgeText}>
+                            <View style={[styles.successBadge, { backgroundColor: theme.brand }]}>
+                                <Text style={[styles.successBadgeText, { color: theme.onActionSolid }]}>
                                     {currency} {selectedAmount.toFixed(2)} {t('gift_card_text')}
                                 </Text>
                             </View>
@@ -175,19 +176,19 @@ export default function GiftCardCheckout({
                     </View>
 
                     {/* Bottom Pill — Breakdown */}
-                    <View style={styles.successBottomPill}>
+                    <View style={[styles.successBottomPill, { backgroundColor: theme.logoTile }]}>
                         {/* You Saved */}
                         <View style={styles.successSavedRow}>
-                            <Ionicons name="pricetag" size={18} color={Colors.brandGreen} />
-                            <Text style={styles.successSavedLabel}>
+                            <Ionicons name="pricetag" size={18} color={theme.brand} />
+                            <Text style={[styles.successSavedLabel, { color: theme.brandText }]}>
                                 {t('you_saved_success_message', { currency, amount: savedStr }).replace('!', '')}
                             </Text>
                         </View>
 
                         {/* Amount to Pay */}
-                        <View style={styles.successPayRow}>
-                            <Ionicons name="card" size={18} color="#000" />
-                            <Text style={styles.successPayLabel}>
+                        <View style={[styles.successPayRow, { borderTopColor: theme.logoTileBorder }]}>
+                            <Ionicons name="card" size={18} color={theme.logoTileText} />
+                            <Text style={[styles.successPayLabel, { color: theme.logoTileText }]}>
                                 {t('amount_to_pay_label')}: {currency} {remainingAmount.toFixed(2)}
                             </Text>
                         </View>
@@ -199,24 +200,24 @@ export default function GiftCardCheckout({
 
     return (
         <KeyboardAvoidingView
-            style={styles.container}
+            style={[styles.container, { backgroundColor: theme.background }]}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
             {/* Header */}
             <View style={[styles.header, isRTL && styles.headerRTL]}>
                 <TouchableOpacity
-                    style={styles.backButton}
+                    style={[styles.backButton, { backgroundColor: theme.cardMuted }]}
                     onPress={() => {
                         triggerSubtleHaptic();
                         onBack();
                     }}
                     activeOpacity={0.7}
                 >
-                    <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color="#000000" />
+                    <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={theme.icon} />
                 </TouchableOpacity>
                 <View style={styles.logoContainer}>
-                    <PhonkText style={styles.logoX}>X</PhonkText>
-                    <PhonkText style={styles.logoCard}>CARD</PhonkText>
+                    <PhonkText style={[styles.logoX, { color: theme.brand }]}>X</PhonkText>
+                    <PhonkText style={[styles.logoCard, { color: theme.text }]}>CARD</PhonkText>
                 </View>
                 <View style={styles.headerSpacer} />
             </View>
@@ -228,22 +229,22 @@ export default function GiftCardCheckout({
             >
                 {/* Gift Card Display Card */}
                 <View style={styles.offerCardWrapper}>
-                    <View style={styles.offerCard}>
-                        <PhonkText style={styles.offerTitle}>
+                    <View style={[styles.offerCard, { backgroundColor: theme.cardMuted }]}>
+                        <PhonkText style={[styles.offerTitle, { color: theme.text }]}>
                             {selectedAmount.toFixed(2)}
-                            <Text style={styles.greenText}>{currency}</Text>
+                            <Text style={[styles.greenText, { color: theme.brand }]}>{currency}</Text>
                         </PhonkText>
-                        <PhonkText style={styles.offerSubtitleLabel}>{t('gift_card_text')}</PhonkText>
-                        <Text style={styles.offerSubtitle}>{t('in_store_badge')}</Text>
+                        <PhonkText style={[styles.offerSubtitleLabel, { color: theme.brand }]}>{t('gift_card_text')}</PhonkText>
+                        <Text style={[styles.offerSubtitle, { color: theme.mutedText }]}>{t('in_store_badge')}</Text>
                     </View>
 
                     {/* Logo Overlay */}
-                    <View style={styles.brandLogoOverlay}>
+                    <View style={[styles.brandLogoOverlay, { backgroundColor: theme.logoTile, borderColor: theme.logoTile, shadowColor: theme.shadow }]}>
                         <View style={[styles.brandLogoInner, { backgroundColor: brand.backgroundColor || '#1E2A38' }]}>
                             {brand.logo ? (
                                 <Image source={{ uri: brand.logo }} style={styles.brandLogoImage} contentFit="contain" />
                             ) : (
-                                <Text style={styles.brandLogoPlaceholder}>
+                                <Text style={[styles.brandLogoPlaceholder, { color: theme.logoTileText }]}>
                                     {brand.name.charAt(0)}
                                 </Text>
                             )}
@@ -252,9 +253,9 @@ export default function GiftCardCheckout({
                 </View>
 
                 {/* Redemption Card */}
-                <View style={styles.redemptionCard}>
+                <View style={[styles.redemptionCard, { backgroundColor: theme.cardMuted }]}>
                     {/* PIN Entry */}
-                    <Text style={[styles.inputLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+                    <Text style={[styles.inputLabel, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
                         {t('enter_vendor_pin')}
                     </Text>
                     <TouchableOpacity
@@ -266,8 +267,8 @@ export default function GiftCardCheckout({
                         }}
                     >
                         {[0, 1, 2, 3].map((index) => (
-                            <View key={index} style={styles.pinBox}>
-                                <Text style={[styles.pinText, pin.length > index && { color: '#000', marginTop: 0 }]}>
+                            <View key={index} style={[styles.pinBox, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
+                                <Text style={[styles.pinText, { color: theme.subtleText }, pin.length > index && { color: theme.text, marginTop: 0 }]}>
                                     {pin.length > index ? '●' : '*'}
                                 </Text>
                             </View>
@@ -285,42 +286,42 @@ export default function GiftCardCheckout({
                     />
 
                     {/* Total Bill */}
-                    <Text style={[styles.inputLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+                    <Text style={[styles.inputLabel, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
                         {t('total_bill')}
                     </Text>
-                    <View style={[styles.amountInputContainer, isRTL && styles.amountInputContainerRTL]}>
-                        <Text style={[styles.currencyPrefix, isRTL && styles.currencyPrefixRTL]}>
+                    <View style={[styles.amountInputContainer, { backgroundColor: theme.card, shadowColor: theme.shadow }, isRTL && styles.amountInputContainerRTL]}>
+                        <Text style={[styles.currencyPrefix, { color: theme.mutedText }, isRTL && styles.currencyPrefixRTL]}>
                             {currency}
                         </Text>
                         <TextInput
-                            style={[styles.amountInput, { textAlign: isRTL ? 'right' : 'left' }]}
+                            style={[styles.amountInput, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}
                             value={totalBill}
                             onChangeText={setTotalBill}
                             keyboardType="numeric"
                             placeholder="0"
-                            placeholderTextColor="#CCC"
+                            placeholderTextColor={theme.inputPlaceholder}
                         />
                     </View>
 
                     {/* Breakdown */}
                     {totalBillNum > 0 && (
-                        <View style={styles.breakdownContainer}>
+                        <View style={[styles.breakdownContainer, { backgroundColor: theme.card }]}>
                             <View style={styles.breakdownRow}>
-                            <Text style={styles.breakdownLabel}>{t('total_bill')}</Text>
-                                <Text style={styles.breakdownValue}>
+                            <Text style={[styles.breakdownLabel, { color: theme.mutedText }]}>{t('total_bill')}</Text>
+                                <Text style={[styles.breakdownValue, { color: theme.mutedText }]}>
                                     {currency} {totalBillNum.toFixed(2)}
                                 </Text>
                             </View>
                             <View style={styles.breakdownRow}>
-                            <Text style={styles.breakdownLabelGreen}>{t('gift_card_redeemed_label')}</Text>
-                                <Text style={styles.breakdownValueGreen}>
+                            <Text style={[styles.breakdownLabelGreen, { color: theme.brandText }]}>{t('gift_card_redeemed_label')}</Text>
+                                <Text style={[styles.breakdownValueGreen, { color: theme.brandText }]}>
                                     − {currency} {Math.min(selectedAmount, totalBillNum).toFixed(2)}
                                 </Text>
                             </View>
-                            <View style={styles.breakdownDivider} />
+                            <View style={[styles.breakdownDivider, { backgroundColor: theme.border }]} />
                             <View style={styles.breakdownRow}>
-                                <Text style={styles.breakdownLabelBold}>{t('amount_to_pay_label')}</Text>
-                                <PhonkText style={styles.breakdownValueBold}>
+                                <Text style={[styles.breakdownLabelBold, { color: theme.text }]}>{t('amount_to_pay_label')}</Text>
+                                <PhonkText style={[styles.breakdownValueBold, { color: theme.text }]}>
                                     {currency} {remainingAmount.toFixed(2)}
                                 </PhonkText>
                             </View>
@@ -333,17 +334,21 @@ export default function GiftCardCheckout({
 
                 {/* Redeem Button */}
                 <TouchableOpacity
-                    style={[styles.redeemButton, !canRedeem && styles.redeemButtonDisabled]}
+                    style={[
+                        styles.redeemButton,
+                        { backgroundColor: theme.actionSolid, shadowColor: theme.actionSolid },
+                        !canRedeem && styles.redeemButtonDisabled,
+                    ]}
                     activeOpacity={0.9}
                     onPress={handleRedeem}
                     disabled={!canRedeem || isRedeeming}
                 >
                     {isRedeeming ? (
-                        <ActivityIndicator size="small" color="#FFF" />
+                        <ActivityIndicator size="small" color={theme.onActionSolid} />
                     ) : (
                         <>
-                            <Ionicons name="flash" size={20} color="#FFF" />
-                            <PhonkText style={styles.redeemButtonText}>{t('redeem_button_text')}</PhonkText>
+                            <Ionicons name="flash" size={20} color={theme.onActionSolid} />
+                            <PhonkText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>{t('redeem_button_text')}</PhonkText>
                         </>
                     )}
                 </TouchableOpacity>
@@ -357,7 +362,6 @@ export default function GiftCardCheckout({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
     },
     header: {
         flexDirection: 'row',
@@ -373,7 +377,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#F5F5F5',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -383,11 +386,9 @@ const styles = StyleSheet.create({
     },
     logoX: {
         fontSize: 24,
-        color: Colors.brandGreen,
     },
     logoCard: {
         fontSize: 24,
-        color: '#000000',
     },
     headerSpacer: {
         width: 40,
@@ -402,7 +403,6 @@ const styles = StyleSheet.create({
         marginTop: 50,
     },
     offerCard: {
-        backgroundColor: '#F7F7F7',
         borderRadius: 35,
         paddingTop: 70,
         paddingBottom: 40,
@@ -416,16 +416,13 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     greenText: {
-        color: Colors.brandGreen,
     },
     offerSubtitleLabel: {
         fontSize: 28,
-        color: Colors.brandGreen,
         marginTop: 2,
     },
     offerSubtitle: {
         fontSize: 16,
-        color: '#888',
         fontFamily: Typography.poppins.medium,
         marginTop: 4,
     },
@@ -436,9 +433,7 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 25,
-        backgroundColor: '#FFFFFF',
         borderWidth: 4,
-        borderColor: '#FFFFFF',
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
@@ -462,17 +457,14 @@ const styles = StyleSheet.create({
     brandLogoPlaceholder: {
         fontSize: 40,
         fontFamily: Typography.poppins.semiBold,
-        color: '#FFFFFF',
     },
     redemptionCard: {
-        backgroundColor: '#F7F7F7',
         borderRadius: 35,
         padding: 24,
         marginTop: 20,
     },
     inputLabel: {
         fontSize: 16,
-        color: '#444',
         fontFamily: Typography.poppins.semiBold,
         marginBottom: 12,
     },
@@ -487,7 +479,6 @@ const styles = StyleSheet.create({
     pinBox: {
         width: 65,
         height: 65,
-        backgroundColor: '#FFF',
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
@@ -506,7 +497,6 @@ const styles = StyleSheet.create({
     amountInputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFF',
         borderRadius: 25,
         height: 55,
         paddingHorizontal: 20,
@@ -521,7 +511,6 @@ const styles = StyleSheet.create({
     },
     currencyPrefix: {
         fontSize: 16,
-        color: '#AAA',
         fontFamily: Typography.poppins.semiBold,
         marginRight: 10,
     },
@@ -532,12 +521,10 @@ const styles = StyleSheet.create({
     amountInput: {
         flex: 1,
         fontSize: 18,
-        color: '#000',
         fontFamily: Typography.poppins.semiBold,
     },
     breakdownContainer: {
         marginTop: 20,
-        backgroundColor: '#FFFFFF',
         borderRadius: 20,
         padding: 20,
     },
@@ -549,40 +536,32 @@ const styles = StyleSheet.create({
     },
     breakdownLabel: {
         fontSize: 14,
-        color: '#666',
         fontFamily: Typography.poppins.medium,
     },
     breakdownValue: {
         fontSize: 14,
-        color: '#666',
         fontFamily: Typography.poppins.semiBold,
     },
     breakdownLabelGreen: {
         fontSize: 14,
-        color: Colors.brandGreen,
         fontFamily: Typography.poppins.medium,
     },
     breakdownValueGreen: {
         fontSize: 14,
-        color: Colors.brandGreen,
         fontFamily: Typography.poppins.semiBold,
     },
     breakdownDivider: {
         height: 1,
-        backgroundColor: '#F0F0F0',
         marginVertical: 4,
     },
     breakdownLabelBold: {
         fontSize: 16,
-        color: '#000',
         fontFamily: Typography.poppins.semiBold,
     },
     breakdownValueBold: {
         fontSize: 18,
-        color: '#000',
     },
     redeemButton: {
-        backgroundColor: Colors.brandGreen,
         borderRadius: 35,
         height: 65,
         flexDirection: 'row',
@@ -590,7 +569,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 12,
         marginBottom: 10,
-        shadowColor: Colors.brandGreen,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
@@ -600,14 +578,12 @@ const styles = StyleSheet.create({
         opacity: 0.5,
     },
     redeemButtonText: {
-        color: '#FFF',
         fontSize: 22,
         letterSpacing: 1,
     },
     // Success Screen Styles
     successContainer: {
         flex: 1,
-        backgroundColor: Colors.brandGreen,
     },
     successCloseButton: {
         position: 'absolute',
@@ -616,7 +592,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#FFFFFF',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 10,
@@ -654,7 +629,6 @@ const styles = StyleSheet.create({
         marginTop: 40,
     },
     successTopPill: {
-        backgroundColor: '#FFFFFF',
         borderRadius: 30,
         paddingTop: 50,
         paddingBottom: 24,
@@ -662,7 +636,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     successBottomPill: {
-        backgroundColor: '#FFFFFF',
         borderRadius: 30,
         paddingVertical: 24,
         paddingHorizontal: 24,
@@ -698,24 +671,20 @@ const styles = StyleSheet.create({
     },
     successTitle: {
         fontSize: 26,
-        color: '#000',
         fontFamily: Typography.poppins.semiBold,
         textAlign: 'center',
     },
     successTitleGreen: {
         fontSize: 26,
-        color: Colors.brandGreen,
         textAlign: 'center',
         marginBottom: 16,
     },
     successBadge: {
-        backgroundColor: Colors.brandGreen,
         borderRadius: 30,
         paddingVertical: 10,
         paddingHorizontal: 24,
     },
     successBadgeText: {
-        color: '#FFF',
         fontSize: 16,
         fontFamily: Typography.poppins.semiBold,
     },
@@ -728,7 +697,6 @@ const styles = StyleSheet.create({
     },
     successSavedLabel: {
         fontSize: 15,
-        color: Colors.brandGreen,
         fontFamily: Typography.poppins.semiBold,
     },
     successPayRow: {
@@ -738,11 +706,9 @@ const styles = StyleSheet.create({
         gap: 10,
         paddingVertical: 10,
         borderTopWidth: 1,
-        borderTopColor: '#E8E8E8',
     },
     successPayLabel: {
         fontSize: 15,
-        color: '#000',
         fontFamily: Typography.poppins.semiBold,
     },
 });

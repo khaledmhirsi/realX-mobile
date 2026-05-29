@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from 'expo-router/js-tabs';
 import { withLayoutContext } from 'expo-router';
 import { I18nManager, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useAppTheme } from '../../context/AppThemeContext';
 
 const NativeTabsNavigator = createNativeBottomTabNavigator().Navigator;
 const JSTabsNavigator = createBottomTabNavigator().Navigator;
@@ -13,8 +14,22 @@ const JSTabs = withLayoutContext(JSTabsNavigator);
 
 export default function TabLayout() {
     const { t } = useTranslation();
+    const { theme } = useAppTheme();
     const Tabs = Platform.OS === 'ios' ? NativeTabs : JSTabs;
     const isRTL = I18nManager.isRTL;
+    const screenOptions = Platform.OS === 'ios'
+        ? {
+            tabBarActiveTintColor: theme.brand,
+            tabBarInactiveTintColor: theme.iconMuted,
+        }
+        : {
+            tabBarActiveTintColor: theme.brand,
+            tabBarInactiveTintColor: theme.iconMuted,
+            tabBarStyle: {
+                backgroundColor: theme.tabBar,
+                borderTopColor: theme.border,
+            },
+        };
 
     const screens = [
         <Tabs.Screen
@@ -68,12 +83,7 @@ export default function TabLayout() {
     ];
 
     return (
-        <Tabs
-            screenOptions={{
-                tabBarActiveTintColor: '#18B852',
-                tabBarInactiveTintColor: '#8E8E93',
-            }}
-        >
+        <Tabs screenOptions={screenOptions as any}>
             {isRTL ? [...screens].reverse() : screens}
         </Tabs>
     );

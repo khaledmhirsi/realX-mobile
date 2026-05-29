@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 
 const cashbackBadgeIcon = require('../../assets/images/cashback.png');
@@ -36,6 +37,7 @@ export default function RestaurantCard({
   xcardEnabled = false,
 }: Props) {
   const { i18n } = useTranslation();
+  const { theme } = useAppTheme();
   const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
 
   const handlePress = () => {
@@ -68,13 +70,13 @@ export default function RestaurantCard({
             </View>
           </>
         ) : (
-          <View style={styles.imagePlaceholder}>
+          <View style={[styles.imagePlaceholder, { backgroundColor: theme.cardMuted }]}>
             <Text style={styles.placeholderEmoji}>🏪</Text>
           </View>
         )}
         {/* Logo */}
         <View style={styles.logoContainer}>
-          <View style={styles.logoWrapper}>
+          <View style={[styles.logoWrapper, { backgroundColor: theme.logoTile, borderColor: theme.logoTileBorder }]}>
             {logoUri ? (
               <Image
                 source={{ uri: logoUri }}
@@ -82,7 +84,7 @@ export default function RestaurantCard({
                 contentFit="cover"
               />
             ) : (
-              <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.logoEmoji]}>🏪</Text>
+              <Text style={[{ color: theme.logoTileText, fontFamily: Typography.poppins.medium }, styles.logoEmoji]}>🏪</Text>
             )}
           </View>
         </View>
@@ -103,15 +105,15 @@ export default function RestaurantCard({
       {/* Content */}
       <View style={styles.content}>
         <Text style={[
-          { color: '#000', fontFamily: Typography.poppins.medium },
           styles.name,
+          { color: theme.text, fontFamily: Typography.poppins.medium },
           { textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }
         ]} numberOfLines={1}>{isArabic ? (nameAr || name) : name}</Text>
 
         {cashbackText || discountText ? (
           <Text style={[
-            { color: '#666666', fontFamily: Typography.poppins.medium },
             styles.descriptionText,
+            { color: theme.mutedText, fontFamily: Typography.poppins.medium },
             { textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }
           ]} numberOfLines={2}>{discountText || cashbackText}</Text>
         ) : null}
@@ -156,7 +158,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    borderWidth: StyleSheet.hairlineWidth,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',

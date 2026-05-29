@@ -8,7 +8,7 @@ import { ActivityIndicator, FlatList, I18nManager, StatusBar, StyleSheet, Text, 
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PhonkText from '../components/PhonkText';
-import { Colors } from '../constants/Colors';
+import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
 import { triggerSubtleHaptic } from '../utils/haptics';
 import { logger } from '../utils/logger';
@@ -34,6 +34,7 @@ type SavedOffer = {
 export default function SavedOffersScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
+  const { isDark, theme } = useAppTheme();
   const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
   const [savedOffers, setSavedOffers] = useState<SavedOffer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,46 +107,53 @@ export default function SavedOffersScreen() {
     const description = isArabic ? (item.descriptionAr || item.descriptionEn || '') : (item.descriptionEn || item.descriptionAr || '');
 
     return (
-      <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={() => openVendor(item)}>
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
+        activeOpacity={0.9}
+        onPress={() => openVendor(item)}
+      >
         <Image
           source={item.vendorCoverImage ? { uri: item.vendorCoverImage } : undefined}
-          style={styles.cover}
+          style={[styles.cover, { backgroundColor: theme.cardMuted }]}
           contentFit="cover"
         />
         <View style={styles.content}>
-          <View style={styles.logoWrap}>
+          <View style={[styles.logoWrap, { backgroundColor: theme.logoTile, borderColor: theme.logoTileBorder }]}>
             {item.vendorLogo ? (
               <Image source={{ uri: item.vendorLogo }} style={styles.logo} contentFit="cover" />
             ) : (
-              <Ionicons name="storefront-outline" size={22} color={Colors.brandGreen} />
+              <Ionicons name="storefront-outline" size={22} color={theme.brand} />
             )}
           </View>
           <View style={styles.textBlock}>
-            <Text style={[styles.vendorName, { textAlign: isArabic ? 'right' : 'left' }]} numberOfLines={1}>
+            <Text style={[styles.vendorName, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]} numberOfLines={1}>
               {vendorName || t('unknown_vendor')}
             </Text>
-            <PhonkText style={[styles.offerTitle, { textAlign: isArabic ? 'right' : 'left' }]} numberOfLines={2}>
+            <PhonkText style={[styles.offerTitle, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]} numberOfLines={2}>
               {title || t('saved_offer')}
             </PhonkText>
             {description ? (
-              <Text style={[styles.description, { textAlign: isArabic ? 'right' : 'left' }]} numberOfLines={2}>
+              <Text style={[styles.description, { color: theme.subtleText, textAlign: isArabic ? 'right' : 'left' }]} numberOfLines={2}>
                 {description}
               </Text>
             ) : null}
           </View>
         </View>
         <View style={styles.actions}>
-          <TouchableOpacity style={[styles.actionButton, styles.redeemButton]} onPress={() => redeemOffer(item)}>
-            <Ionicons name="flash" size={18} color="#FFF" />
-            <Text style={styles.redeemText}>{t('redeem_caps')}</Text>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.redeemButton, { backgroundColor: theme.actionSolid }]}
+            onPress={() => redeemOffer(item)}
+          >
+            <Ionicons name="flash" size={18} color={theme.onActionSolid} />
+            <Text style={[styles.redeemText, { color: theme.onActionSolid }]}>{t('redeem_caps')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.removeButton}
+            style={[styles.removeButton, { borderColor: theme.border }]}
             onPress={() => void removeSavedOffer(item)}
             disabled={removingIds.has(item.id)}
           >
-            <Ionicons name="bookmark" size={18} color={Colors.brandGreen} />
-            <Text style={styles.removeText}>{t('remove')}</Text>
+            <Ionicons name="bookmark" size={18} color={theme.brand} />
+            <Text style={[styles.removeText, { color: theme.text }]}>{t('remove')}</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -153,24 +161,28 @@ export default function SavedOffersScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.light.background} />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={theme.background} />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.8}>
-          <Ionicons name="arrow-back" size={22} color="#000" />
+        <TouchableOpacity
+          style={[styles.backButton, { backgroundColor: theme.card }]}
+          onPress={() => router.back()}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="arrow-back" size={22} color={theme.icon} />
         </TouchableOpacity>
-        <PhonkText style={styles.headerTitle}>{t('saved_offers')}</PhonkText>
+        <PhonkText style={[styles.headerTitle, { color: theme.text }]}>{t('saved_offers')}</PhonkText>
       </View>
 
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={Colors.brandGreen} />
+          <ActivityIndicator size="large" color={theme.brand} />
         </View>
       ) : savedOffers.length === 0 ? (
         <View style={styles.centered}>
-          <Ionicons name="bookmark-outline" size={58} color={Colors.brandGreen} />
-          <Text style={styles.emptyTitle}>{t('no_saved_offers')}</Text>
-          <Text style={styles.emptySubtitle}>{t('no_saved_offers_hint')}</Text>
+          <Ionicons name="bookmark-outline" size={58} color={theme.brand} />
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>{t('no_saved_offers')}</Text>
+          <Text style={[styles.emptySubtitle, { color: theme.mutedText }]}>{t('no_saved_offers_hint')}</Text>
         </View>
       ) : (
         <FlatList
@@ -188,7 +200,6 @@ export default function SavedOffersScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.light.background,
   },
   header: {
     flexDirection: 'row',
@@ -201,13 +212,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 24,
-    color: Colors.light.text,
   },
   listContent: {
     paddingHorizontal: 20,
@@ -215,10 +224,8 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   card: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#EEEEEE',
     overflow: 'hidden',
   },
   cover: {
@@ -235,7 +242,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -249,18 +256,15 @@ const styles = StyleSheet.create({
   },
   vendorName: {
     fontSize: 13,
-    color: '#666666',
     fontFamily: Typography.poppins.medium,
   },
   offerTitle: {
     fontSize: 20,
-    color: Colors.light.text,
     marginTop: 2,
   },
   description: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#7A7A7A',
     fontFamily: Typography.poppins.medium,
     marginTop: 4,
   },
@@ -280,10 +284,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   redeemButton: {
-    backgroundColor: Colors.brandGreen,
   },
   redeemText: {
-    color: '#FFFFFF',
     fontFamily: Typography.poppins.semiBold,
     fontSize: 13,
   },
@@ -292,14 +294,12 @@ const styles = StyleSheet.create({
     height: 46,
     borderRadius: 23,
     borderWidth: 1,
-    borderColor: '#E5E5E5',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
   },
   removeText: {
-    color: Colors.light.text,
     fontFamily: Typography.poppins.semiBold,
     fontSize: 13,
   },
@@ -312,7 +312,6 @@ const styles = StyleSheet.create({
   emptyTitle: {
     marginTop: 16,
     fontSize: 20,
-    color: Colors.light.text,
     fontFamily: Typography.poppins.semiBold,
     textAlign: 'center',
   },
@@ -320,7 +319,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 14,
     lineHeight: 20,
-    color: '#777777',
     fontFamily: Typography.poppins.medium,
     textAlign: 'center',
   },

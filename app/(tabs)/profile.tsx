@@ -9,17 +9,18 @@ import * as Updates from 'expo-updates';
 
 import { logger } from '../../utils/logger';
 import { toArabicDigits } from '../../utils/numbers';
-import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 import i18n, { setStoredLanguage } from '../../src/localization/i18n';
 import { applyRTL } from '../../src/localization/rtl';
 import { useStudent } from '../../context/StudentContext';
 import UserAvatar from '../../components/UserAvatar';
+import { useAppTheme } from '../../context/AppThemeContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { isDark, theme } = useAppTheme();
   const isRTL = I18nManager.isRTL;
   const { studentData: userData } = useStudent();
 
@@ -46,7 +47,7 @@ export default function ProfileScreen() {
       [
         { text: t('english'), onPress: () => void changeLanguage('en') },
         { text: t('arabic'), onPress: () => void changeLanguage('ar') },
-        { text: t('cancel'), style: 'cancel' }
+        { text: t('cancel'), style: 'cancel' },
       ]
     );
   };
@@ -80,7 +81,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: Colors.light.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -88,7 +89,7 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <PhonkText
             style={[
-              { color: Colors.light.text, textAlign: isRTL ? 'right' : 'left' },
+              { color: theme.text, textAlign: isRTL ? 'right' : 'left' },
               styles.headerText,
             ]}
           >
@@ -96,7 +97,7 @@ export default function ProfileScreen() {
           </PhonkText>
         </View>
 
-        <View style={styles.topPill}>
+        <View style={[styles.topPill, { backgroundColor: theme.cardMuted }]}>
           <View style={[styles.profileTopRow]}>
             <UserAvatar
               firstName={userData?.firstName}
@@ -107,25 +108,25 @@ export default function ProfileScreen() {
               seed={getAuth().currentUser?.uid}
               size={80}
             />
-            <View style={styles.badge}>
+            <View style={[styles.badge, { backgroundColor: theme.brand }]}>
               <PhonkText style={[{ color: '#FFFFFF', textAlign: isRTL ? 'right' : 'left' }, styles.badgeText]}>{t('rookie_badge')}</PhonkText>
             </View>
           </View>
         </View>
 
-        <View style={styles.bottomPill}>
+        <View style={[styles.bottomPill, { backgroundColor: theme.cardMuted }]}>
           <View style={[styles.profileBottomRow]}>
             <View style={styles.userInfo}>
-              <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium, textAlign: isRTL ? 'right' : 'left' }, styles.userName]}>
+              <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium, textAlign: isRTL ? 'right' : 'left' }, styles.userName]}>
                 {userData ? `${userData.firstName} ${userData.lastName}` : 'Darren Watkins'}
               </Text>
             </View>
             <TouchableOpacity
-              style={[styles.editButton]}
+              style={[styles.editButton, { backgroundColor: theme.surfaceElevated }]}
               onPress={() => router.push('/profile-details')}
             >
-              <Ionicons name="create-outline" size={16} color="#8E8E93" />
-              <PhonkText style={[{ color: Colors.light.text, textAlign: isRTL ? 'right' : 'left' }, styles.editButtonText]}>
+              <Ionicons name="create-outline" size={16} color={theme.iconMuted} />
+              <PhonkText style={[{ color: theme.text, textAlign: isRTL ? 'right' : 'left' }, styles.editButtonText]}>
                 {t('profile')}
               </PhonkText>
             </TouchableOpacity>
@@ -135,7 +136,7 @@ export default function ProfileScreen() {
         <View style={styles.sectionHeader}>
           <PhonkText
             style={[
-              { color: Colors.light.text, textAlign: isRTL ? 'right' : 'left' },
+              { color: theme.text, textAlign: isRTL ? 'right' : 'left' },
               styles.sectionTitle,
               { textTransform: isRTL ? 'none' : 'uppercase' },
             ]}
@@ -144,10 +145,10 @@ export default function ProfileScreen() {
           </PhonkText>
         </View>
 
-        <View style={styles.savingsCard}>
+        <View style={[styles.savingsCard, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }]}>
           <Text
             style={[
-              { color: Colors.light.text, fontFamily: Typography.poppins.medium },
+              { color: theme.text, fontFamily: Typography.poppins.medium },
               styles.savingsLabel,
               { textAlign: isRTL ? 'right' : 'left' },
             ]}
@@ -155,7 +156,7 @@ export default function ProfileScreen() {
             {t('all_time_saved')}
           </Text>
           <View style={[styles.savingsAmountContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}> 
-            <PhonkText style={[{ color: '#1AD04F', textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }, styles.savingsAmountGreen]}>
+            <PhonkText style={[{ color: theme.brandText, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }, styles.savingsAmountGreen]}>
               {t('amount_with_currency', { amount: isRTL ? toArabicDigits((userData?.savings ?? 0).toFixed(2)) : (userData?.savings ?? 0).toFixed(2), currency: t('currency_qar') })}
             </PhonkText>
           </View>
@@ -181,11 +182,11 @@ export default function ProfileScreen() {
               </PhonkText>
               
               <TouchableOpacity
-                style={styles.universityBannerButton}
+                style={[styles.universityBannerButton, { backgroundColor: theme.logoTile }]}
                 onPress={() => router.push('/x-academy')}
                 activeOpacity={0.8}
               >
-                <PhonkText style={styles.universityBannerButtonText}>{t('apply_now')}</PhonkText>
+                <PhonkText style={[styles.universityBannerButtonText, { color: theme.logoTileText }]}>{t('apply_now')}</PhonkText>
               </TouchableOpacity>
             </View>
           </ImageBackground>
@@ -214,13 +215,13 @@ export default function ProfileScreen() {
             isRTL={isRTL}
           />
           <TouchableOpacity
-            style={styles.logoutPill}
+            style={[styles.logoutPill, { backgroundColor: isDark ? 'rgba(255,107,95,0.12)' : '#FFF1F0', borderColor: theme.danger }]}
             onPress={handleLogout}
             activeOpacity={0.7}
           >
             <View style={[styles.logoutContent]}> 
-              <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
-              <PhonkText style={[styles.logoutText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('log_out').toUpperCase()}</PhonkText>
+              <Ionicons name="log-out-outline" size={20} color={theme.danger} />
+              <PhonkText style={[styles.logoutText, { color: theme.danger, textAlign: isRTL ? 'right' : 'left' }]}>{t('log_out').toUpperCase()}</PhonkText>
             </View>
           </TouchableOpacity>
         </View>
@@ -244,21 +245,22 @@ function MenuItem({
   bgColor?: string;
   isRTL: boolean;
 }) {
+  const { theme } = useAppTheme();
 
   return (
     <TouchableOpacity
       style={[
         styles.menuItem,
-        { backgroundColor: bgColor || '#F5F5F7' },
+        { backgroundColor: bgColor || theme.cardMuted },
       ]}
       activeOpacity={0.7}
       onPress={onPress}
     >
       <View style={[styles.menuItemLeft]}>
-        <Ionicons name={icon} size={24} color={color || "#000"} />
+        <Ionicons name={icon} size={24} color={color || theme.icon} />
         <Text
           style={[
-            { color: color || Colors.light.text, fontFamily: Typography.poppins.medium },
+            { color: color || theme.text, fontFamily: Typography.poppins.medium },
             styles.menuItemLabel,
             { textAlign: isRTL ? 'right' : 'left' },
           ]}
@@ -273,7 +275,6 @@ function MenuItem({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     paddingHorizontal: 24,
@@ -288,13 +289,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   topPill: {
-    backgroundColor: '#F5F5F7',
     borderRadius: 30,
     padding: 8,
-
   },
   bottomPill: {
-    backgroundColor: '#F5F5F7',
     borderRadius: 30,
     paddingVertical: 24,
     paddingHorizontal: 8,
@@ -306,7 +304,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   badge: {
-    backgroundColor: '#1AD04F',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 30,
@@ -329,11 +326,9 @@ const styles = StyleSheet.create({
     fontFamily: Typography.poppins.semiBold,
     paddingHorizontal: 4,
   },
-
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 30,
@@ -351,18 +346,15 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   savingsCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 32,
     padding: 16,
-    marginTop:8,
+    marginTop: 8,
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: '#F0F0F2',
   },
   savingsLabel: {
     fontSize: 14,
     fontFamily: Typography.poppins.medium,
-    color: '#000'
   },
   savingsAmountContainer: {
     flexDirection: 'row',
@@ -371,11 +363,6 @@ const styles = StyleSheet.create({
   },
   savingsAmountGreen: {
     fontSize: 32,
-    color: '#1AD04F',
-  },
-  savingsCurrency: {
-    fontSize: 28,
-    color: '#000',
   },
   universityBanner: {
     marginBottom: 24,
@@ -417,21 +404,16 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   universityBannerButton: {
-    backgroundColor: '#FFF',
     paddingVertical: 12,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   universityBannerButtonText: {
-    color: '#8A1538',
     fontSize: 16,
   },
   menuContainer: {
     gap: 12,
-  },
-  rowReverse: {
-    flexDirection: 'row-reverse',
   },
   menuItem: {
     flexDirection: 'row',
@@ -447,15 +429,12 @@ const styles = StyleSheet.create({
   menuItemLabel: {
     fontSize: 16,
     fontFamily: Typography.poppins.semiBold,
-    color: '#000',
   },
   logoutPill: {
-    backgroundColor: '#FFF1F0',
     borderRadius: 30,
     paddingVertical: 20,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#FFD5D2',
   },
   logoutContent: {
     flexDirection: 'row',
@@ -464,6 +443,5 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: 14,
-    color: '#FF3B30',
   },
 });

@@ -5,8 +5,8 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
 
@@ -30,6 +30,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 export default function CategoryGrid({ categories: propCategories, onCategoryPress }: Props) {
     const router = useRouter();
     const { t, i18n } = useTranslation();
+    const { theme } = useAppTheme();
     const [fetchedCategories, setFetchedCategories] = useState<CategoryItem[]>([]);
     const [loading, setLoading] = useState(!propCategories);
     const [isDrawerVisible, setIsDrawerVisible] = useState(false);
@@ -116,10 +117,10 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                             contentFit="contain"
                         />
                     ) : (
-                        <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, { fontSize: 40 }]}>{item.icon}</Text>
+                        <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, { fontSize: 40 }]}>{item.icon}</Text>
                     )}
                 </View>
-                <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.categoryName]} numberOfLines={1}>{item.name}</Text>
+                <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, styles.categoryName]} numberOfLines={1}>{item.name}</Text>
             </TouchableOpacity>
         );
     };
@@ -127,7 +128,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
     if (loading) {
         return (
             <View style={[styles.container, styles.loaderContainer]}>
-                <ActivityIndicator size="small" color={Colors.light.tint} />
+                <ActivityIndicator size="small" color={theme.brand} />
             </View>
         );
     }
@@ -154,10 +155,10 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                     animationType="slide"
                     onRequestClose={closeDrawer}
                 >
-                    <Pressable style={styles.overlay} onPress={closeDrawer}>
-                        <Pressable style={styles.drawerContainer} onPress={(e) => e.stopPropagation()}>
+                    <Pressable style={[styles.overlay, { backgroundColor: theme.overlay }]} onPress={closeDrawer}>
+                        <Pressable style={[styles.drawerContainer, { backgroundColor: theme.surfaceElevated }]} onPress={(e) => e.stopPropagation()}>
                             <View style={styles.drawerHandleContainer}>
-                                <View style={styles.drawerHandle} />
+                                <View style={[styles.drawerHandle, { backgroundColor: theme.borderStrong }]} />
                             </View>
                             <ScrollView
                                 style={styles.drawerList}
@@ -167,7 +168,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                                 {remainingCategories.map((category) => (
                                     <TouchableOpacity
                                         key={category.id}
-                                        style={styles.drawerListItem}
+                                        style={[styles.drawerListItem, { borderBottomColor: theme.border }]}
                                         activeOpacity={0.7}
                                         onPress={() => {
                                             closeDrawer();
@@ -181,9 +182,9 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                                                 contentFit="contain"
                                             />
                                         ) : (
-                                            <Text style={styles.drawerListIcon}>{category.icon}</Text>
+                                            <Text style={[styles.drawerListIcon, { color: theme.text }]}>{category.icon}</Text>
                                         )}
-                                        <Text style={styles.drawerListText}>{category.name}</Text>
+                                        <Text style={[styles.drawerListText, { color: theme.text }]}>{category.name}</Text>
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
@@ -223,11 +224,9 @@ const styles = StyleSheet.create({
     },
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.35)',
         justifyContent: 'flex-end',
     },
     drawerContainer: {
-        backgroundColor: '#FFFFFF',
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         maxHeight: SCREEN_HEIGHT * 0.75,
@@ -243,7 +242,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 6,
         borderRadius: 3,
-        backgroundColor: '#E0E0E0',
     },
     drawerTitle: {
         fontSize: 18,
@@ -262,7 +260,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 14,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#E5E5E5',
     },
     drawerListImage: {
         width: 48,
@@ -271,7 +268,6 @@ const styles = StyleSheet.create({
     },
     drawerListIcon: {
         fontSize: 32,
-        color: '#000000',
         marginRight: 12,
     },
     drawerListText: {

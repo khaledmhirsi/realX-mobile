@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 import {
@@ -40,6 +41,7 @@ export default function DetailsOnboarding() {
     const router = useRouter();
     const params = useLocalSearchParams<{ email?: string; role?: string }>();
     const { t } = useTranslation();
+    const { theme } = useAppTheme();
     const isRTL = I18nManager.isRTL;
     const inputTextAlign: 'left' | 'right' = isRTL ? 'right' : 'left';
     const [firstName, setFirstName] = useState('');
@@ -104,7 +106,7 @@ export default function DetailsOnboarding() {
     const isFormValid = firstName.trim() && lastName.trim() && dob && gender && !isLoading;
 
     return (
-        <View style={[styles.container, { backgroundColor: Colors.brandGreen }]}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar style="light" />
 
             {/* Header / Background Section */}
@@ -130,7 +132,7 @@ export default function DetailsOnboarding() {
             </OnboardingScreenMotion>
 
             {/* Main Content Card */}
-            <OnboardingCardMotion style={[styles.cardContainer, { backgroundColor: '#FFFFFF' }]}>
+            <OnboardingCardMotion style={[styles.cardContainer, { backgroundColor: theme.background }]}>
                 <ScrollView
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ flexGrow: 1 }}
@@ -139,16 +141,16 @@ export default function DetailsOnboarding() {
                     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                         <View style={styles.card}>
                             <OnboardingStaggerItem delay={120}>
-                            <View style={styles.iconCircle}>
-                                <Ionicons name="create-outline" size={32} color={Colors.brandGreen} />
+                            <View style={[styles.iconCircle, { backgroundColor: theme.brandSoft }]}>
+                                <Ionicons name="create-outline" size={32} color={theme.brand} />
                             </View>
                             </OnboardingStaggerItem>
 
                             <OnboardingStaggerItem delay={170}>
                             <View style={styles.textContainer}>
-                                <Text style={styles.titleSmall}>{t('onboarding_details_title_prefix')}</Text>
+                                <Text style={[styles.titleSmall, { color: theme.mutedText }]}>{t('onboarding_details_title_prefix')}</Text>
                                 <PhonkText style={styles.titleLarge}>
-                                    <Text style={styles.greenText}>{t('onboarding_details_title_suffix')}</Text>
+                                    <Text style={[styles.greenText, { color: theme.brand }]}>{t('onboarding_details_title_suffix')}</Text>
                                 </PhonkText>
                             </View>
                             </OnboardingStaggerItem>
@@ -160,13 +162,13 @@ export default function DetailsOnboarding() {
                                             styles.inputContainer,
                                             { flex: 1 },
                                             isRTL ? styles.inputMarginRTL : styles.inputMarginLTR,
-                                            firstName ? styles.inputFocused : null,
+                                            { backgroundColor: firstName ? theme.brandSoft : theme.cardMuted, borderColor: firstName ? theme.brand : 'transparent' },
                                         ]}
                                     >
                                         <TextInput
-                                            style={[styles.input, { color: '#000000', textAlign: inputTextAlign }]}
+                                            style={[styles.input, { color: theme.text, textAlign: inputTextAlign }]}
                                             placeholder={t('first_name_placeholder')}
-                                            placeholderTextColor="#999999"
+                                            placeholderTextColor={theme.inputPlaceholder}
                                             value={firstName}
                                             onChangeText={setFirstName}
                                             editable={!isLoading}
@@ -175,12 +177,12 @@ export default function DetailsOnboarding() {
                                     <View style={[
                                         styles.inputContainer,
                                         { flex: 1 },
-                                        lastName ? styles.inputFocused : null,
+                                        { backgroundColor: lastName ? theme.brandSoft : theme.cardMuted, borderColor: lastName ? theme.brand : 'transparent' },
                                     ]}>
                                         <TextInput
-                                            style={[styles.input, { color: '#000000', textAlign: inputTextAlign }]}
+                                            style={[styles.input, { color: theme.text, textAlign: inputTextAlign }]}
                                             placeholder={t('last_name_placeholder')}
-                                            placeholderTextColor="#999999"
+                                            placeholderTextColor={theme.inputPlaceholder}
                                             value={lastName}
                                             onChangeText={setLastName}
                                             editable={!isLoading}
@@ -189,7 +191,10 @@ export default function DetailsOnboarding() {
                                 </View>
 
                                 <TouchableOpacity
-                                    style={[styles.inputContainer, dob ? styles.inputFocused : null]}
+                                    style={[
+                                        styles.inputContainer,
+                                        { backgroundColor: dob ? theme.brandSoft : theme.cardMuted, borderColor: dob ? theme.brand : 'transparent' },
+                                    ]}
                                     onPress={() => {
                                         Keyboard.dismiss();
                                         setShowDatePicker(true);
@@ -197,12 +202,12 @@ export default function DetailsOnboarding() {
                                     disabled={isLoading}
                                     activeOpacity={0.7}
                                 >
-                                    <Ionicons name="calendar-outline" size={20} color={dob ? Colors.brandGreen : '#999'} style={styles.inputIcon} />
+                                    <Ionicons name="calendar-outline" size={20} color={dob ? theme.brand : theme.iconMuted} style={styles.inputIcon} />
                                     <Text
                                         style={[
                                             styles.input,
                                             { textAlign: inputTextAlign, flex: 1 },
-                                            !dob && { color: '#999999' },
+                                            { color: dob ? theme.text : theme.inputPlaceholder },
                                         ]}
                                     >
                                         {formatDate(dob)}
@@ -227,20 +232,23 @@ export default function DetailsOnboarding() {
                                             display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                                             onChange={onDateChange}
                                             maximumDate={new Date()}
-                                            textColor="black"
+                                            textColor={theme.text}
                                         />
                                     </View>
                                 )}
 
                                 <View style={styles.genderContainer}>
-                                    <Text style={[styles.label, isRTL && styles.labelRTL]}>
+                                    <Text style={[styles.label, { color: theme.mutedText }, isRTL && styles.labelRTL]}>
                                         {t('onboarding_gender_label')}
                                     </Text>
                                     <View style={[styles.genderOptions, isRTL && styles.genderOptionsRTL]}>
                                         <TouchableOpacity
                                             style={[
                                                 styles.genderButton,
-                                                gender === 'Male' && styles.genderButtonSelected,
+                                                {
+                                                    backgroundColor: gender === 'Male' ? theme.brandSoft : theme.cardMuted,
+                                                    borderColor: gender === 'Male' ? theme.brand : 'transparent',
+                                                },
                                             ]}
                                             onPress={() => setGender('Male')}
                                             disabled={isLoading}
@@ -248,10 +256,14 @@ export default function DetailsOnboarding() {
                                             <Ionicons
                                                 name="male-outline"
                                                 size={18}
-                                                color={gender === 'Male' ? Colors.brandGreen : '#666'}
+                                                color={gender === 'Male' ? theme.brand : theme.iconMuted}
                                             />
                                             <Text
-                                                style={[styles.genderText, gender === 'Male' && styles.genderTextSelected]}
+                                                style={[
+                                                    styles.genderText,
+                                                    { color: gender === 'Male' ? theme.brandText : theme.mutedText },
+                                                    gender === 'Male' && styles.genderTextSelected,
+                                                ]}
                                             >
                                                 {t('onboarding_gender_male')}
                                             </Text>
@@ -259,7 +271,10 @@ export default function DetailsOnboarding() {
                                         <TouchableOpacity
                                             style={[
                                                 styles.genderButton,
-                                                gender === 'Female' && styles.genderButtonSelected,
+                                                {
+                                                    backgroundColor: gender === 'Female' ? theme.brandSoft : theme.cardMuted,
+                                                    borderColor: gender === 'Female' ? theme.brand : 'transparent',
+                                                },
                                             ]}
                                             onPress={() => setGender('Female')}
                                             disabled={isLoading}
@@ -267,10 +282,14 @@ export default function DetailsOnboarding() {
                                             <Ionicons
                                                 name="female-outline"
                                                 size={18}
-                                                color={gender === 'Female' ? Colors.brandGreen : '#666'}
+                                                color={gender === 'Female' ? theme.brand : theme.iconMuted}
                                             />
                                             <Text
-                                                style={[styles.genderText, gender === 'Female' && styles.genderTextSelected]}
+                                                style={[
+                                                    styles.genderText,
+                                                    { color: gender === 'Female' ? theme.brandText : theme.mutedText },
+                                                    gender === 'Female' && styles.genderTextSelected,
+                                                ]}
                                             >
                                                 {t('onboarding_gender_female')}
                                             </Text>
@@ -293,7 +312,7 @@ export default function DetailsOnboarding() {
                             disabled={!isFormValid}
                             activeOpacity={0.8}
                         >
-                            <Text style={styles.buttonText}>
+                            <Text style={[styles.buttonText, { color: theme.onActionSolid }]}>
                                 {isLoading ? t('onboarding_saving') : t('onboarding_continue')}
                             </Text>
                         </TouchableOpacity>
@@ -308,7 +327,6 @@ export default function DetailsOnboarding() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.brandGreen,
     },
     headerBackground: {
         height: 250,
@@ -332,7 +350,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
     },
     cardContainer: {
-        flex: 1, backgroundColor: 'white',
+        flex: 1,
         borderTopLeftRadius: 50, borderTopRightRadius: 50,
         marginTop: -80, paddingHorizontal: 28, paddingTop: 36,
     },
@@ -341,7 +359,6 @@ const styles = StyleSheet.create({
     },
     iconCircle: {
         width: 72, height: 72, borderRadius: 36,
-        backgroundColor: '#F0F9F0',
         justifyContent: 'center', alignItems: 'center',
         marginBottom: 12, marginTop: 4,
     },
@@ -351,29 +368,26 @@ const styles = StyleSheet.create({
     },
     titleSmall: {
         fontSize: 14, fontFamily: Typography.poppins.medium,
-        color: '#666', textTransform: 'uppercase', letterSpacing: 2,
+        textTransform: 'uppercase', letterSpacing: 2,
         marginBottom: 4, textAlign: 'center',
     },
     titleLarge: {
         fontSize: 32, textAlign: 'center', lineHeight: 38,
     },
-    greenText: { color: Colors.brandGreen },
+    greenText: {},
     formContainer: {
         marginBottom: 20, width: '100%',
     },
     row: { flexDirection: 'row', marginBottom: 12 },
     rowRTL: { flexDirection: 'row-reverse' },
     inputContainer: {
-        backgroundColor: '#F5F5F5', borderRadius: 16,
+        borderRadius: 16,
         height: 56, justifyContent: 'center',
         paddingHorizontal: 18, marginBottom: 12,
         flexDirection: 'row', alignItems: 'center',
         borderWidth: 2, borderColor: 'transparent',
     },
-    inputFocused: {
-        borderColor: Colors.brandGreen,
-        backgroundColor: '#F0F9F0',
-    },
+    inputFocused: {},
     inputMarginRTL: { marginLeft: 6 },
     inputMarginLTR: { marginRight: 6 },
     inputIcon: { marginRight: 10 },
@@ -385,27 +399,23 @@ const styles = StyleSheet.create({
     genderContainer: { marginTop: 8 },
     label: {
         fontSize: 14, fontFamily: Typography.poppins.medium,
-        marginBottom: 10, marginLeft: 6, color: '#666',
+        marginBottom: 10, marginLeft: 6,
     },
     labelRTL: { marginLeft: 0, marginRight: 6, textAlign: 'right' },
     genderOptions: { flexDirection: 'row', justifyContent: 'space-between' },
     genderOptionsRTL: { flexDirection: 'row-reverse' },
     genderButton: {
         flex: 1, height: 52, borderRadius: 16,
-        backgroundColor: '#F5F5F5',
         flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
         marginHorizontal: 6, gap: 8,
         borderWidth: 2, borderColor: 'transparent',
     },
     genderButtonSelected: {
-        backgroundColor: '#F0F9F0',
-        borderColor: Colors.brandGreen,
     },
     genderText: {
         fontSize: 15, fontFamily: Typography.poppins.medium,
     },
     genderTextSelected: {
-        color: Colors.brandGreen,
         fontFamily: Typography.poppins.semiBold,
     },
     footer: { paddingBottom: 40 },
@@ -420,16 +430,15 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
     },
     buttonText: {
-        color: '#FFFFFF', fontSize: 17, fontFamily: Typography.poppins.semiBold,
+        fontSize: 17, fontFamily: Typography.poppins.semiBold,
     },
     iosPickerContainer: {
-        backgroundColor: '#F5F5F5', borderRadius: 16,
+        borderRadius: 16,
         marginBottom: 12, overflow: 'hidden',
     },
     pickerHeader: {
         flexDirection: 'row', justifyContent: 'flex-end',
         paddingHorizontal: 15, paddingTop: 10,
-        backgroundColor: '#F5F5F5',
     },
     doneButtonStyle: { padding: 5 },
     doneButtonText: {

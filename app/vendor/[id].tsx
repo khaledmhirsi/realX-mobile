@@ -11,6 +11,7 @@ import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, Share,
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
+import { useAppTheme } from '../../context/AppThemeContext';
 import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
@@ -63,6 +64,7 @@ export default function VendorScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { i18n, t } = useTranslation();
+    const { isDark, theme } = useAppTheme();
     const isArabic = i18n.language === 'ar';
     const [vendor, setVendor] = useState<any>(null);
     const [offers, setOffers] = useState<any[]>([]);
@@ -273,23 +275,23 @@ export default function VendorScreen() {
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={Colors.brandGreen} />
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.brand} />
             </View>
         );
     }
 
     if (!vendor) {
         return (
-                <View style={[styles.errorContainer, { backgroundColor: Colors.light.background }]}>
-                <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.errorText]}>{t('vendor_not_found')}</Text>
+                <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
+                <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, styles.errorText]}>{t('vendor_not_found')}</Text>
             </View>
         );
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: Colors.light.background }]}>
-            <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 {/* Header Image Section */}
@@ -305,15 +307,15 @@ export default function VendorScreen() {
                     <SafeAreaView style={styles.headerOverlay} edges={['top']}>
                         <View style={styles.headerButtonsRow}>
                             <TouchableOpacity
-                                style={styles.roundButton}
+                                style={[styles.roundButton, { backgroundColor: theme.logoTile, shadowColor: theme.shadow }]}
                                 onPress={() => router.back()}
                                 activeOpacity={0.8}
                             >
-                                <Ionicons name="arrow-back" size={24} color="#000" />
+                                <Ionicons name="arrow-back" size={24} color={theme.logoTileText} />
                             </TouchableOpacity>
 
                             <TouchableOpacity
-                                style={styles.roundButton}
+                                style={[styles.roundButton, { backgroundColor: theme.logoTile, shadowColor: theme.shadow }]}
                                 activeOpacity={0.8}
                                 onPress={() => {
                                     const vendorName = isArabic ? (vendor.nameAr || vendor.name) : vendor.name;
@@ -322,7 +324,7 @@ export default function VendorScreen() {
                                     });
                                 }}
                             >
-                                <Ionicons name="share-outline" size={24} color="#000" />
+                                <Ionicons name="share-outline" size={24} color={theme.logoTileText} />
                             </TouchableOpacity>
                         </View>
                     </SafeAreaView>
@@ -331,7 +333,7 @@ export default function VendorScreen() {
                     <View style={styles.logoContainer}>
                         <Image
                             source={{ uri: vendor.profilePicture }}
-                            style={styles.logoImage}
+                            style={[styles.logoImage, { backgroundColor: theme.logoTile, borderColor: theme.logoTileBorder }]}
                             contentFit="contain"
                         />
                     </View>
@@ -339,7 +341,7 @@ export default function VendorScreen() {
                 </View>
 
                 {/* Vendor Details */}
-                <View style={[styles.detailsContainer, { backgroundColor: Colors.light.background }]}>
+                <View style={[styles.detailsContainer, { backgroundColor: theme.background }]}>
                     <View style={styles.vendorHeaderRow}>
                         {vendor.integralLogo ? (
                             <Image
@@ -348,13 +350,13 @@ export default function VendorScreen() {
                                 contentFit="contain"
                             />
                         ) : (
-                            <PhonkText style={[{ color: Colors.light.text }, styles.vendorName]}>{pickLocalizedText(isArabic, vendor.nameAr, vendor.name, 'Vendor')}</PhonkText>
+                            <PhonkText style={[{ color: theme.text }, styles.vendorName]}>{pickLocalizedText(isArabic, vendor.nameAr, vendor.name, 'Vendor')}</PhonkText>
                         )}
                     </View>
 
                     <View style={styles.metaRow}>
                         <View style={styles.metaLeft}>
-                        <TouchableOpacity style={styles.locationButton} onPress={() => {
+                        <TouchableOpacity style={[styles.locationButton, { backgroundColor: theme.cardMuted }]} onPress={() => {
                             if (branches.length > 1) {
                                 setBranchPickerVisible(true);
                                 return;
@@ -369,15 +371,15 @@ export default function VendorScreen() {
                             const q = encodeURIComponent(vendorName + " Qatar");
                             void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${q}`);
                         }} activeOpacity={0.7}>
-                            <Ionicons name="location-outline" size={18} color={Colors.brandGreen} />
-                            <Text style={[styles.locationText, { fontFamily: Typography.poppins.medium }]}>
+                            <Ionicons name="location-outline" size={18} color={theme.brand} />
+                            <Text style={[styles.locationText, { color: theme.text, fontFamily: Typography.poppins.medium }]}>
                                 {branches.length > 1 ? `${t('location')} (${branches.length})` : t('location')}
                             </Text>
                         </TouchableOpacity>
                         {nearestBranch?.distanceKm != null && (
-                            <View style={styles.nearestBranchChip}>
-                                <Ionicons name="navigate-outline" size={13} color={Colors.brandGreen} />
-                                <Text style={styles.nearestBranchText}>{nearestBranch.distanceKm.toFixed(1)} km</Text>
+                            <View style={[styles.nearestBranchChip, { backgroundColor: theme.brandSoft }]}>
+                                <Ionicons name="navigate-outline" size={13} color={theme.brand} />
+                                <Text style={[styles.nearestBranchText, { color: theme.brandText }]}>{nearestBranch.distanceKm.toFixed(1)} km</Text>
                             </View>
                         )}
                         </View>
@@ -390,7 +392,7 @@ export default function VendorScreen() {
                                 </View>
                             )}
                             {vendor.xcard && (
-                                <View style={[styles.tagChip, { backgroundColor: Colors.brandGreen }]}>
+                                <View style={[styles.tagChip, { backgroundColor: theme.brand }]}>
                                     <Ionicons name="cash-outline" size={14} color="#FFF" />
                                     <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]}>{t('cashback')}</Text>
                                 </View>
@@ -408,26 +410,26 @@ export default function VendorScreen() {
                     <View style={styles.offersList}>
                         {vendor.vendorType === 'online' ? (
                             <View style={styles.offerCard}>
-                                <View style={[styles.offerInfoContainer, { backgroundColor: '#F5F5F5' }]}>
+                                <View style={[styles.offerInfoContainer, { backgroundColor: theme.cardMuted }]}>
                                     <View style={styles.offerContent}>
-                                        <PhonkText style={[{ color: Colors.light.text }, styles.offerTitle]}>
+                                        <PhonkText style={[{ color: theme.text }, styles.offerTitle]}>
                                             {t('online_vendor_title')}
                                         </PhonkText>
-                                        <Text style={[styles.descriptionText, { textAlign: isArabic ? 'right' : 'left' }]}>
+                                        <Text style={[styles.descriptionText, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>
                                             {t('online_vendor_description')}
                                         </Text>
                                     </View>
                                 </View>
 
-                                <View style={styles.offerActionsRow}>
+                                <View style={[styles.offerActionsRow, { backgroundColor: theme.cardMuted }]}>
                                     <TouchableOpacity
-                                        style={[styles.pillButton, styles.redeemPill]}
+                                        style={[styles.pillButton, styles.redeemPill, { backgroundColor: theme.actionSolid }]}
                                         onPress={() => {
                                             router.push(`/redeem/${actualVendorId || id}?vendorId=${actualVendorId || id}`);
                                         }}
                                     >
-                                        <Ionicons name="globe-outline" size={18} color="#FFF" />
-                                        <Text style={[{ color: '#FFF', fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>{t('redeem_caps')}</Text>
+                                        <Ionicons name="globe-outline" size={18} color={theme.onActionSolid} />
+                                        <Text style={[{ color: theme.onActionSolid, fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>{t('redeem_caps')}</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -455,7 +457,11 @@ const isSaved = savedOfferIds.has(savedId);
                                         />
                                     )}
                                     <TouchableOpacity
-                                        style={[styles.offerSaveButton, isSaved && styles.offerSaveButtonActive]}
+                                        style={[
+                                            styles.offerSaveButton,
+                                            { backgroundColor: isSaved ? theme.brand : theme.card, shadowColor: theme.shadow },
+                                            isSaved && styles.offerSaveButtonActive,
+                                        ]}
                                         onPress={() => void toggleSavedOffer(offer, offerIndex)}
                                         disabled={savingOfferIds.has(savedId)}
                                         activeOpacity={0.8}
@@ -463,13 +469,13 @@ const isSaved = savedOfferIds.has(savedId);
                                         <Ionicons
                                             name={isSaved ? 'bookmark' : 'bookmark-outline'}
                                             size={22}
-                                            color={isSaved ? '#FFF' : Colors.brandGreen}
+                                            color={isSaved ? theme.onActionSolid : theme.brand}
                                         />
                                     </TouchableOpacity>
                                     {/* Top Info Pill */}
-                                    <View style={[styles.offerInfoContainer, { backgroundColor: '#F5F5F5' }]}>
+                                    <View style={[styles.offerInfoContainer, { backgroundColor: theme.cardMuted }]}>
                                         <View style={styles.offerContent}>
-                                            <PhonkText style={[{ color: Colors.light.text }, styles.offerTitle]}>
+                                            <PhonkText style={[{ color: theme.text }, styles.offerTitle]}>
                                                 {(offerTitle || "").split(/(\d+(?:\.\d+)?\s?%?)/).map((part: string, index: number) => 
                                                     /^\d+(?:\.\d+)?\s?%?$/.test(part) ? (
                                                         <PhonkText key={index} style={styles.greenText}>{part}</PhonkText>
@@ -481,23 +487,23 @@ const isSaved = savedOfferIds.has(savedId);
                                         </View>
                                     </View>
                                     {/* Bottom Button Pills */}
-                                    <View style={styles.offerActionsRow}>
+                                    <View style={[styles.offerActionsRow, { backgroundColor: theme.cardMuted }]}>
                                         <TouchableOpacity
-                                            style={[styles.pillButton, { backgroundColor: '#FFF' }]}
+                                            style={[styles.pillButton, { backgroundColor: theme.card }]}
                                             onPress={() => setSelectedOfferForTC(offer)}
                                         >
-                                            <Ionicons name="alert-circle-outline" size={22} color="#8E8E93" />
-                                            <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>{t('view_tc')}</Text>
+                                            <Ionicons name="alert-circle-outline" size={22} color={theme.iconMuted} />
+                                            <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>{t('view_tc')}</Text>
                                         </TouchableOpacity>
 
                                         <TouchableOpacity
-                                            style={[styles.pillButton, styles.redeemPill]}
+                                            style={[styles.pillButton, styles.redeemPill, { backgroundColor: theme.actionSolid }]}
                                             onPress={() => {
                                                 router.push(`/redeem/${actualVendorId || id}?vendorId=${actualVendorId || id}&offerIndex=${offerIndex}`);
                                             }}
                                         >
-                                            <Ionicons name="flash" size={18} color="#FFF" />
-                                            <Text style={[{ color: '#FFF', fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>{t('redeem_caps')}</Text>
+                                            <Ionicons name="flash" size={18} color={theme.onActionSolid} />
+                                            <Text style={[{ color: theme.onActionSolid, fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>{t('redeem_caps')}</Text>
                                         </TouchableOpacity>
 
                                     </View>
@@ -520,12 +526,12 @@ const isSaved = savedOfferIds.has(savedId);
                     style={styles.modalOverlay}
                     onPress={() => setSelectedOfferForTC(null)}
                 >
-                    <GlassView style={StyleSheet.absoluteFill} glassEffectStyle="regular" colorScheme="dark" tintColor="rgba(0,0,0,0.3)" />
+                    <GlassView style={StyleSheet.absoluteFill} glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} tintColor="rgba(0,0,0,0.3)" />
                     <Pressable
                         style={[
                             styles.drawerContainer,
                             {
-                                backgroundColor: '#FFFFFF',
+                                backgroundColor: theme.card,
                                 paddingBottom: insets.bottom + 20
                             }
                         ]}
@@ -533,17 +539,17 @@ const isSaved = savedOfferIds.has(savedId);
                     >
                         {/* Drawer Handle */}
                         <View style={styles.handleContainer}>
-                            <View style={[styles.handle, { backgroundColor: '#E0E0E0' }]} />
+                            <View style={[styles.handle, { backgroundColor: theme.borderStrong }]} />
                         </View>
 
                         <View style={styles.modalContent}>
                             <View style={styles.modalHeader}>
-                                <PhonkText style={[{ color: Colors.light.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</PhonkText>
+                                <PhonkText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</PhonkText>
                                 <TouchableOpacity
                                     onPress={() => setSelectedOfferForTC(null)}
                                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                                 >
-                                    <Ionicons name="close-circle" size={28} color="#000" />
+                                    <Ionicons name="close-circle" size={28} color={theme.icon} />
                                 </TouchableOpacity>
                             </View>
 
@@ -552,32 +558,32 @@ const isSaved = savedOfferIds.has(savedId);
                                 style={styles.modalBody}
                                 contentContainerStyle={styles.modalBodyContent}
                             >
-                                <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.descriptionText]}>
+                                <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.descriptionText]}>
                                     {isArabic
                                         ? (selectedOfferForTC?.descriptionAr || selectedOfferForTC?.descriptionEn || t('no_specific_terms'))
                                         : (selectedOfferForTC?.descriptionEn || selectedOfferForTC?.descriptionAr || t('no_specific_terms'))}
                                 </Text>
 
-                                <View style={styles.commonTerms}>
+                                <View style={[styles.commonTerms, { borderTopColor: theme.border }]}>
                                     <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
-                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('in_store_only')}</Text>
+                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('in_store_only')}</Text>
                                     </View>
                                     <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
-                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('cannot_be_combined')}</Text>
+                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('cannot_be_combined')}</Text>
                                     </View>
                                     <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
-                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_promotional_reward')}</Text>
+                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_promotional_reward')}</Text>
                                     </View>
                                     <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
-                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_no_cash_withdrawal')}</Text>
+                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_no_cash_withdrawal')}</Text>
                                     </View>
                                     <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
-                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_in_app_only')}</Text>
+                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_in_app_only')}</Text>
                                     </View>
                                 </View>
                             </ScrollView>
@@ -593,31 +599,31 @@ const isSaved = savedOfferIds.has(savedId);
                 onRequestClose={() => setBranchPickerVisible(false)}
             >
                 <Pressable style={styles.modalOverlay} onPress={() => setBranchPickerVisible(false)}>
-                    <GlassView style={StyleSheet.absoluteFill} glassEffectStyle="regular" colorScheme="dark" tintColor="rgba(0,0,0,0.3)" />
+                    <GlassView style={StyleSheet.absoluteFill} glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} tintColor="rgba(0,0,0,0.3)" />
                     <Pressable
                         style={[
                             styles.drawerContainer,
                             {
-                                backgroundColor: '#FFFFFF',
+                                backgroundColor: theme.card,
                                 paddingBottom: insets.bottom + 20
                             }
                         ]}
                         onPress={(e) => e.stopPropagation()}
                     >
                         <View style={styles.handleContainer}>
-                            <View style={[styles.handle, { backgroundColor: '#E0E0E0' }]} />
+                            <View style={[styles.handle, { backgroundColor: theme.borderStrong }]} />
                         </View>
 
                         <View style={styles.modalContent}>
                             <View style={styles.modalHeader}>
-                                <PhonkText style={[{ color: Colors.light.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>
+                                <PhonkText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>
                                     {isArabic ? 'الفروع' : 'BRANCHES'}
                                 </PhonkText>
                                 <TouchableOpacity
                                     onPress={() => setBranchPickerVisible(false)}
                                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                                 >
-                                    <Ionicons name="close-circle" size={28} color="#000" />
+                                    <Ionicons name="close-circle" size={28} color={theme.icon} />
                                 </TouchableOpacity>
                             </View>
 
@@ -633,28 +639,28 @@ const isSaved = savedOfferIds.has(savedId);
                                     return (
                                         <TouchableOpacity
                                             key={branch.id}
-                                            style={styles.branchRow}
+                                            style={[styles.branchRow, { backgroundColor: theme.cardMuted }]}
                                             onPress={() => openBranchOnMap(branch)}
                                             activeOpacity={0.8}
                                         >
-                                            <View style={styles.branchIcon}>
-                                                <Ionicons name={index === 0 ? 'navigate' : 'location-outline'} size={18} color={Colors.brandGreen} />
+                                            <View style={[styles.branchIcon, { backgroundColor: theme.card }]}>
+                                                <Ionicons name={index === 0 ? 'navigate' : 'location-outline'} size={18} color={theme.brand} />
                                             </View>
                                             <View style={styles.branchTextBlock}>
                                                 <View style={styles.branchTitleRow}>
-                                                    <Text style={styles.branchName} numberOfLines={1}>{branchName}</Text>
+                                                    <Text style={[styles.branchName, { color: theme.text }]} numberOfLines={1}>{branchName}</Text>
                                                     {index === 0 && branch.distanceKm != null && (
-                                                        <View style={styles.branchNearestPill}>
-                                                            <Text style={styles.branchNearestText}>Nearest</Text>
+                                                        <View style={[styles.branchNearestPill, { backgroundColor: theme.brand }]}>
+                                                            <Text style={[styles.branchNearestText, { color: theme.onActionSolid }]}>Nearest</Text>
                                                         </View>
                                                     )}
                                                 </View>
-                                                {address ? <Text style={styles.branchAddress} numberOfLines={2}>{address}</Text> : null}
+                                                {address ? <Text style={[styles.branchAddress, { color: theme.mutedText }]} numberOfLines={2}>{address}</Text> : null}
                                                 {branch.distanceKm != null && (
-                                                    <Text style={styles.branchDistance}>{branch.distanceKm.toFixed(1)} km away</Text>
+                                                    <Text style={[styles.branchDistance, { color: theme.brandText }]}>{branch.distanceKm.toFixed(1)} km away</Text>
                                                 )}
                                             </View>
-                                            <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+                                            <Ionicons name="chevron-forward" size={18} color={theme.iconMuted} />
                                         </TouchableOpacity>
                                     );
                                 })}
@@ -670,7 +676,6 @@ const isSaved = savedOfferIds.has(savedId);
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
     },
     loadingContainer: {
         flex: 1,
@@ -719,7 +724,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#FFF',
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
@@ -741,6 +745,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         borderRadius: 16,
+        borderWidth: StyleSheet.hairlineWidth,
         backgroundColor: 'transparent',
     },
     detailsContainer: {
@@ -755,7 +760,6 @@ const styles = StyleSheet.create({
     },
     vendorName: {
         fontSize: 26,
-        color: '#000',
         textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
@@ -801,27 +805,23 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: '#F5F5F5',
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderRadius: 20,
     },
     locationText: {
         fontSize: 14,
-        color: '#000',
     },
     nearestBranchChip: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        backgroundColor: '#EAF8EF',
         paddingHorizontal: 10,
         paddingVertical: 7,
         borderRadius: 18,
     },
     nearestBranchText: {
         fontSize: 12,
-        color: Colors.brandGreen,
         fontFamily: Typography.poppins.semiBold,
     },
     ratingContainer: {
@@ -890,7 +890,6 @@ const styles = StyleSheet.create({
     offerActionsRow: {
         flexDirection: 'row',
         gap: 12,
-        backgroundColor: '#F5F5F5',
         borderRadius: 30,
         paddingHorizontal: 8,
         paddingVertical: 8,
@@ -900,13 +899,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#FFF',
         height: 56,
         borderRadius: 30,
         gap: 8,
     },
     redeemPill: {
-        backgroundColor: Colors.brandGreen,
     },
     offerSaveButton: {
         position: 'absolute',
@@ -915,7 +912,6 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: '#FFFFFF',
         alignItems: 'center',
         justifyContent: 'center',
         shadowColor: '#000',
@@ -926,7 +922,6 @@ const styles = StyleSheet.create({
         zIndex: 40,
     },
     offerSaveButtonActive: {
-        backgroundColor: Colors.brandGreen,
     },
     pillButtonTextSmall: {
         fontSize: 14,
@@ -977,14 +972,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: Typography.poppins.medium,
         lineHeight: 24,
-        color: '#8E8E93',
     },
     commonTerms: {
         marginTop: 24,
         gap: 12,
         paddingTop: 24,
         borderTopWidth: 1,
-        borderTopColor: '#F0F0F0',
     },
     termRow: {
         flexDirection: 'row',
@@ -999,7 +992,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        backgroundColor: '#F7F7F7',
         borderRadius: 20,
         padding: 14,
     },
@@ -1007,7 +999,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#FFFFFF',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1023,34 +1014,28 @@ const styles = StyleSheet.create({
     branchName: {
         flex: 1,
         fontSize: 15,
-        color: Colors.light.text,
         fontFamily: Typography.poppins.semiBold,
     },
     branchNearestPill: {
-        backgroundColor: Colors.brandGreen,
         borderRadius: 10,
         paddingHorizontal: 8,
         paddingVertical: 3,
     },
     branchNearestText: {
         fontSize: 10,
-        color: '#FFFFFF',
         fontFamily: Typography.poppins.semiBold,
         textTransform: 'uppercase',
     },
     branchAddress: {
         fontSize: 13,
-        color: '#6E6E73',
         fontFamily: Typography.poppins.medium,
     },
     branchDistance: {
         fontSize: 12,
-        color: Colors.brandGreen,
         fontFamily: Typography.poppins.semiBold,
     },
     termText: {
         fontSize: 14,
         fontFamily: Typography.poppins.medium,
-        color: '#666',
     },
 });

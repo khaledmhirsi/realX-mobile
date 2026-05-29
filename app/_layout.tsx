@@ -10,9 +10,9 @@ import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { StudentProvider, useStudent } from '../context/StudentContext';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { initI18n } from '../src/localization/i18n';
@@ -27,6 +27,7 @@ import {
   type PendingVerificationData,
 } from '../utils/verificationPending';
 import { logger } from '../utils/logger';
+import { AppThemeProvider, useAppTheme } from '../context/AppThemeContext';
 
 import CustomSplash from './splash';
 
@@ -93,18 +94,20 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <StudentProvider>
-        <LayoutContent
-          user={user}
-          loaded={loaded}
-          error={error}
-          i18nReady={i18nReady}
-          appCheckReady={appCheckReady}
-          initializing={initializing}
-          showSplash={showSplash}
-          onSplashFinish={() => setShowSplash(false)}
-        />
-      </StudentProvider>
+      <AppThemeProvider>
+        <StudentProvider>
+          <LayoutContent
+            user={user}
+            loaded={loaded}
+            error={error}
+            i18nReady={i18nReady}
+            appCheckReady={appCheckReady}
+            initializing={initializing}
+            showSplash={showSplash}
+            onSplashFinish={() => setShowSplash(false)}
+          />
+        </StudentProvider>
+      </AppThemeProvider>
     </SafeAreaProvider>
   );
 }
@@ -129,11 +132,29 @@ function LayoutContent({
   onSplashFinish: () => void;
 }) {
   const { docExists: hasProfile } = useStudent();
+  const { isDark, theme } = useAppTheme();
   const router = useRouter();
   const segments = useSegments();
   const [appReady, setAppReady] = useState(false);
   const [pendingVerification, setPendingVerification] = useState<PendingVerificationData | null>(null);
   const [pendingCheckDone, setPendingCheckDone] = useState(false);
+  const navigationTheme = useMemo(() => {
+    const baseTheme = isDark ? DarkTheme : DefaultTheme;
+
+    return {
+      ...baseTheme,
+      dark: isDark,
+      colors: {
+        ...baseTheme.colors,
+        primary: theme.brand,
+        background: theme.background,
+        card: theme.surfaceElevated,
+        text: theme.text,
+        border: theme.border,
+        notification: theme.brand,
+      },
+    };
+  }, [isDark, theme]);
 
   useEffect(() => {
     getPendingVerification().then((data) => {
@@ -262,27 +283,31 @@ function LayoutContent({
 
   if (!appReady || showSplash) {
     return (
-      <CustomSplash
-        onFinish={onSplashFinish}
-      />
+      <ThemeProvider value={navigationTheme}>
+        <CustomSplash
+          onFinish={onSplashFinish}
+        />
+      </ThemeProvider>
     );
   }
 
   return (
-    <Stack>
-      <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="category" options={{ headerShown: false }} />
-      <Stack.Screen name="search" options={{ headerShown: false }} />
-      <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
-      <Stack.Screen name="redeem/[id]" options={{ headerShown: false }} />
-      <Stack.Screen name="redemption-history" options={{ headerShown: false }} />
-      <Stack.Screen name="saved-offers" options={{ headerShown: false }} />
-      <Stack.Screen name="profile-details" options={{ headerShown: false }} />
-      <Stack.Screen name="terms" options={{ headerShown: false }} />
-      <Stack.Screen name="privacy" options={{ headerShown: false }} />
-      <Stack.Screen name="x-academy" options={{ headerShown: false }} />
-      <Stack.Screen name="+not-found" options={{ title: 'Oops! Not Found' }} />
-    </Stack>
+    <ThemeProvider value={navigationTheme}>
+      <Stack>
+        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="category" options={{ headerShown: false }} />
+        <Stack.Screen name="search" options={{ headerShown: false }} />
+        <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="redeem/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="redemption-history" options={{ headerShown: false }} />
+        <Stack.Screen name="saved-offers" options={{ headerShown: false }} />
+        <Stack.Screen name="profile-details" options={{ headerShown: false }} />
+        <Stack.Screen name="terms" options={{ headerShown: false }} />
+        <Stack.Screen name="privacy" options={{ headerShown: false }} />
+        <Stack.Screen name="x-academy" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" options={{ title: 'Oops! Not Found' }} />
+      </Stack>
+    </ThemeProvider>
   );
 }
