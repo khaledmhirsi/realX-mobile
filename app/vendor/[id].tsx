@@ -73,6 +73,13 @@ function callPhoneNumber(phoneNumber?: string) {
     void Linking.openURL(`tel:${dialable}`);
 }
 
+function formatBranchDistance(distanceKm: number) {
+    if (distanceKm >= 100) {
+        return `${Math.round(distanceKm)} km away`;
+    }
+    return `${distanceKm.toFixed(1)} km away`;
+}
+
 export default function VendorScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
@@ -707,7 +714,7 @@ const isSaved = savedOfferIds.has(savedId);
                                                 {branch.distanceKm != null && (
                                                     <View style={[styles.branchDistanceChip, { backgroundColor: theme.brandSoft }]}>
                                                         <Ionicons name="navigate-outline" size={13} color={theme.brand} />
-                                                        <Text style={[styles.branchDistance, { color: theme.brandText }]} numberOfLines={1}>{branch.distanceKm.toFixed(1)} km away</Text>
+                                                        <Text style={[styles.branchDistance, { color: theme.brandText }]}>{formatBranchDistance(branch.distanceKm)}</Text>
                                                     </View>
                                                 )}
                                             </View>
@@ -880,7 +887,7 @@ const styles = StyleSheet.create({
         borderRadius: 18,
     },
     nearestBranchText: {
-        fontSize: 12,
+        fontSize: 14,
         fontFamily: Typography.poppins.semiBold,
     },
     phoneButton: {
@@ -894,7 +901,7 @@ const styles = StyleSheet.create({
     },
     phoneButtonText: {
         flexShrink: 1,
-        fontSize: 12,
+        fontSize: 14,
         fontFamily: Typography.poppins.semiBold,
     },
     ratingContainer: {
@@ -1114,35 +1121,33 @@ const styles = StyleSheet.create({
         paddingStart: 52,
     },
     branchMetaRowSpread: {
-        justifyContent: 'space-between',
+        justifyContent: 'flex-start',
     },
     branchPhoneChip: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
-        maxWidth: '48%',
-        minWidth: '46%',
+        flexShrink: 1,
         paddingHorizontal: 10,
         paddingVertical: 7,
         borderRadius: 18,
     },
     branchPhoneText: {
         flexShrink: 1,
-        fontSize: 13,
+        fontSize: 15,
         fontFamily: Typography.poppins.semiBold,
     },
     branchDistanceChip: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        maxWidth: '48%',
-        minWidth: '46%',
+        flexShrink: 1,
         paddingHorizontal: 10,
         paddingVertical: 7,
         borderRadius: 18,
     },
     branchDistance: {
-        fontSize: 12,
+        fontSize: 14,
         fontFamily: Typography.poppins.semiBold,
     },
     termText: {
