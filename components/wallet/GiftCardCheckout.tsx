@@ -10,7 +10,6 @@ import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    StatusBar,
     StyleSheet,
     Text,
     TextInput,
@@ -21,6 +20,7 @@ import { useAppTheme } from '../../context/AppThemeContext';
 import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
+import RewardSuccessScreen from '../rewards/RewardSuccessScreen';
 import TransactionLoadingOverlay from '../TransactionLoadingOverlay';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { showLocalNotification } from '../../utils/notifications';
@@ -118,83 +118,35 @@ export default function GiftCardCheckout({
 
     // Success Screen
     if (showSuccess) {
-        const savedStr = Math.min(selectedAmount, totalBillNum).toFixed(2);
-
         return (
-            <View style={[styles.successContainer, { backgroundColor: theme.brand }]}>
-                <StatusBar barStyle="light-content" />
-
-                {/* Close Button */}
-                <TouchableOpacity
-                    style={[styles.successCloseButton, { backgroundColor: theme.logoTile }]}
-                    onPress={() => {
-                        triggerSubtleHaptic();
-                        onSuccess?.();
-                    }}
-                >
-                    <Ionicons name="close" size={22} color={theme.logoTileText} />
-                </TouchableOpacity>
-
-                {/* Watermark Background */}
-                <View style={styles.watermarkOverlay} pointerEvents="none">
-                    {Array.from({ length: 14 }).map((_, i) => (
-                        <View key={i} style={[styles.watermarkRow, { marginTop: i % 2 === 0 ? 0 : -20 }]}>
-                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
-                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
-                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
-                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
-                        </View>
-                    ))}
-                </View>
-
-                <View style={styles.successPillWrapper}>
-                    {/* Top Pill — Brand + Title */}
-                    <View style={styles.successTopPillWrapper}>
-                        <View style={[styles.successTopPill, { backgroundColor: theme.logoTile }]}>
-                            {/* Title */}
-                            <Text style={[styles.successTitle, { color: theme.logoTileText }]}>{t('redemption_title_line')}</Text>
-                            <PhonkText style={[styles.successTitleGreen, { color: theme.brand }]}>{t('redemption_successful_exclaim')}</PhonkText>
-
-                            {/* Gift Card Amount Badge */}
-                            <View style={[styles.successBadge, { backgroundColor: theme.brand }]}>
-                                <Text style={[styles.successBadgeText, { color: theme.onActionSolid }]}>
-                                    {currency} {selectedAmount.toFixed(2)} {t('gift_card_text')}
-                                </Text>
-                            </View>
-                        </View>
-
-                        {/* Brand Logo — half in, half out */}
-                        <View style={styles.successLogoOverlay}>
-                            <View style={[styles.successLogoInner, { backgroundColor: brand.backgroundColor || '#1E2A38' }]}>
-                                {brand.logo ? (
-                                    <Image source={{ uri: brand.logo }} style={styles.successLogoImage} contentFit="contain" />
-                                ) : (
-                                    <Text style={styles.successLogoPlaceholder}>{brand.name.charAt(0)}</Text>
-                                )}
-                            </View>
-                        </View>
-                    </View>
-
-                    {/* Bottom Pill — Breakdown */}
-                    <View style={[styles.successBottomPill, { backgroundColor: theme.logoTile }]}>
-                        {/* You Saved */}
-                        <View style={styles.successSavedRow}>
-                            <Ionicons name="pricetag" size={18} color={theme.brand} />
-                            <Text style={[styles.successSavedLabel, { color: theme.brandText }]}>
-                                {t('you_saved_success_message', { currency, amount: savedStr }).replace('!', '')}
-                            </Text>
-                        </View>
-
-                        {/* Amount to Pay */}
-                        <View style={[styles.successPayRow, { borderTopColor: theme.logoTileBorder }]}>
-                            <Ionicons name="card" size={18} color={theme.logoTileText} />
-                            <Text style={[styles.successPayLabel, { color: theme.logoTileText }]}>
-                                {t('amount_to_pay_label')}: {currency} {remainingAmount.toFixed(2)}
-                            </Text>
-                        </View>
-                    </View>
-                </View>
-            </View>
+            <RewardSuccessScreen
+                mascotSource={require('../../assets/images/realx-mascot-run-gift-both-hands.png')}
+                badgeText={t('gift_card_text')}
+                merchantLabel={t('reward_success_merchant_label')}
+                merchantName={brand.name}
+                rows={[
+                    {
+                        icon: 'gift-outline',
+                        iconBorderColor: '#D1F4DA',
+                        label: t('reward_success_gift_card_value_label'),
+                        value: `${currency} ${selectedAmount.toFixed(2)}`,
+                        tone: 'savings',
+                    },
+                    {
+                        icon: 'card-outline',
+                        iconBorderColor: '#DCE4EC',
+                        label: t('amount_to_pay_label'),
+                        value: `${currency} ${remainingAmount.toFixed(2)}`,
+                    },
+                ]}
+                metaLines={[
+                    t('reward_success_ready_in_store'),
+                ]}
+                primaryActionLabel={t('done')}
+                onPrimaryAction={() => onSuccess?.()}
+                onClose={() => onSuccess?.()}
+                isRTL={isRTL}
+            />
         );
     }
 
@@ -580,135 +532,5 @@ const styles = StyleSheet.create({
     redeemButtonText: {
         fontSize: 22,
         letterSpacing: 1,
-    },
-    // Success Screen Styles
-    successContainer: {
-        flex: 1,
-    },
-    successCloseButton: {
-        position: 'absolute',
-        top: 80,
-        right: 24,
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 10,
-    },
-    watermarkOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: -80,
-        right: -80,
-        bottom: 0,
-        justifyContent: 'space-around',
-        overflow: 'hidden',
-        zIndex: 0,
-    },
-    watermarkRow: {
-        flexDirection: 'row',
-        transform: [{ rotate: '-25deg' }],
-    },
-    watermarkText: {
-        color: 'rgba(255,255,255,0.07)',
-        fontSize: 13,
-        fontFamily: Typography.poppins.semiBold,
-        letterSpacing: 2,
-        marginHorizontal: 15,
-    },
-    successPillWrapper: {
-        flex: 1,
-        justifyContent: 'center',
-        paddingHorizontal: 30,
-        gap: 16,
-        zIndex: 1,
-    },
-    successTopPillWrapper: {
-        position: 'relative',
-        marginTop: 40,
-    },
-    successTopPill: {
-        borderRadius: 30,
-        paddingTop: 50,
-        paddingBottom: 24,
-        paddingHorizontal: 24,
-        alignItems: 'center',
-    },
-    successBottomPill: {
-        borderRadius: 30,
-        paddingVertical: 24,
-        paddingHorizontal: 24,
-    },
-    successLogoOverlay: {
-        position: 'absolute',
-        top: -40,
-        alignSelf: 'center',
-        width: 80,
-        height: 80,
-        borderRadius: 20,
-        backgroundColor: '#1E2a38',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 2,
-    },
-    successLogoInner: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden',
-    },
-    successLogoImage: {
-        width: '60%',
-        height: '60%',
-    },
-    successLogoPlaceholder: {
-        fontSize: 32,
-        fontFamily: Typography.poppins.semiBold,
-        color: '#FFFFFF',
-    },
-    successTitle: {
-        fontSize: 26,
-        fontFamily: Typography.poppins.semiBold,
-        textAlign: 'center',
-    },
-    successTitleGreen: {
-        fontSize: 26,
-        textAlign: 'center',
-        marginBottom: 16,
-    },
-    successBadge: {
-        borderRadius: 30,
-        paddingVertical: 10,
-        paddingHorizontal: 24,
-    },
-    successBadgeText: {
-        fontSize: 16,
-        fontFamily: Typography.poppins.semiBold,
-    },
-    successSavedRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 10,
-        paddingVertical: 10,
-    },
-    successSavedLabel: {
-        fontSize: 15,
-        fontFamily: Typography.poppins.semiBold,
-    },
-    successPayRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 10,
-        paddingVertical: 10,
-        borderTopWidth: 1,
-    },
-    successPayLabel: {
-        fontSize: 15,
-        fontFamily: Typography.poppins.semiBold,
     },
 });

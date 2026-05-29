@@ -25,6 +25,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PhonkText from '../../components/PhonkText';
+import RewardSuccessScreen from '../../components/rewards/RewardSuccessScreen';
 import TransactionLoadingOverlay from '../../components/TransactionLoadingOverlay';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
@@ -36,10 +37,61 @@ interface RedemptionResult {
     discountAmount: number;
     savedAmount?: number;
     cashbackAmount: number;
+    transactionId?: string;
+    redeemedAt?: unknown;
     creatorName?: string;
     totalAmount: number;
     finalAmount: number;
 }
+
+const normalizeRedeemedAt = (value: unknown): Date | null => {
+    const fromMilliseconds = (milliseconds: number) => {
+        const date = new Date(milliseconds);
+        return Number.isNaN(date.getTime()) ? null : date;
+    };
+
+    if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+    }
+
+    if (typeof value === 'number') {
+        return fromMilliseconds(value < 1000000000000 ? value * 1000 : value);
+    }
+
+    if (typeof value === 'string') {
+        const trimmedValue = value.trim();
+        if (!trimmedValue) return null;
+
+        const numericValue = Number(trimmedValue);
+        if (Number.isFinite(numericValue)) {
+            return fromMilliseconds(numericValue < 1000000000000 ? numericValue * 1000 : numericValue);
+        }
+
+        return fromMilliseconds(Date.parse(trimmedValue));
+    }
+
+    if (value && typeof value === 'object') {
+        const maybeTimestamp = value as {
+            toDate?: () => Date;
+            _seconds?: number;
+            _nanoseconds?: number;
+            seconds?: number;
+            nanoseconds?: number;
+        };
+
+        if (typeof maybeTimestamp.toDate === 'function') {
+            return normalizeRedeemedAt(maybeTimestamp.toDate());
+        }
+
+        const seconds = maybeTimestamp.seconds ?? maybeTimestamp._seconds;
+        const nanoseconds = maybeTimestamp.nanoseconds ?? maybeTimestamp._nanoseconds ?? 0;
+        if (typeof seconds === 'number' && typeof nanoseconds === 'number') {
+            return fromMilliseconds((seconds * 1000) + (nanoseconds / 1000000));
+        }
+    }
+
+    return null;
+};
 
 // Types for better type safety
 interface VendorData {
@@ -62,7 +114,11 @@ interface OfferData {
 }
 
 export default function RedeemScreen() {
-    const { id, vendorId, offerIndex: offerIndexParam } = useLocalSearchParams<{ id: string; vendorId: string; offerIndex: string }>();
+    const { id, vendorId, offerIndex: offerIndexParam } = useLocalSearchParams<{
+        id: string;
+        vendorId: string;
+        offerIndex: string;
+    }>();
     const router = useRouter();
     const { t, i18n } = useTranslation();
     const { isDark, theme } = useAppTheme();
@@ -83,6 +139,7 @@ export default function RedeemScreen() {
     const [pin, setPin] = useState('');
     const [amount, setAmount] = useState('');
 
+    const creatorInputRef = useRef<TextInput>(null);
     const pinInputRef = useRef<TextInput>(null);
     const amountInputRef = useRef<TextInput>(null);
     const scrollRef = useRef<ScrollView>(null);
@@ -146,6 +203,9 @@ export default function RedeemScreen() {
     const totalAmount = parseFloat(normalizeDigits(amount)) || 0;
     const discountValue = Number(offer?.discountValue) || 0;
     const discountType = offer?.discountType || 'percentage';
+    const parsedDiscountPercent = Number(offer?.discountValue);
+    const isPercentageDiscountOffer = offer?.discountType === 'percentage' && Number.isFinite(parsedDiscountPercent) && parsedDiscountPercent > 0;
+    const roundedDiscountPercent = isPercentageDiscountOffer ? Math.round(parsedDiscountPercent) : 0;
 
     let discountAmount = 0;
     if (discountType === 'percentage') {
@@ -208,6 +268,8 @@ export default function RedeemScreen() {
                 setIsRedeeming(false);
                 setRedemptionResult({
                     discountAmount: data.discountAmount || discountAmount,
+                    transactionId: data.transactionId,
+                    redeemedAt: data.redeemedAt ?? Date.now(),
                     savedAmount: data.savedAmount ?? data.discountAmount ?? discountAmount,
                     cashbackAmount: data.cashbackAmount || 0,
                     creatorName: data.creatorName,
@@ -446,145 +508,72 @@ export default function RedeemScreen() {
         const savedStr = (redemptionResult.savedAmount ?? redemptionResult.discountAmount).toFixed(2);
         const earnedStr = redemptionResult.cashbackAmount.toFixed(2);
         const currency = t('currency_qar');
+        const merchantName = isArabic
+            ? (vendor?.nameAr || vendor?.name)
+            : vendor?.name;
+        const normalizedRedeemedAt = normalizeRedeemedAt(redemptionResult.redeemedAt);
+        const redeemedOn = normalizedRedeemedAt
+            ? normalizedRedeemedAt.toLocaleString(isArabic ? 'ar-QA' : 'en-QA', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+            })
+            : null;
+        const discountBadgeText =
+            inStoreOffer.discountType === 'buy1get1'
+                ? t('buy1get1_label')
+                : inStoreOffer.discountType === 'percentage'
+                    ? `${t('flat_off_prefix')}${roundedDiscountPercent}%${t('flat_off_suffix')}`
+                    : `${currency} ${Number(inStoreOffer.discountValue || 0).toFixed(0)}${t('flat_off_suffix')}`;
+        const receiptSavedLine = t('reward_success_you_saved_label');
+        const receiptPayLabel = t('amount_to_pay_label');
+        const pointsLine = t('reward_success_xpoints_earned_label');
+        const receiptRows = [
+            {
+                icon: 'heart-outline' as const,
+                iconBorderColor: '#D1F4DA',
+                label: receiptSavedLine,
+                value: `${currency} ${savedStr}`,
+                tone: 'savings' as const,
+                accessibilityLabel: `${receiptSavedLine} ${currency} ${savedStr}`,
+            },
+            {
+                icon: 'card-outline' as const,
+                iconBorderColor: '#DCE4EC',
+                label: receiptPayLabel,
+                value: `${currency} ${redemptionResult.finalAmount.toFixed(2)}`,
+            },
+            ...(redemptionResult.cashbackAmount > 0 ? [{
+                icon: 'wallet-outline' as const,
+                iconBorderColor: '#FFE7C7',
+                label: pointsLine,
+                value: `${currency} ${earnedStr}`,
+                tone: 'points' as const,
+            }] : []),
+        ];
+        const metaLines = [
+            redeemedOn ? t('redeemed_on', { date: redeemedOn }) : null,
+            redemptionResult.creatorName ? t('thanks_to_creator', { creator: redemptionResult.creatorName }) : null,
+        ].filter(Boolean) as string[];
 
         return (
-            <SafeAreaView style={[styles.successContainer, { backgroundColor: theme.brand }]}>
-                <StatusBar barStyle="light-content" />
-
-                {/* Close Button */}
-                <TouchableOpacity
-                    style={[styles.successCloseButton, { backgroundColor: theme.logoTile }]}
-                    onPress={() => {
-                        triggerSubtleHaptic();
-                        router.replace('/');
-                    }}
-                >
-                    <Ionicons name="close" size={22} color={theme.logoTileText} />
-                </TouchableOpacity>
-
-                {/* Watermark Background */}
-                <View style={styles.watermarkOverlay} pointerEvents="none">
-                    {Array.from({ length: 14 }).map((_, i) => (
-                        <View key={i} style={[styles.watermarkRow, { marginTop: i % 2 === 0 ? 0 : -20 }]}>
-                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
-                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
-                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
-                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
-                        </View>
-                    ))}
-                </View>
-
-                <View style={styles.successPillWrapper}>
-                    {/* Top Pill — Vendor + Title */}
-                    <View style={styles.successTopPillWrapper}>
-                        <View style={[styles.successTopPill, { backgroundColor: theme.logoTile }]}>
-                            {/* Title */}
-                            <Text style={[styles.successTitle, { color: theme.logoTileText }]}>{t('redemption_title_line')}</Text>
-                            <PhonkText style={[styles.successTitleGreen, { color: theme.brand }]}>{t('redemption_successful_exclaim')}</PhonkText>
-
-                            {/* Discount Badge */}
-                            <View style={[styles.successBadge, { backgroundColor: theme.brand }]}>
-                                <Text style={[styles.successBadgeText, { color: theme.onActionSolid }]}>
-                                    {t('flat_off_prefix')}{inStoreOffer.discountType === 'buy1get1' ? t('buy1get1_label') : `${inStoreOffer.discountValue}${inStoreOffer.discountType === 'percentage' ? '%' : ''}`}{t('flat_off_suffix')}
-                                </Text>
-                            </View>
-                        </View>
-
-                        {/* Vendor Logo — half in, half out */}
-                                <View style={[styles.successLogoOverlay, { backgroundColor: theme.logoTile }]}>
-                                    <Image
-                                        source={{ uri: vendor.profilePicture }}
-                                        style={styles.successLogoImage}
-                                        contentFit="cover"
-                                    />
-                                </View>
-                    </View>
-
-                    {/* Bottom Pill — Breakdown */}
-                    <View style={[styles.successBottomPill, { backgroundColor: theme.logoTile }]}>
-                        {/* You Saved */}
-                        <View
-                            style={[
-                                styles.successSavedRow,
-                                {
-                                    flexDirection: isArabic ? 'row-reverse' : 'row',
-                                    justifyContent: isArabic ? 'flex-end' : 'flex-start',
-                                },
-                            ]}
-                        >
-                            <Ionicons name="pricetag" size={18} color={theme.brand} />
-                            <Text
-                                style={[
-                                    styles.successSavedLabel,
-                                    {
-                                        color: theme.brandText,
-                                        textAlign: isArabic ? 'right' : 'left',
-                                    },
-                                ]}
-                            >
-                                {t('you_saved_success_message', { currency, amount: savedStr }).replace('!', '')}
-                            </Text>
-                        </View>
-
-                        {/* Amount to Pay */}
-                        <View
-                            style={[
-                                styles.successPayRow,
-                                {
-                                    flexDirection: isArabic ? 'row-reverse' : 'row',
-                                    justifyContent: isArabic ? 'flex-end' : 'flex-start',
-                                },
-                            ]}
-                        >
-                            <Ionicons name="card" size={18} color={theme.logoTileText} />
-                            <Text
-                                style={[
-                                    styles.successPayLabel,
-                                    {
-                                        color: theme.logoTileText,
-                                        textAlign: isArabic ? 'right' : 'left',
-                                    },
-                                ]}
-                            >
-                                {t('amount_to_pay_label')}: {currency} {redemptionResult.finalAmount.toFixed(2)}
-                            </Text>
-                        </View>
-
-                        {/* Cashback (only if > 0) */}
-                        {redemptionResult.cashbackAmount > 0 && (
-                            <View
-                                style={[
-                                    styles.successCashbackRow,
-                                    {
-                                        borderTopColor: theme.logoTileBorder,
-                                        flexDirection: isArabic ? 'row-reverse' : 'row',
-                                        justifyContent: isArabic ? 'flex-end' : 'flex-start',
-                                    },
-                                ]}
-                            >
-                                <Ionicons name="wallet" size={18} color="#FF9800" />
-                                <Text
-                                    style={[
-                                        styles.successCashbackLabel,
-                                        {
-                                            textAlign: isArabic ? 'right' : 'left',
-                                        },
-                                    ]}
-                                >
-                                    {t('cashback_earned_success_message', { currency, amount: earnedStr })}
-                                </Text>
-                            </View>
-                        )}
-
-                        {/* Creator credit */}
-                        {redemptionResult.creatorName && redemptionResult.cashbackAmount > 0 && (
-                            <Text style={[styles.successCreatorText, { color: theme.subtleText }]}>
-                                {t('thanks_to_creator', { creator: redemptionResult.creatorName })}
-                            </Text>
-                        )}
-                    </View>
-                </View>
-            </SafeAreaView>
+            <RewardSuccessScreen
+                mascotSource={require('../../assets/images/realx-mascot-run-cash-both-hands.png')}
+                badgeText={discountBadgeText}
+                badgeFinalPercent={roundedDiscountPercent}
+                badgeCountUpSuffix={`%${t('flat_off_suffix')}`}
+                animateBadgeCountUp={isPercentageDiscountOffer}
+                merchantLabel={t('reward_success_merchant_label')}
+                merchantName={merchantName}
+                rows={receiptRows}
+                metaLines={metaLines}
+                primaryActionLabel={t('done')}
+                onPrimaryAction={() => router.replace('/wallet')}
+                onClose={() => router.replace('/')}
+                isRTL={isArabic}
+            />
         );
     }
 
@@ -648,8 +637,23 @@ export default function RedeemScreen() {
                                     <Text style={[styles.inputLabel, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>
                                         {t('have_creator_code')} <Text style={[styles.optionalText, { color: theme.subtleText }]}>{t('optional')}</Text>
                                     </Text>
-                                    <View style={[styles.creatorInputContainer, { backgroundColor: theme.card, shadowColor: theme.shadow, flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                    <TouchableOpacity
+                                        activeOpacity={1}
+                                        style={[
+                                            styles.creatorInputContainer,
+                                            {
+                                                backgroundColor: theme.card,
+                                                shadowColor: theme.shadow,
+                                                flexDirection: isArabic ? 'row-reverse' : 'row',
+                                            },
+                                        ]}
+                                        onPress={() => {
+                                            triggerSubtleHaptic();
+                                            creatorInputRef.current?.focus();
+                                        }}
+                                    >
                                         <TextInput
+                                            ref={creatorInputRef}
                                             style={[styles.creatorInput, { color: theme.text, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]}
                                             value={creatorCode}
                                             onChangeText={(text) => setCreatorCode(normalizeDigits(text).toUpperCase())}
@@ -661,7 +665,7 @@ export default function RedeemScreen() {
                                             onSubmitEditing={handleAction}
                                             autoCorrect={false}
                                         />
-                                    </View>
+                                    </TouchableOpacity>
                                 </View>
                             )}
 
@@ -1126,151 +1130,11 @@ const styles = StyleSheet.create({
     creatorInput: {
         fontSize: 18,
         fontFamily: Typography.poppins.semiBold,
+        flex: 1,
+        height: '100%',
     },
     optionalText: {
         fontFamily: Typography.poppins.medium,
         fontSize: 14,
-    },
-    // Success Screen Styles
-    successContainer: {
-        flex: 1,
-    },
-    successCloseButton: {
-        position: 'absolute',
-        top: 80,
-        right: 24,
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 10,
-    },
-    successPillWrapper: {
-        flex: 1,
-        justifyContent: 'center',
-        paddingHorizontal: 30,
-        gap: 0,
-        zIndex: 1,
-    },
-    successTopPillWrapper: {
-        position: 'relative',
-        marginTop: 40,
-    },
-    successTopPill: {
-        borderRadius: 30,
-        paddingTop: 50,
-        paddingBottom: 24,
-        paddingHorizontal: 24,
-        alignItems: 'center',
-    },
-    successBottomPill: {
-        borderRadius: 30,
-        paddingVertical: 24,
-        paddingHorizontal: 24,
-        marginTop: -2,
-        alignItems: 'center',
-    },
-    successLogoOverlay: {
-        position: 'absolute',
-        top: -40,
-        alignSelf: 'center',
-        width: 80,
-        height: 80,
-        borderRadius: 20,
-        backgroundColor: '#1E2a38',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 2,
-    },
-    successLogoImage: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 20,
-    },
-    successTitle: {
-        fontSize: 26,
-        fontFamily: Typography.poppins.semiBold,
-        textAlign: 'center',
-    },
-    successTitleGreen: {
-        fontSize: 26,
-        textAlign: 'center',
-        marginBottom: 16,
-    },
-    successBadge: {
-        borderRadius: 30,
-        paddingVertical: 10,
-        paddingHorizontal: 24,
-    },
-    successBadgeText: {
-        fontSize: 16,
-        fontFamily: Typography.poppins.semiBold,
-    },
-    successSavedRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        paddingVertical: 10,
-        width: '88%',
-    },
-    successSavedLabel: {
-        fontSize: 15,
-        fontFamily: Typography.poppins.semiBold,
-        flex: 1,
-    },
-    successPayRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        paddingVertical: 10,
-        borderTopWidth: 1,
-        width: '88%',
-    },
-    successPayLabel: {
-        fontSize: 15,
-        fontFamily: Typography.poppins.semiBold,
-        flex: 1,
-    },
-    successCashbackRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        paddingVertical: 10,
-        borderTopWidth: 1,
-        width: '88%',
-    },
-    successCashbackLabel: {
-        fontSize: 15,
-        color: '#FF9800',
-        fontFamily: Typography.poppins.semiBold,
-        flex: 1,
-    },
-    successCreatorText: {
-        fontSize: 13,
-        fontFamily: Typography.poppins.medium,
-        textAlign: 'center',
-        marginTop: 8,
-    },
-    watermarkOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: -80,
-        right: -80,
-        bottom: 0,
-        justifyContent: 'space-around',
-        overflow: 'hidden',
-        zIndex: 0,
-    },
-    watermarkRow: {
-        flexDirection: 'row',
-        transform: [{ rotate: '-25deg' }],
-    },
-    watermarkText: {
-        color: 'rgba(255,255,255,0.07)',
-        fontSize: 13,
-        fontFamily: Typography.poppins.semiBold,
-        letterSpacing: 2,
-        marginHorizontal: 15,
     },
 });
