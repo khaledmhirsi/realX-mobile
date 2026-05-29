@@ -19,6 +19,7 @@ import {
     OnboardingScreenMotion,
     OnboardingStaggerItem,
 } from '../../components/onboarding/OnboardingMotion';
+import StaggeredHeadingText from '../../components/onboarding/StaggeredHeadingText';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 import { setStoredLanguage } from '../../src/localization/i18n';
@@ -77,10 +78,20 @@ export default function OnboardingScreen() {
                         {/* Headline */}
                         <View style={[styles.headlineContainer, isRTL && styles.headlineRTL]}>
                             <OnboardingIntroHeadlineMotion delay={180}>
-                                <PhonkText style={styles.headlineBroke}>{t('onboarding_headline_broke')}</PhonkText>
+                                <StaggeredHeadingText
+                                    text={t('onboarding_headline_broke')}
+                                    textStyle={styles.headlineBroke}
+                                    fontHeight={34}
+                                    delay={980}
+                                />
                             </OnboardingIntroHeadlineMotion>
                             <OnboardingIntroHeadlineMotion delay={260}>
-                                <PhonkText style={styles.headlineNotAnymore}>{t('onboarding_headline_not_anymore')}</PhonkText>
+                                <StaggeredHeadingText
+                                    text={t('onboarding_headline_not_anymore')}
+                                    textStyle={styles.headlineNotAnymore}
+                                    fontHeight={34}
+                                    delay={1120}
+                                />
                             </OnboardingIntroHeadlineMotion>
                         </View>
 
@@ -242,15 +253,15 @@ const styles = StyleSheet.create({
         paddingLeft: 10,
     },
     headlineBroke: {
-        fontSize: 40,
+        fontSize: 32,
         color: '#FFFFFF',
         fontStyle: 'italic',
-        lineHeight: 52,
+        lineHeight: 44,
     },
     headlineNotAnymore: {
-        fontSize: 40,
+        fontSize: 32,
         color: '#FFFFFF',
-        lineHeight: 52
+        lineHeight: 44
     },
     graphicContainer: {
         flex: 1,
