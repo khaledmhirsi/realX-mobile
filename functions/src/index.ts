@@ -23,7 +23,7 @@ function getResend(): Resend {
 }
 
 const db = admin.firestore();
-const REVIEW_EMAIL = (process.env.APPLE_REVIEW_EMAIL || '').toLowerCase().trim();
+const REVIEW_EMAIL = (process.env.APPLE_REVIEW_EMAIL || 'apple-review@realx.qa').toLowerCase().trim();
 const ALLOWED_STUDENT_EMAIL_DOMAINS = new Set([
   'gemsed.com',
   'dpsmisdoha.com',
@@ -1093,19 +1093,6 @@ export const sendOtp = onCall(
       }
     }
 
-    // Login: verify account exists
-    if (purpose === 'login') {
-      const snapshot = await db
-        .collection('students')
-        .where('email', '==', email)
-        .limit(1)
-        .get();
-
-      if (snapshot.empty) {
-        throw new HttpsError('not-found', 'No account found with this email');
-      }
-    }
-
     // App Store Review Bypass
     if (REVIEW_EMAIL && email === REVIEW_EMAIL && purpose === 'login') {
       let uid: string;
@@ -1133,6 +1120,19 @@ export const sendOtp = onCall(
 
       const customToken = await admin.auth().createCustomToken(uid);
       return { success: true, customToken };
+    }
+
+    // Login: verify account exists
+    if (purpose === 'login') {
+      const snapshot = await db
+        .collection('students')
+        .where('email', '==', email)
+        .limit(1)
+        .get();
+
+      if (snapshot.empty) {
+        throw new HttpsError('not-found', 'No account found with this email');
+      }
     }
 
     const now = admin.firestore.Timestamp.now();

@@ -21,6 +21,7 @@ type VendorBranch = {
     id: string;
     name?: string;
     nameAr?: string;
+    phoneNumber?: string;
     address?: string;
     addressAr?: string;
     latitude?: number;
@@ -34,6 +35,7 @@ function getVendorBranches(vendor: any): VendorBranch[] {
         ? vendor.locations
         : [{
             id: 'primary',
+            phoneNumber: vendor?.phoneNumber,
             address: vendor?.address,
             addressAr: vendor?.addressAr,
             latitude: vendor?.latitude ?? vendor?.lat,
@@ -49,6 +51,7 @@ function getVendorBranches(vendor: any): VendorBranch[] {
                 id: String(location?.id || (location?.isPrimary ? 'primary' : `branch-${index + 1}`)),
                 name: location?.name,
                 nameAr: location?.nameAr,
+                phoneNumber: typeof location?.phoneNumber === 'string' ? location.phoneNumber.trim() : undefined,
                 address: location?.address || vendor?.address,
                 addressAr: location?.addressAr || vendor?.addressAr,
                 latitude,
@@ -57,6 +60,17 @@ function getVendorBranches(vendor: any): VendorBranch[] {
             };
         })
         .filter((location: VendorBranch) => isValidLatLng(location.latitude, location.longitude));
+}
+
+function getDialablePhoneNumber(phoneNumber?: string) {
+    const normalized = phoneNumber?.replace(/[^\d+]/g, '') || '';
+    return normalized.length > 0 ? normalized : null;
+}
+
+function callPhoneNumber(phoneNumber?: string) {
+    const dialable = getDialablePhoneNumber(phoneNumber);
+    if (!dialable) return;
+    void Linking.openURL(`tel:${dialable}`);
 }
 
 export default function VendorScreen() {
@@ -382,6 +396,18 @@ export default function VendorScreen() {
                                 <Text style={[styles.nearestBranchText, { color: theme.brandText }]}>{nearestBranch.distanceKm.toFixed(1)} km</Text>
                             </View>
                         )}
+                        {nearestBranch?.phoneNumber ? (
+                            <TouchableOpacity
+                                style={[styles.phoneButton, { backgroundColor: theme.cardMuted }]}
+                                onPress={() => callPhoneNumber(nearestBranch.phoneNumber)}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="call-outline" size={15} color={theme.brand} />
+                                <Text style={[styles.phoneButtonText, { color: theme.text }]} numberOfLines={1}>
+                                    {nearestBranch.phoneNumber}
+                                </Text>
+                            </TouchableOpacity>
+                        ) : null}
                         </View>
 
                         <View style={styles.tagsRow}>
@@ -656,11 +682,35 @@ const isSaved = savedOfferIds.has(savedId);
                                                     )}
                                                 </View>
                                                 {address ? <Text style={[styles.branchAddress, { color: theme.mutedText }]} numberOfLines={2}>{address}</Text> : null}
+                                                {branch.phoneNumber ? (
+                                                    <View style={styles.branchPhoneRow}>
+                                                        <Ionicons name="call-outline" size={14} color={theme.brand} />
+                                                        <Text style={[styles.branchPhoneText, { color: theme.text }]} numberOfLines={1}>
+                                                            {branch.phoneNumber}
+                                                        </Text>
+                                                    </View>
+                                                ) : null}
                                                 {branch.distanceKm != null && (
                                                     <Text style={[styles.branchDistance, { color: theme.brandText }]}>{branch.distanceKm.toFixed(1)} km away</Text>
                                                 )}
                                             </View>
+                                            {branch.phoneNumber ? (
+                                                <TouchableOpacity
+                                                    style={[styles.branchCallButton, { backgroundColor: theme.brand }]}
+                                                    onPress={(event) => {
+                                                        event.stopPropagation();
+                                                        callPhoneNumber(branch.phoneNumber);
+                                                    }}
+                                                    activeOpacity={0.8}
+                                                >
+                                                    <Ionicons name="call" size={16} color={theme.onActionSolid} />
+                                                    <Text style={[styles.branchCallText, { color: theme.onActionSolid }]}>
+                                                        {isArabic ? 'اتصال' : 'Call'}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            ) : (
                                             <Ionicons name="chevron-forward" size={18} color={theme.iconMuted} />
+                                            )}
                                         </TouchableOpacity>
                                     );
                                 })}
@@ -780,7 +830,9 @@ const styles = StyleSheet.create({
     metaLeft: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        gap: 10,
+        flexShrink: 1,
+        flexWrap: 'wrap',
     },
     tagsRow: {
         flexDirection: 'row',
@@ -821,6 +873,20 @@ const styles = StyleSheet.create({
         borderRadius: 18,
     },
     nearestBranchText: {
+        fontSize: 12,
+        fontFamily: Typography.poppins.semiBold,
+    },
+    phoneButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        maxWidth: 170,
+        paddingHorizontal: 10,
+        paddingVertical: 7,
+        borderRadius: 18,
+    },
+    phoneButtonText: {
+        flexShrink: 1,
         fontSize: 12,
         fontFamily: Typography.poppins.semiBold,
     },
@@ -1030,9 +1096,32 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontFamily: Typography.poppins.medium,
     },
+    branchPhoneRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+    },
+    branchPhoneText: {
+        flex: 1,
+        fontSize: 13,
+        fontFamily: Typography.poppins.semiBold,
+    },
     branchDistance: {
         fontSize: 12,
         fontFamily: Typography.poppins.semiBold,
+    },
+    branchCallButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        paddingHorizontal: 12,
+        paddingVertical: 9,
+        borderRadius: 18,
+    },
+    branchCallText: {
+        fontSize: 12,
+        fontFamily: Typography.poppins.semiBold,
+        textTransform: 'uppercase',
     },
     termText: {
         fontSize: 14,

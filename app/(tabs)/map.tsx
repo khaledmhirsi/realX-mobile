@@ -74,6 +74,7 @@ type VendorMapItem = {
   nameAr?: string;
   branchName?: string;
   branchNameAr?: string;
+  phoneNumber?: string;
   address?: string;
   addressAr?: string;
   latitude: number;
@@ -133,6 +134,16 @@ function clusterColorForCount(pointCount: number) {
   return Colors.brandGreen;
 }
 
+function getDialablePhoneNumber(phoneNumber?: string) {
+  const normalized = phoneNumber?.replace(/[^\d+]/g, '') || '';
+  return normalized.length > 0 ? normalized : null;
+}
+
+function callPhoneNumber(phoneNumber?: string) {
+  const dialable = getDialablePhoneNumber(phoneNumber);
+  if (!dialable) return;
+  void Linking.openURL(`tel:${dialable}`);
+}
 
 export default function MapScreen() {
   const { t, i18n } = useTranslation();
@@ -568,6 +579,7 @@ export default function MapScreen() {
           nameAr: vendor.nameAr,
           branchName: vendor.branchName,
           branchNameAr: vendor.branchNameAr,
+          phoneNumber: vendor.phoneNumber,
           latitude: vendor.latitude,
           longitude: vendor.longitude,
           viewedAt: Date.now(),
@@ -618,6 +630,7 @@ export default function MapScreen() {
         vendorNameAr: vendor.nameAr || '',
         branchName: vendor.branchName || '',
         branchNameAr: vendor.branchNameAr || '',
+        phoneNumber: vendor.phoneNumber || '',
         address: vendor.address || '',
         addressAr: vendor.addressAr || '',
         latitude: vendor.latitude,
@@ -893,6 +906,15 @@ export default function MapScreen() {
                 </View>
               )}
 
+              {selectedMapVendor.phoneNumber ? (
+                <View style={[styles.calloutPhonePill, { backgroundColor: theme.cardMuted }]}>
+                  <Ionicons name="call-outline" size={14} color={theme.brand} />
+                  <Text style={[styles.calloutPhoneText, { color: theme.text }]} numberOfLines={1}>
+                    {selectedMapVendor.phoneNumber}
+                  </Text>
+                </View>
+              ) : null}
+
               <View style={styles.calloutActions}>
                 <TouchableOpacity
                   style={[styles.calloutIconBtn, { backgroundColor: theme.cardMuted }]}
@@ -914,6 +936,17 @@ export default function MapScreen() {
                   <Ionicons name="storefront-outline" size={16} color={theme.text} />
                   <Text style={[styles.calloutBtnText, { color: theme.text }]}>{t('map_callout_view')}</Text>
                 </TouchableOpacity>
+
+                {selectedMapVendor.phoneNumber ? (
+                  <TouchableOpacity
+                    style={[styles.calloutViewBtn, { backgroundColor: theme.cardMuted }]}
+                    onPress={() => callPhoneNumber(selectedMapVendor.phoneNumber)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="call" size={16} color={theme.text} />
+                    <Text style={[styles.calloutBtnText, { color: theme.text }]}>{t('map_callout_call')}</Text>
+                  </TouchableOpacity>
+                ) : null}
 
                 <TouchableOpacity
                   style={[styles.calloutDirectionsBtn, { backgroundColor: theme.actionSolid }]}
@@ -1021,6 +1054,7 @@ function parseMapLocations(locationsData: Record<string, any> | undefined): Vend
         id: 'primary',
         name: base.branchName,
         nameAr: base.branchNameAr,
+        phoneNumber: base.phoneNumber,
         address: base.address,
         addressAr: base.addressAr,
         latitude: base.latitude,
@@ -1059,6 +1093,9 @@ function parseMapLocations(locationsData: Record<string, any> | undefined): Vend
         nameAr: base.vendorNameAr || base.nameAr,
         branchName: rawLocation.name,
         branchNameAr: rawLocation.nameAr,
+        phoneNumber: typeof rawLocation.phoneNumber === 'string'
+          ? rawLocation.phoneNumber.trim()
+          : (typeof base.phoneNumber === 'string' ? base.phoneNumber.trim() : undefined),
         address: rawLocation.address || base.address,
         addressAr: rawLocation.addressAr || base.addressAr,
         latitude,
@@ -1278,9 +1315,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: Typography.poppins.medium,
   },
+  calloutPhonePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
+  calloutPhoneText: {
+    flexShrink: 1,
+    fontSize: 13,
+    fontFamily: Typography.poppins.semiBold,
+  },
   calloutActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
   calloutIconBtn: {
     width: 44,

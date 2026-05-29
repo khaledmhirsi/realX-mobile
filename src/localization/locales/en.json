@@ -21,6 +21,7 @@
   "no_search_results": "No results matched your search.",
   "map_load_error": "Couldn't load map vendors. Please try again.",
   "map_callout_view": "View",
+  "map_callout_call": "Call",
   "map_callout_directions": "Directions",
   "profile_details_title": "Profile Details",
   "save": "Save",
