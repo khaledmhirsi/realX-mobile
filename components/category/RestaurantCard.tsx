@@ -5,6 +5,8 @@ import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 
+const cashbackBadgeIcon = require('../../assets/images/cashback.png');
+
 type Props = {
   id: string;
   name: string;
@@ -33,7 +35,7 @@ export default function RestaurantCard({
   style,
   xcardEnabled = false,
 }: Props) {
-  const { i18n, t } = useTranslation();
+  const { i18n } = useTranslation();
   const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
 
   const handlePress = () => {
@@ -88,9 +90,11 @@ export default function RestaurantCard({
         {/* Cashback Badge */}
         {xcardEnabled && (
           <View style={styles.xcardBadge}>
-            <Text style={styles.xcardText}>
-              {t('cashback')}
-            </Text>
+            <Image
+              source={cashbackBadgeIcon}
+              style={styles.xcardIcon}
+              contentFit="contain"
+            />
           </View>
         )}
       </View>
@@ -117,12 +121,6 @@ export default function RestaurantCard({
 }
 
 const styles = StyleSheet.create({
-  xcardText: {
-  color: '#FFFFFF',
-  fontSize: 11,
-  fontFamily: Typography.poppins.semiBold,
-  textTransform: 'uppercase',
-  },
   container: {
     width: '100%',
     height: 200, // Fixed height for consistency
@@ -238,20 +236,14 @@ const styles = StyleSheet.create({
 
   xcardBadge: {
     position: 'absolute',
-    top: 10,
-    end: 10,
-    width: 32,
-    height: 32,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    top: 8,
+    end: 8,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
     zIndex: 10,
+    overflow: 'hidden',
   },
   topPill: {
     flex: 1,
@@ -273,7 +265,7 @@ const styles = StyleSheet.create({
     transform: [{ translateY: '-50%' }],
   },
   xcardIcon: {
-    width: 32,
-    height: 32,
+    width: '100%',
+    height: '100%',
   },
 });
