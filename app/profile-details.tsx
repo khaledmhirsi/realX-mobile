@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { deleteUser, getAuth, signOut, updateProfile } from '@react-native-firebase/auth';
 import { doc, getDoc, getFirestore, updateDoc } from '@react-native-firebase/firestore';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -24,6 +23,7 @@ import { logger } from '../utils/logger';
 import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
 import PhonkText from '../components/PhonkText';
+import UserAvatar from '../components/UserAvatar';
 
 export default function ProfileDetailsScreen() {
     const router = useRouter();
@@ -38,6 +38,7 @@ export default function ProfileDetailsScreen() {
     const [email, setEmail] = useState('');
     const [dob, setDob] = useState<Date | null>(null);
     const [photoURL, setPhotoURL] = useState<string | null>(null);
+    const [role, setRole] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -63,6 +64,7 @@ export default function ProfileDetailsScreen() {
                     setLastName(data?.lastName || '');
                     setEmail(data?.email || user.email || '');
                     setPhotoURL(data?.photoURL || user.photoURL || null);
+                    setRole(data?.role || null);
                     if (data?.dob) {
                         try {
                             if (data.dob.includes('-')) {
@@ -218,13 +220,16 @@ export default function ProfileDetailsScreen() {
                 >
                     {/* Profile Image Section */}
                     <View style={styles.avatarContainer}>
-                        <View style={[styles.avatarMain, { backgroundColor: '#F5F5F7' }]}>
-                            {photoURL ? (
-                                <Image source={{ uri: photoURL }} style={styles.avatarImage} />
-                            ) : (
-                                <Ionicons name="person" size={80} color="#E0E0E0" />
-                            )}
-                        </View>
+                        <UserAvatar
+                            firstName={firstName}
+                            lastName={lastName}
+                            email={email}
+                            photoURL={photoURL}
+                            role={role}
+                            seed={getAuth().currentUser?.uid}
+                            size={120}
+                            style={styles.avatarMain}
+                        />
                     </View>
 
                     {/* Form Fields */}
@@ -399,18 +404,8 @@ const styles = StyleSheet.create({
         marginBottom: 32,
     },
     avatarMain: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden',
         borderWidth: 4,
         borderColor: '#F5F5F7',
-    },
-    avatarImage: {
-        width: '100%',
-        height: '100%',
     },
     form: {
         gap: 24,

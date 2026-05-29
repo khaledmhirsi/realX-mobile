@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import { getAuth, signOut } from '@react-native-firebase/auth';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +15,7 @@ import PhonkText from '../../components/PhonkText';
 import i18n, { setStoredLanguage } from '../../src/localization/i18n';
 import { applyRTL } from '../../src/localization/rtl';
 import { useStudent } from '../../context/StudentContext';
+import UserAvatar from '../../components/UserAvatar';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -98,18 +98,15 @@ export default function ProfileScreen() {
 
         <View style={styles.topPill}>
           <View style={[styles.profileTopRow]}>
-            <View style={styles.avatarContainer}>
-              {userData?.photoURL || getAuth().currentUser?.photoURL ? (
-                <Image
-                  source={{ uri: userData?.photoURL || getAuth().currentUser?.photoURL || undefined }}
-                  style={styles.avatar}
-                />
-              ) : (
-                <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F0F0' }]}>
-                  <Ionicons name="person" size={32} color="#AAA" />
-                </View>
-              )}
-            </View>
+            <UserAvatar
+              firstName={userData?.firstName}
+              lastName={userData?.lastName}
+              email={userData?.email || getAuth().currentUser?.email}
+              photoURL={userData?.photoURL || getAuth().currentUser?.photoURL}
+              role={userData?.role}
+              seed={getAuth().currentUser?.uid}
+              size={80}
+            />
             <View style={styles.badge}>
               <PhonkText style={[{ color: '#FFFFFF', textAlign: isRTL ? 'right' : 'left' }, styles.badgeText]}>{t('rookie_badge')}</PhonkText>
             </View>
@@ -308,16 +305,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 50,
-    overflow: 'hidden',
-  },
-  avatar: {
-    width: '100%',
-    height: '100%',
-  },
   badge: {
     backgroundColor: '#1AD04F',
     paddingHorizontal: 16,
@@ -480,4 +467,3 @@ const styles = StyleSheet.create({
     color: '#FF3B30',
   },
 });
-
