@@ -3,11 +3,11 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
-import { Colors } from '../../constants/Colors';
 import PhonkText from '../PhonkText';
 import RestaurantCard from '../category/RestaurantCard';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../../utils/logger';
+import { useAppTheme } from '../../context/AppThemeContext';
 
 type TrendingOffersProps = {
     onVendorPress?: (vendor: any) => void;
@@ -20,6 +20,7 @@ const OFFER_AUTO_SCROLL_MS = 4000;
 
 export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
     const { t } = useTranslation();
+    const { theme } = useAppTheme();
     const isRTL = I18nManager.isRTL;
     const [vendors, setVendors] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -136,7 +137,7 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
     if (loading) {
         return (
             <View style={[styles.container, styles.loaderContainer]}>
-                <ActivityIndicator size="small" color={Colors.brandGreen} />
+                <ActivityIndicator size="small" color={theme.brand} />
             </View>
         );
     }
@@ -149,10 +150,10 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
         <View style={styles.container}>
             <View style={styles.headerContainer}>
                 <View style={styles.headerTitle}>
-                    <PhonkText style={[styles.trendingText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                    <PhonkText style={[styles.trendingText, { color: theme.text, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                         {trendingLabelPrefix}
                     </PhonkText>
-                    <PhonkText style={[styles.offersText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                    <PhonkText style={[styles.offersText, { color: theme.brand, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                         {trendingLabelHighlight}
                     </PhonkText>
                 </View>
@@ -218,12 +219,10 @@ const styles = StyleSheet.create({
     },
     trendingText: {
         fontSize: 20,
-        color: Colors.light.text,
         letterSpacing: 1,
     },
     offersText: {
         fontSize: 20,
-        color: Colors.brandGreen,
         fontWeight: '900',
         fontStyle: 'normal',
         letterSpacing: 1,

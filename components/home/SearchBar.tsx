@@ -9,8 +9,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Colors } from "../../constants/Colors";
 import { Typography } from "../../constants/Typography";
+import { useAppTheme } from "../../context/AppThemeContext";
 
 type Props = {
   placeholder?: string;
@@ -38,7 +38,9 @@ export default function SearchBar({
   onClear,
 }: Props) {
   const navigation = useNavigation();
-  const useNativeGlass = canUseNativeGlass();
+  const { isDark, theme } = useAppTheme();
+  const useNativeGlass = !isDark && canUseNativeGlass();
+  const showHighlights = !isDark;
   const [isFocused, setIsFocused] = useState(false);
   const [animatedPlaceholder, setAnimatedPlaceholder] = useState<string | null>(null);
   const isActive = isFocused || (value?.length ?? 0) > 0;
@@ -103,15 +105,15 @@ export default function SearchBar({
   };
 
   return (
-    <View style={styles.searchShell}>
+    <View style={[styles.searchShell, isDark && styles.searchShellDark]}>
       {useNativeGlass ? (
         <GlassView
-          style={[styles.searchSurface, styles.nativeGlass]}
+          style={[styles.searchSurface, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder }]}
           glassEffectStyle="regular"
-          colorScheme="light"
-          tintColor="rgba(255,255,255,0.34)"
+          colorScheme={isDark ? "dark" : "light"}
+          tintColor={theme.inputBackground}
         >
-          <GlassHighlights />
+          {showHighlights ? <GlassHighlights topColor={theme.inputHighlight} bottomColor={theme.inputShade} /> : null}
           <SearchBarContent
             placeholder={placeholderText}
             value={value}
@@ -121,11 +123,15 @@ export default function SearchBar({
             isActive={isActive}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
+            textColor={theme.inputText}
+            placeholderColor={theme.inputPlaceholder}
+            iconColor={theme.icon}
+            activeColor={theme.brand}
           />
         </GlassView>
       ) : (
-        <View style={[styles.searchSurface, styles.fallbackGlass]}>
-          <GlassHighlights />
+        <View style={[styles.searchSurface, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder }]}>
+          {showHighlights ? <GlassHighlights topColor={theme.inputHighlight} bottomColor={theme.inputShade} /> : null}
           <SearchBarContent
             placeholder={placeholderText}
             value={value}
@@ -135,6 +141,10 @@ export default function SearchBar({
             isActive={isActive}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
+            textColor={theme.inputText}
+            placeholderColor={theme.inputPlaceholder}
+            iconColor={theme.icon}
+            activeColor={theme.brand}
           />
         </View>
       )}
@@ -142,11 +152,11 @@ export default function SearchBar({
   );
 }
 
-function GlassHighlights() {
+function GlassHighlights({ topColor, bottomColor }: { topColor: string; bottomColor: string }) {
   return (
     <>
-      <View pointerEvents="none" style={styles.topHighlight} />
-      <View pointerEvents="none" style={styles.bottomShade} />
+      <View pointerEvents="none" style={[styles.topHighlight, { backgroundColor: topColor }]} />
+      <View pointerEvents="none" style={[styles.bottomShade, { backgroundColor: bottomColor }]} />
     </>
   );
 }
@@ -156,6 +166,10 @@ type SearchBarContentProps = Required<Pick<Props, "placeholder">> &
     isActive: boolean;
     onFocus: () => void;
     onBlur: () => void;
+    textColor: string;
+    placeholderColor: string;
+    iconColor: string;
+    activeColor: string;
   };
 
 function SearchBarContent({
@@ -167,25 +181,33 @@ function SearchBarContent({
   isActive,
   onFocus,
   onBlur,
+  textColor,
+  placeholderColor,
+  iconColor,
+  activeColor,
 }: SearchBarContentProps) {
   return (
     <>
       <Ionicons
         name="search"
         size={20}
-        color={isActive ? Colors.brandGreen : "#111111"}
+        color={isActive ? activeColor : iconColor}
         style={styles.icon}
       />
       <TextInput
-        style={[styles.input, isActive && styles.inputActive]}
+        style={[
+          styles.input,
+          { color: textColor },
+          isActive && { color: activeColor },
+        ]}
         placeholder={placeholder}
-        placeholderTextColor="rgba(0,0,0,0.48)"
+        placeholderTextColor={placeholderColor}
         value={value}
         onChangeText={onChangeText}
         returnKeyType="search"
         onSubmitEditing={onSubmit}
-        selectionColor={Colors.brandGreen}
-        cursorColor={Colors.brandGreen}
+        selectionColor={activeColor}
+        cursorColor={activeColor}
         onFocus={onFocus}
         onBlur={onBlur}
       />
@@ -197,7 +219,7 @@ function SearchBarContent({
           accessibilityLabel="Clear search"
           hitSlop={8}
         >
-          <Ionicons name="close-circle" size={18} color="rgba(0,0,0,0.46)" />
+          <Ionicons name="close-circle" size={18} color={placeholderColor} />
         </TouchableOpacity>
       ) : null}
     </>
@@ -215,6 +237,11 @@ const styles = StyleSheet.create({
     shadowRadius: 22,
     elevation: 8,
   },
+  searchShellDark: {
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+  },
   searchSurface: {
     flexDirection: "row",
     alignItems: "center",
@@ -222,16 +249,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     minHeight: 56,
-    borderWidth:2,
+    borderWidth: 1,
     overflow: "hidden",
-  },
-  nativeGlass: {
-    borderColor: "rgba(255,255,255,0.84)",
-    backgroundColor: "rgba(255,255,255,0.32)",
-  },
-  fallbackGlass: {
-    backgroundColor: "rgba(255,255,255,0.76)",
-    borderColor: "rgba(255,255,255,0.95)",
   },
   topHighlight: {
     position: "absolute",
@@ -239,7 +258,6 @@ const styles = StyleSheet.create({
     left: 14,
     right: 14,
     height: 1,
-    backgroundColor: "rgba(255,255,255,0.9)",
   },
   bottomShade: {
     position: "absolute",
@@ -247,7 +265,6 @@ const styles = StyleSheet.create({
     right: 12,
     bottom: 0,
     height: 1,
-    backgroundColor: "rgba(0,0,0,0.04)",
   },
   icon: {
     marginRight: 10,
@@ -257,12 +274,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: Typography.poppins.medium,
     padding: 0,
-    color: "rgba(0,0,0,0.72)",
-    textShadowColor: "rgba(255,255,255,0.85)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 6,
-  },
-  inputActive: {
-    color: Colors.brandGreen,
   },
 });

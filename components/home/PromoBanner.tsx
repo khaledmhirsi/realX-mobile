@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDi
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
+import { useAppTheme } from '../../context/AppThemeContext';
 
 const BANNER_HEIGHT = 192;
 const BANNER_SIDE_PADDING = 24;
@@ -30,6 +31,7 @@ type PromoBannerProps = {
 };
 
 export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
+    const { theme } = useAppTheme();
     const [banners, setBanners] = useState<BannerItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -137,7 +139,7 @@ export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
     if (loading) {
         return (
             <View style={[styles.container, styles.loaderContainer]}>
-                <ActivityIndicator size="large" color="#333" />
+                <ActivityIndicator size="large" color={theme.brand} />
             </View>
         );
     }
@@ -145,7 +147,7 @@ export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
     if (banners.length === 0) {
         return (
             <View style={[styles.container, styles.loaderContainer]}>
-                <Text style={{ color: '#8E8E93', fontFamily: 'System' }}>No banners available</Text>
+                <Text style={{ color: theme.subtleText, fontFamily: 'System' }}>No banners available</Text>
             </View>
         );
     }
