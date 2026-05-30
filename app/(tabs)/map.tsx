@@ -941,17 +941,6 @@ export default function MapScreen() {
                   <Text style={[styles.calloutBtnText, { color: theme.text }]}>{t('map_callout_view')}</Text>
                 </TouchableOpacity>
 
-                {selectedMapVendor.phoneNumber ? (
-                  <TouchableOpacity
-                    style={[styles.calloutViewBtn, { backgroundColor: theme.cardMuted }]}
-                    onPress={() => callPhoneNumber(selectedMapVendor.phoneNumber)}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="call" size={16} color={theme.text} />
-                    <Text style={[styles.calloutBtnText, { color: theme.text }]}>{t('map_callout_call')}</Text>
-                  </TouchableOpacity>
-                ) : null}
-
                 <TouchableOpacity
                   style={[styles.calloutDirectionsBtn, { backgroundColor: theme.actionSolid }]}
                   onPress={() => {
