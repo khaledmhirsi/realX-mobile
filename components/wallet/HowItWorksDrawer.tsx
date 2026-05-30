@@ -44,13 +44,20 @@ function StepItem({ step, isArabic }: StepItemProps) {
             ]}
         >
             <View style={styles.stepNumberColumn}>
-                <PhonkText style={[styles.stepNumber, { color: theme.brand }]}>
+                <PhonkText
+                    style={[
+                        styles.stepNumber,
+                        isArabic && styles.stepNumberRTL,
+                        { color: theme.brand },
+                    ]}
+                >
                     {step.number}
                 </PhonkText>
             </View>
             <Text
                 style={[
                     styles.stepText,
+                    isArabic && styles.stepTextRTL,
                     {
                         color: theme.text,
                         textAlign: isArabic ? 'right' : 'left',
@@ -102,13 +109,23 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
 
                     <ScrollView
                         style={styles.content}
+                        contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={false}
                         bounces={false}
                     >
                         {/* Logo */}
                         <View style={[styles.logoContainer, isArabic && styles.logoContainerRTL]}>
-                            <PhonkText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</PhonkText>
-                            <PhonkText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</PhonkText>
+                            {isArabic ? (
+                                <>
+                                    <Text style={[styles.logoCardArabic, { color: theme.text }]}>{t('xcard_title_card')}</Text>
+                                    <Text style={[styles.logoXArabic, { color: theme.brand }]}>{t('xcard_title_x')}</Text>
+                                </>
+                            ) : (
+                                <>
+                                    <PhonkText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</PhonkText>
+                                    <PhonkText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</PhonkText>
+                                </>
+                            )}
                         </View>
 
                         {/* Divider */}
@@ -161,6 +178,11 @@ const styles = StyleSheet.create({
         borderRadius: 2,
     },
     content: {
+        flexGrow: 0,
+    },
+    scrollContent: {
+        width: '100%',
+        alignItems: 'stretch',
         paddingHorizontal: 24,
     },
     logoContainer: {
@@ -171,13 +193,26 @@ const styles = StyleSheet.create({
         paddingBottom: 24,
     },
     logoContainerRTL: {
-        flexDirection: 'row-reverse',
+        direction: 'ltr',
+        gap: 4,
     },
     logoX: {
         fontSize: 28,
     },
     logoCard: {
         fontSize: 28,
+    },
+    logoXArabic: {
+        fontFamily: 'TajawalBlack',
+        fontSize: 32,
+        lineHeight: 40,
+        writingDirection: 'rtl',
+    },
+    logoCardArabic: {
+        fontFamily: 'TajawalBlack',
+        fontSize: 32,
+        lineHeight: 40,
+        writingDirection: 'rtl',
     },
     divider: {
         height: 1,
@@ -200,10 +235,14 @@ const styles = StyleSheet.create({
         fontSize: 22,
     },
     stepsContainer: {
+        width: '100%',
+        alignSelf: 'stretch',
         gap: 12,
         paddingBottom: 20,
     },
     stepItem: {
+        width: '100%',
+        alignSelf: 'stretch',
         alignItems: 'center',
         justifyContent: 'flex-start',
         borderRadius: 16,
@@ -218,7 +257,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row-reverse',
     },
     stepNumber: {
-        fontSize: 22,
+        fontSize: 28,
+        lineHeight: 32,
+        textAlign: 'center',
+    },
+    stepNumberRTL: {
+        fontSize: 34,
+        lineHeight: 40,
     },
     stepNumberColumn: {
         width: 42,
@@ -226,8 +271,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     stepText: {
-        fontSize: 16,
-        fontFamily: Typography.poppins.medium,
         flex: 1,
+        fontSize: 18,
+        lineHeight: 26,
+        fontFamily: Typography.poppins.medium,
+    },
+    stepTextRTL: {
+        fontSize: 20,
+        lineHeight: 28,
     },
 });

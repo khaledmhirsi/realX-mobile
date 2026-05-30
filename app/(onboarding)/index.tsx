@@ -29,7 +29,7 @@ const TAJAWAL_BLACK = 'TajawalBlack';
 
 export default function OnboardingScreen() {
     const router = useRouter();
-    const [step, setStep] = useState(0); // Set to 1 to show the screen in the screenshot directly, or as starting point
+    const [step, setStep] = useState(0);
 
     const { t, i18n } = useTranslation();
     const { theme } = useAppTheme();
