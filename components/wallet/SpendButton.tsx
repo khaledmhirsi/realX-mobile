@@ -93,13 +93,13 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
     buttonText: {
-        fontSize: 16,
+        fontSize: 18,
         fontFamily: Typography.hanson.bold,
         color: '#FFFFFF',
         letterSpacing: 1,
     },
     buttonTextCompact: {
-        fontSize: 15,
+        fontSize: 17,
         letterSpacing: 0.3,
     },
 });

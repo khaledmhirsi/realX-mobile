@@ -272,7 +272,7 @@ export default function SpendCardDrawer({
                             >
                                 <Text style={[styles.backArrow, { color: theme.text }]}>{isRTL ? '→' : '←'}</Text>
                             </ScalePressable>
-                            <View style={styles.logoContainer}>
+                            <View style={[styles.logoContainer, isArabic && styles.logoContainerRTL]}>
                                 <PhonkText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</PhonkText>
                                 <PhonkText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</PhonkText>
                             </View>
@@ -414,6 +414,9 @@ const styles = StyleSheet.create({
     logoContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+    },
+    logoContainerRTL: {
+        flexDirection: 'row-reverse',
     },
     logoX: {
         fontSize: 24,

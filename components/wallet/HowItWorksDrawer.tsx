@@ -25,26 +25,39 @@ type Props = {
 type StepData = {
     number: string;
     text: string;
-    emoji?: string;
 };
 
 type StepItemProps = {
     step: StepData;
-    isRTL: boolean;
+    isArabic: boolean;
 };
 
-function StepItem({ step, isRTL }: StepItemProps) {
+function StepItem({ step, isArabic }: StepItemProps) {
     const { theme } = useAppTheme();
 
     return (
-        <View style={[styles.stepItem, { backgroundColor: theme.cardMuted }, isRTL && styles.stepItemRTL]}>
+        <View
+            style={[
+                styles.stepItem,
+                { backgroundColor: theme.cardMuted },
+                isArabic && styles.stepItemRTL,
+            ]}
+        >
             <PhonkText style={[styles.stepNumber, { color: theme.brand }]}>
                 {step.number}
             </PhonkText>
             <View style={styles.stepNumberSpacer} />
-            <Text style={[styles.stepText, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text
+                style={[
+                    styles.stepText,
+                    {
+                        color: theme.text,
+                        textAlign: isArabic ? 'right' : 'left',
+                        writingDirection: isArabic ? 'rtl' : 'ltr',
+                    },
+                ]}
+            >
                 {step.text}
-                {step.emoji && ` ${step.emoji}`}
             </Text>
         </View>
     );
@@ -52,9 +65,9 @@ function StepItem({ step, isRTL }: StepItemProps) {
 
 export default function HowItWorksDrawer({ visible, onClose }: Props) {
     const insets = useSafeAreaInsets();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { theme } = useAppTheme();
-    const isRTL = I18nManager.isRTL;
+    const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
 
     const steps: StepData[] = [
         { number: '1', text: t('how_it_works_step_1') },
@@ -92,7 +105,7 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                         bounces={false}
                     >
                         {/* Logo */}
-                        <View style={[styles.logoContainer, isRTL && styles.logoContainerRTL]}>
+                        <View style={[styles.logoContainer, isArabic && styles.logoContainerRTL]}>
                             <PhonkText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</PhonkText>
                             <PhonkText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</PhonkText>
                         </View>
@@ -104,7 +117,7 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                         <View
                             style={[
                                 styles.titleContainer,
-                                isRTL && styles.titleContainerRTL,
+                                isArabic && styles.titleContainerRTL,
                             ]}
                         >
                             <PhonkText style={[styles.titleText, { color: theme.text }]}>{t('how_it_works_title_prefix')}</PhonkText>
@@ -115,7 +128,7 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                         {/* Steps */}
                         <View style={styles.stepsContainer}>
                             {steps.map((step) => (
-                                <StepItem key={step.number} step={step} isRTL={isRTL} />
+                                <StepItem key={step.number} step={step} isArabic={isArabic} />
                             ))}
                         </View>
                     </ScrollView>
@@ -177,7 +190,7 @@ const styles = StyleSheet.create({
         paddingBottom: 24,
     },
     titleContainerRTL: {
-        flexDirection: 'row-reverse',
+        direction: 'rtl',
     },
     titleText: {
         fontSize: 22,
@@ -192,13 +205,13 @@ const styles = StyleSheet.create({
     stepItem: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         borderRadius: 16,
         paddingVertical: 18,
         paddingHorizontal: 20,
     },
     stepItemRTL: {
-        flexDirection: 'row-reverse',
-        paddingLeft: 12,
+        direction: 'rtl',
     },
     stepNumber: {
         fontSize: 22,
@@ -206,11 +219,11 @@ const styles = StyleSheet.create({
     stepNumberRTL: {
     },
     stepNumberSpacer: {
-        width: 12,
+        width: 14,
     },
     stepText: {
         fontSize: 16,
         fontFamily: Typography.poppins.medium,
-        flex: 1,
+        flexShrink: 1,
     },
 });
