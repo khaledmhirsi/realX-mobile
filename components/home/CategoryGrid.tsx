@@ -76,7 +76,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
     const hasMoreCategories = remainingCategories.length > 0;
     const comingSoonItem: CategoryItem = {
         id: 'coming-soon',
-        name: t('coming_soon'),
+        name: t('more'),
         image: SEE_MORE_IMAGE,
     };
     const displayCategories = hasMoreCategories ? [...visibleCategories, comingSoonItem] : baseCategories;

@@ -30,8 +30,11 @@ const ALLOWED_STUDENT_EMAIL_DOMAINS = new Set([
   'oliveschooldoha.com',
   'bpsdoha.edu.qa',
   'rajagiridoha.com',
-  'student.dbs.sch.qa',
+  'education.qa',
+  'americanacademy.sch.qa',
   'student.ukm.qa',
+  'abdn.ac.uk',
+  'student.dbs.sch.qa',
 ]);
 
 /**

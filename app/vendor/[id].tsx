@@ -7,7 +7,7 @@ import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
@@ -84,6 +84,7 @@ export default function VendorScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { height: windowHeight } = useWindowDimensions();
     const { i18n, t } = useTranslation();
     const { isDark, theme } = useAppTheme();
     const isArabic = i18n.language === 'ar';
@@ -222,6 +223,7 @@ export default function VendorScreen() {
     }, [userLocation, vendor]);
 
     const nearestBranch = branches[0] || null;
+    const branchListMaxHeight = Math.max(260, Math.min(520, windowHeight * 0.58 - insets.bottom));
 
     const openBranchOnMap = (branch: VendorBranch) => {
         if (!isValidLatLng(branch.latitude, branch.longitude)) return;
@@ -651,7 +653,13 @@ const isSaved = savedOfferIds.has(savedId);
                                 </TouchableOpacity>
                             </View>
 
-                            <View style={styles.branchList}>
+                            <ScrollView
+                                style={[styles.branchListScroll, { maxHeight: branchListMaxHeight }]}
+                                contentContainerStyle={styles.branchListContent}
+                                showsVerticalScrollIndicator={false}
+                                bounces={false}
+                                nestedScrollEnabled
+                            >
                                 {branches.map((branch, index) => {
                                     const branchName = isArabic
                                         ? (branch.nameAr || branch.name || `${isArabic ? 'فرع' : 'Branch'} ${index + 1}`)
@@ -709,7 +717,7 @@ const isSaved = savedOfferIds.has(savedId);
                                         </TouchableOpacity>
                                     );
                                 })}
-                            </View>
+                            </ScrollView>
                         </View>
                     </Pressable>
                 </Pressable>
@@ -1052,7 +1060,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 10,
     },
-    branchList: {
+    branchListScroll: {
+        flexGrow: 0,
+    },
+    branchListContent: {
         gap: 12,
         paddingBottom: 10,
     },
