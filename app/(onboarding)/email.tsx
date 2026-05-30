@@ -57,6 +57,7 @@ export default function EmailOnboarding() {
   const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
   const inputTextAlign: 'left' | 'right' = isRTL ? 'right' : 'left';
   const roleTitle = role === 'creator' ? t('onboarding_email_title_creator') : t('onboarding_email_title_student');
+  const titleSuffix = t('onboarding_email_title_suffix');
 
   const [email, setEmail] = useState('');
   const isNewUser = mode === 'signup';
@@ -142,11 +143,19 @@ export default function EmailOnboarding() {
               <View style={styles.textContainer}>
                 <Text style={[styles.titleSmall, { color: theme.mutedText }]}>{t('onboarding_email_title_prefix')}</Text>
                 <View style={styles.titleRow}>
-                  <PhonkText style={styles.titleLarge}>
-                    <Text style={[styles.greenText, { color: theme.brand }]}>{roleTitle}</Text>
-                  </PhonkText>
-                  <PhonkText style={styles.titleLarge}>
-                    <Text style={[styles.blackText, { color: theme.text }]}> {t('onboarding_email_title_suffix')}</Text>
+                  <PhonkText style={[styles.titleLarge, isRTL && styles.titleLargeRTL]}>
+                    {isRTL ? (
+                      <>
+                        <Text style={[styles.blackText, { color: theme.text }]}>{titleSuffix}</Text>
+                        <Text> </Text>
+                        <Text style={[styles.greenText, { color: theme.brand }]}>{roleTitle}</Text>
+                      </>
+                    ) : (
+                      <>
+                        <Text style={[styles.greenText, { color: theme.brand }]}>{roleTitle}</Text>
+                        <Text style={[styles.blackText, { color: theme.text }]}> {titleSuffix}</Text>
+                      </>
+                    )}
                   </PhonkText>
                 </View>
               </View>
@@ -242,6 +251,7 @@ const styles = StyleSheet.create({
   },
   titleRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
   titleLarge: { fontSize: 32, textAlign: 'center', lineHeight: 38 },
+  titleLargeRTL: { writingDirection: 'rtl' },
   greenText: { color: Colors.brandGreen },
   blackText: {},
   inputWrapper: { marginBottom: 20, width: '100%' },

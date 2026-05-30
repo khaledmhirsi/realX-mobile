@@ -40,13 +40,14 @@ function StepItem({ step, isArabic }: StepItemProps) {
             style={[
                 styles.stepItem,
                 { backgroundColor: theme.cardMuted },
-                isArabic && styles.stepItemRTL,
+                isArabic ? styles.stepItemRTL : styles.stepItemLTR,
             ]}
         >
-            <PhonkText style={[styles.stepNumber, { color: theme.brand }]}>
-                {step.number}
-            </PhonkText>
-            <View style={styles.stepNumberSpacer} />
+            <View style={styles.stepNumberColumn}>
+                <PhonkText style={[styles.stepNumber, { color: theme.brand }]}>
+                    {step.number}
+                </PhonkText>
+            </View>
             <Text
                 style={[
                     styles.stepText,
@@ -203,27 +204,30 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
     stepItem: {
-        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         borderRadius: 16,
         paddingVertical: 18,
         paddingHorizontal: 20,
+        minHeight: 68,
+    },
+    stepItemLTR: {
+        flexDirection: 'row',
     },
     stepItemRTL: {
-        direction: 'rtl',
+        flexDirection: 'row-reverse',
     },
     stepNumber: {
         fontSize: 22,
     },
-    stepNumberRTL: {
-    },
-    stepNumberSpacer: {
-        width: 14,
+    stepNumberColumn: {
+        width: 42,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     stepText: {
         fontSize: 16,
         fontFamily: Typography.poppins.medium,
-        flexShrink: 1,
+        flex: 1,
     },
 });
