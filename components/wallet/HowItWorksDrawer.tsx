@@ -114,12 +114,13 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                         bounces={false}
                     >
                         {/* Logo */}
-                        <View style={[styles.logoContainer, isArabic && styles.logoContainerRTL]}>
+                        <View style={styles.logoContainer}>
                             {isArabic ? (
-                                <>
+                                <Text style={styles.logoArabicText}>
                                     <Text style={[styles.logoCardArabic, { color: theme.text }]}>{t('xcard_title_card')}</Text>
+                                    {' '}
                                     <Text style={[styles.logoXArabic, { color: theme.brand }]}>{t('xcard_title_x')}</Text>
-                                </>
+                                </Text>
                             ) : (
                                 <>
                                     <PhonkText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</PhonkText>
@@ -191,9 +192,9 @@ const styles = StyleSheet.create({
         paddingTop: 20,
         paddingBottom: 24,
     },
-    logoContainerRTL: {
-        direction: 'ltr',
-        gap: 4,
+    logoArabicText: {
+        textAlign: 'center',
+        writingDirection: 'rtl',
     },
     logoX: {
         fontSize: 28,

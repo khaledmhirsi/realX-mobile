@@ -10,7 +10,7 @@
   "greeting_prompt": "مستعد للتوفير؟",
   "redeem": "استخدم الخصم",
   "search": "بحث",
-  "search_placeholder": ". . .ابحث عن أي شيء",
+  "search_placeholder": "ابحث عن أي شيء...",
   "profile": "الملف الشخصي",
   "map": "الخريطة",
   "nearby_count": "{{count}} قريب",

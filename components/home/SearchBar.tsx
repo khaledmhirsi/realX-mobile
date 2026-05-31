@@ -3,6 +3,7 @@ import { GlassView, isGlassEffectAPIAvailable } from "expo-glass-effect";
 import { useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  I18nManager,
   Platform,
   StyleSheet,
   TextInput,
@@ -43,8 +44,9 @@ export default function SearchBar({
   const showHighlights = !isDark;
   const [isFocused, setIsFocused] = useState(false);
   const [animatedPlaceholder, setAnimatedPlaceholder] = useState<string | null>(null);
+  const isRTL = I18nManager.isRTL;
   const isActive = isFocused || (value?.length ?? 0) > 0;
-  const placeholderText = isActive ? "" : (animatedPlaceholder ?? placeholder);
+  const placeholderText = isActive ? "" : formatPlaceholder(animatedPlaceholder ?? placeholder, isRTL);
 
   useEffect(() => {
     if (!onChangeText) return;
@@ -127,6 +129,7 @@ export default function SearchBar({
             placeholderColor={theme.inputPlaceholder}
             iconColor={theme.icon}
             activeColor={theme.brand}
+            isRTL={isRTL}
           />
         </GlassView>
       ) : (
@@ -145,11 +148,18 @@ export default function SearchBar({
             placeholderColor={theme.inputPlaceholder}
             iconColor={theme.icon}
             activeColor={theme.brand}
+            isRTL={isRTL}
           />
         </View>
       )}
     </View>
   );
+}
+
+function formatPlaceholder(placeholder: string, isRTL: boolean) {
+  if (!isRTL) return placeholder;
+
+  return placeholder.replace(/[\s.。…]+$/u, "");
 }
 
 function GlassHighlights({ topColor, bottomColor }: { topColor: string; bottomColor: string }) {
@@ -170,6 +180,7 @@ type SearchBarContentProps = Required<Pick<Props, "placeholder">> &
     placeholderColor: string;
     iconColor: string;
     activeColor: string;
+    isRTL: boolean;
   };
 
 function SearchBarContent({
@@ -185,19 +196,24 @@ function SearchBarContent({
   placeholderColor,
   iconColor,
   activeColor,
+  isRTL,
 }: SearchBarContentProps) {
   return (
-    <>
+    <View style={[styles.searchContent, isRTL && styles.searchContentRTL]}>
       <Ionicons
         name="search"
         size={20}
         color={isActive ? activeColor : iconColor}
-        style={styles.icon}
+        style={[styles.icon, isRTL && styles.iconRTL]}
       />
       <TextInput
         style={[
           styles.input,
-          { color: textColor },
+          {
+            color: textColor,
+            textAlign: isRTL ? "right" : "left",
+            writingDirection: isRTL ? "rtl" : "ltr",
+          },
           isActive && { color: activeColor },
         ]}
         placeholder={placeholder}
@@ -218,11 +234,12 @@ function SearchBarContent({
           accessibilityRole="button"
           accessibilityLabel="Clear search"
           hitSlop={8}
+          style={[styles.clearButton, isRTL && styles.clearButtonRTL]}
         >
           <Ionicons name="close-circle" size={18} color={placeholderColor} />
         </TouchableOpacity>
       ) : null}
-    </>
+    </View>
   );
 }
 
@@ -243,14 +260,21 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   searchSurface: {
-    flexDirection: "row",
-    alignItems: "center",
     borderRadius: 30,
     paddingHorizontal: 16,
     paddingVertical: 14,
     minHeight: 56,
     borderWidth: 1,
     overflow: "hidden",
+  },
+  searchContent: {
+    alignItems: "center",
+    direction: "ltr",
+    flexDirection: "row",
+    width: "100%",
+  },
+  searchContentRTL: {
+    flexDirection: "row-reverse",
   },
   topHighlight: {
     position: "absolute",
@@ -269,10 +293,21 @@ const styles = StyleSheet.create({
   icon: {
     marginRight: 10,
   },
+  iconRTL: {
+    marginRight: 0,
+    marginLeft: 10,
+  },
   input: {
     flex: 1,
     fontSize: 16,
     fontFamily: Typography.poppins.medium,
     padding: 0,
+  },
+  clearButton: {
+    marginLeft: 8,
+  },
+  clearButtonRTL: {
+    marginLeft: 0,
+    marginRight: 8,
   },
 });
