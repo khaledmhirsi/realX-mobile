@@ -33,8 +33,17 @@ const ALLOWED_STUDENT_EMAIL_DOMAINS = new Set([
   'education.qa',
   'americanacademy.sch.qa',
   'student.ukm.qa',
+  'miesppu.edu.qa',
   'abdn.ac.uk',
   'student.dbs.sch.qa',
+  'asd.equ.qa',
+  'qu.edu.qa',
+  'oryx.edu.qa',
+  'lu.edu.qa',
+  'student.ukm.qa',
+  'tamu.edu',
+  'hbku.edu.qa',
+  'andrew.cmu.edu'
 ]);
 
 /**
