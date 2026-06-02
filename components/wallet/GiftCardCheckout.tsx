@@ -61,8 +61,8 @@ export default function GiftCardCheckout({
     const remainingAmount = Math.max(0, totalBillNum - selectedAmount);
 
     const canRedeem = pin.length === 4 && totalBillNum > 0;
-    const { t } = useTranslation();
-    const isRTL = I18nManager.isRTL;
+    const { t, i18n } = useTranslation();
+    const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
     const pinBoxSize = Math.min(65, Math.max(54, (width - 144) / 4));
 
     const handleRedeem = async () => {
@@ -159,7 +159,7 @@ export default function GiftCardCheckout({
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
             {/* Header */}
-            <View style={[styles.header, isRTL && styles.headerRTL]}>
+            <View style={styles.header}>
                 <TouchableOpacity
                     style={[styles.backButton, { backgroundColor: theme.cardMuted }]}
                     onPress={() => {
@@ -331,9 +331,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 12,
-    },
-    headerRTL: {
-        flexDirection: 'row-reverse',
     },
     backButton: {
         width: 40,

@@ -28,8 +28,8 @@ import UserAvatar from '../components/UserAvatar';
 export default function ProfileDetailsScreen() {
     const router = useRouter();
     const { theme } = useAppTheme();
-    const { t } = useTranslation();
-    const isRTL = I18nManager.isRTL;
+    const { t, i18n } = useTranslation();
+    const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
     const backIconName: keyof typeof Ionicons.glyphMap = isRTL ? 'arrow-forward' : 'arrow-back';
 
     // Form states
@@ -196,14 +196,14 @@ export default function ProfileDetailsScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-        <View style={[styles.header, isRTL && styles.rowReverse]}>
+        <View style={styles.header}>
             <TouchableOpacity
                 onPress={handleBack}
                 style={[styles.backButton, { backgroundColor: theme.cardMuted }]}
             >
                 <Ionicons name={backIconName} size={24} color={theme.icon} />
             </TouchableOpacity>
-                <PhonkText style={[styles.headerTitle, { color: theme.text, textAlign: isRTL ? 'right' : 'center' }]}>
+                <PhonkText style={[styles.headerTitle, { color: theme.text }, isRTL && styles.headerTitleRTL]}>
                     {t('profile_details_title')}
                 </PhonkText>
             <TouchableOpacity
@@ -246,9 +246,11 @@ export default function ProfileDetailsScreen() {
                             <>
                                 {/* First Name Field */}
                                 <View style={styles.inputGroup}>
-                                    <PhonkText style={[styles.label, { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                        {t('first_name')}
-                                    </PhonkText>
+                                    <View style={styles.labelRow}>
+                                        <PhonkText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
+                                            {t('first_name')}
+                                        </PhonkText>
+                                    </View>
                                     <View style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, !isEditing && styles.disabledInput]}>
                                         <TextInput
                                             style={[
@@ -266,9 +268,11 @@ export default function ProfileDetailsScreen() {
 
                                 {/* Last Name Field */}
                                 <View style={styles.inputGroup}>
-                                    <PhonkText style={[styles.label, { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                        {t('last_name')}
-                                    </PhonkText>
+                                    <View style={styles.labelRow}>
+                                        <PhonkText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
+                                            {t('last_name')}
+                                        </PhonkText>
+                                    </View>
                                     <View style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, !isEditing && styles.disabledInput]}>
                                         <TextInput
                                             style={[
@@ -286,9 +290,11 @@ export default function ProfileDetailsScreen() {
 
                                 {/* Email Field */}
                                 <View style={styles.inputGroup}>
-                                    <PhonkText style={[styles.label, { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                        {t('email_address')}
-                                    </PhonkText>
+                                    <View style={styles.labelRow}>
+                                        <PhonkText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
+                                            {t('email_address')}
+                                        </PhonkText>
+                                    </View>
                                     <View style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, styles.disabledInput]}>
                                         <TextInput
                                             style={[
@@ -305,9 +311,11 @@ export default function ProfileDetailsScreen() {
 
                                 {/* Date of Birth Field */}
                                 <View style={styles.inputGroup}>
-                                    <PhonkText style={[styles.label, { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                        {t('date_of_birth')}
-                                    </PhonkText>
+                                    <View style={styles.labelRow}>
+                                        <PhonkText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
+                                            {t('date_of_birth')}
+                                        </PhonkText>
+                                    </View>
                                     <TouchableOpacity
                                         style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, !isEditing && styles.disabledInput]}
                                         onPress={() => isEditing && setShowDatePicker(true)}
@@ -345,9 +353,9 @@ export default function ProfileDetailsScreen() {
                             onPress={handleDeleteAccount}
                             activeOpacity={0.7}
                         >
-                    <View style={[styles.deleteContent, isRTL && styles.rowReverse]}>
-                        <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                        <PhonkText style={styles.deleteAccountText}>{t('delete_account')}</PhonkText>
+                            <View style={styles.deleteContent}>
+                                <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+                                <PhonkText style={styles.deleteAccountText}>{t('delete_account')}</PhonkText>
                             </View>
                         </TouchableOpacity>
                     </View>
@@ -368,9 +376,6 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         gap: 16,
     },
-    rowReverse: {
-        flexDirection: 'row-reverse',
-    },
     backButton: {
         width: 44,
         height: 44,
@@ -383,6 +388,10 @@ const styles = StyleSheet.create({
         flex: 1,
         textAlign: 'center',
         letterSpacing: 0.5,
+    },
+    headerTitleRTL: {
+        textAlign: 'right',
+        writingDirection: 'rtl',
     },
     editButton: {
         borderRadius: 24,
@@ -411,9 +420,17 @@ const styles = StyleSheet.create({
     inputGroup: {
         gap: 8,
     },
+    labelRow: {
+        width: '100%',
+        alignItems: 'flex-start',
+    },
     label: {
         fontSize: 12,
-        paddingLeft: 4,
+        paddingStart: 4,
+    },
+    textRTL: {
+        textAlign: 'right',
+        writingDirection: 'rtl',
     },
     inputWrapper: {
         flexDirection: 'row',

@@ -25,19 +25,17 @@ type Props = {
 };
 
 export default function RedemptionItem({ item }: Props) {
-    const isRTL = I18nManager.isRTL;
     const { t, i18n } = useTranslation();
     const { theme } = useAppTheme();
-    const isArabic = i18n.language === 'ar';
+    const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
     const fmt = (n: number) => isArabic ? toArabicDigits(n.toFixed(2)) : n.toFixed(2);
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }, isRTL && styles.containerRTL]}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Merchant Logo */}
             <View style={[
                 styles.logoContainer,
                 { backgroundColor: item.logoBackgroundColor || '#F5F5F5' },
-                isRTL ? { marginLeft: 14 } : { marginRight: 14 },
             ]}>
                 {item.logoUrl ? (
                     <Image source={{ uri: item.logoUrl }} style={styles.logoImage} contentFit="cover" />
@@ -50,23 +48,23 @@ export default function RedemptionItem({ item }: Props) {
 
             {/* Merchant Info */}
             <View style={styles.infoContainer}>
-                <Text style={[styles.dateText, { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[styles.dateText, { color: theme.subtleText, textAlign: isArabic ? 'right' : 'left' }]}>
                     {item.date}
                 </Text>
-                <Text style={[styles.merchantName, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[styles.merchantName, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>
                     {item.merchantName}
                 </Text>
-                <Text style={[styles.offerType, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[styles.offerType, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>
                     {item.offerType}
                 </Text>
             </View>
 
             {/* Saved Amount */}
-            <View style={[styles.savedContainer, isRTL && { alignItems: 'flex-start' }]}> 
+            <View style={styles.savedContainer}>
                 <Text style={styles.savedLabel}>
                     {fmt(item.savedAmount)} {item.currency}
                 </Text>
-                <Text style={[styles.totalBillText, { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[styles.totalBillText, { color: theme.subtleText, textAlign: isArabic ? 'right' : 'left' }]}>
                     {t('instead_of', {
                         total: fmt(item.totalBill),
                         currency: item.currency,
@@ -81,11 +79,9 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 14,
         paddingVertical: 14,
         paddingHorizontal: 20,
-    },
-    containerRTL: {
-        flexDirection: 'row-reverse',
     },
     logoContainer: {
         width: 50,

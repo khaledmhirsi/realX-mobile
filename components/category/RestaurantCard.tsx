@@ -104,18 +104,22 @@ export default function RestaurantCard({
 
       {/* Content */}
       <View style={styles.content}>
-        <Text style={[
-          styles.name,
-          { color: theme.text, fontFamily: Typography.poppins.medium },
-          { textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }
-        ]} numberOfLines={1}>{isArabic ? (nameAr || name) : name}</Text>
+        <View style={styles.textRow}>
+          <Text style={[
+            styles.name,
+            { color: theme.text, fontFamily: Typography.poppins.medium },
+            { writingDirection: isArabic ? 'rtl' : 'ltr' },
+          ]} numberOfLines={1}>{isArabic ? (nameAr || name) : name}</Text>
+        </View>
 
         {cashbackText || discountText ? (
-          <Text style={[
-            styles.descriptionText,
-            { color: theme.mutedText, fontFamily: Typography.poppins.medium },
-            { textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }
-          ]} numberOfLines={2}>{discountText || cashbackText}</Text>
+          <View style={styles.textRow}>
+            <Text style={[
+              styles.descriptionText,
+              { color: theme.mutedText, fontFamily: Typography.poppins.medium },
+              { writingDirection: isArabic ? 'rtl' : 'ltr' },
+            ]} numberOfLines={2}>{discountText || cashbackText}</Text>
+          </View>
         ) : null}
       </View>
     </TouchableOpacity>
@@ -223,6 +227,10 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingHorizontal: 2,
     paddingBottom: 8,
+  },
+  textRow: {
+    width: '100%',
+    alignItems: 'flex-start',
   },
   name: {
     fontSize: 14,

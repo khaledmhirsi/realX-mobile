@@ -7,6 +7,7 @@ import { logger } from '../utils/logger';
 import {
     ActivityIndicator,
     FlatList,
+    I18nManager,
     StatusBar,
     StyleSheet,
     Text,
@@ -23,9 +24,9 @@ import { triggerSubtleHaptic } from '../utils/haptics';
 export default function SearchScreen() {
     const { q } = useLocalSearchParams<{ q: string }>();
     const router = useRouter();
-    const { i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { isDark, theme } = useAppTheme();
-    const isArabic = i18n.language === 'ar';
+    const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
 
     const [searchQuery, setSearchQuery] = useState(q || '');
     const [committedQuery, setCommittedQuery] = useState((q || '').trim().toLowerCase());
@@ -138,8 +139,8 @@ export default function SearchScreen() {
                 style={[
                     styles.cardWrapper,
                     {
-                        paddingLeft: index % 2 === 0 ? 20 : 8,
-                        paddingRight: index % 2 === 0 ? 8 : 20,
+                        paddingStart: index % 2 === 0 ? 20 : 8,
+                        paddingEnd: index % 2 === 0 ? 8 : 20,
                     },
                 ]}
             >
@@ -182,14 +183,21 @@ export default function SearchScreen() {
                     }}
                     activeOpacity={0.8}
                 >
-                    <Ionicons name="arrow-back" size={22} color={theme.icon} />
+                    <Ionicons name={isArabic ? 'arrow-forward' : 'arrow-back'} size={22} color={theme.icon} />
                 </TouchableOpacity>
 
                 <View style={[styles.searchContainer, { backgroundColor: theme.cardMuted, borderColor: theme.border }]}>
-                    <Ionicons name="search" size={18} color={theme.brand} style={styles.searchIcon} />
+                    <Ionicons name="search" size={18} color={theme.brand} />
                     <TextInput
-                        style={[styles.searchInput, { color: theme.text }]}
-                        placeholder="Search for offers..."
+                        style={[
+                            styles.searchInput,
+                            {
+                                color: theme.text,
+                                textAlign: isArabic ? 'right' : 'left',
+                                writingDirection: isArabic ? 'rtl' : 'ltr',
+                            },
+                        ]}
+                        placeholder={t('search_offers_placeholder')}
                         placeholderTextColor={theme.inputPlaceholder}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
@@ -220,13 +228,13 @@ export default function SearchScreen() {
             ) : results.length === 0 ? (
                 <View style={styles.centeredContainer}>
                     <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, styles.emptyEmoji]}>🔍</Text>
-                    <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, styles.emptyTitle]}>
-                        {committedQuery ? 'No offers found' : 'Search for offers'}
+                    <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, styles.emptyTitle, isArabic && styles.textRTL]}>
+                        {committedQuery ? t('search_offers_no_results_title') : t('search_offers_empty_title')}
                     </Text>
-                    <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium }, styles.emptySubtitle]}>
+                    <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium }, styles.emptySubtitle, isArabic && styles.textRTL]}>
                         {committedQuery
-                            ? `We couldn't find any offers matching "${committedQuery}"`
-                            : 'Type a keyword to find deals and discounts'}
+                            ? t('search_offers_no_results_hint', { query: committedQuery })
+                            : t('search_offers_empty_hint')}
                     </Text>
                 </View>
             ) : (
@@ -241,9 +249,11 @@ export default function SearchScreen() {
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={renderFooter}
                     ListHeaderComponent={
-                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium }, styles.resultCount]}>
-                            {results.length} {results.length === 1 ? 'result' : 'results'}
-                        </Text>
+                        <View style={styles.resultCountRow}>
+                            <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium }, styles.resultCount, isArabic && styles.textRTL]}>
+                                {t('search_results_count', { count: results.length })}
+                            </Text>
+                        </View>
                     }
                 />
             )}
@@ -278,13 +288,11 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 8,
         borderRadius: 24,
         paddingHorizontal: 14,
         paddingVertical: 10,
         borderWidth: 1,
-    },
-    searchIcon: {
-        marginRight: 8,
     },
     searchInput: {
         flex: 1,
@@ -317,9 +325,16 @@ const styles = StyleSheet.create({
     resultCount: {
         fontSize: 14,
         fontFamily: Typography.poppins.medium,
-        paddingHorizontal: 20,
         paddingTop: 8,
         paddingBottom: 16,
+    },
+    resultCountRow: {
+        width: '100%',
+        alignItems: 'flex-start',
+        paddingHorizontal: 20,
+    },
+    textRTL: {
+        writingDirection: 'rtl',
     },
     listContent: {
         paddingBottom: 40,

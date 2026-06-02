@@ -11,9 +11,9 @@ type Props = {
 const USER_NAME_PLACEHOLDER = '__USER_NAME__';
 
 export default function GreetingHeader({ userName }: Props) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { theme } = useAppTheme();
-    const isRTL = I18nManager.isRTL;
+    const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
     const textAlignStyle = { textAlign: (isRTL ? 'right' : 'left') as 'right' | 'left' };
     const rawGreeting = t('greeting_line', { name: USER_NAME_PLACEHOLDER });
     const [prefix, suffix] = rawGreeting.split(USER_NAME_PLACEHOLDER);
@@ -31,17 +31,8 @@ export default function GreetingHeader({ userName }: Props) {
 
     return (
         <View style={styles.container}>
-            {isRTL ? (
-                <>
-                    <MascotThemeButton />
-                    {greetingTextBlock}
-                </>
-            ) : (
-                <>
-                    {greetingTextBlock}
-                    <MascotThemeButton />
-                </>
-            )}
+            {greetingTextBlock}
+            <MascotThemeButton />
         </View>
     );
 }
@@ -59,7 +50,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     textContainerRTL: {
-        alignItems: 'flex-end',
+        alignItems: 'flex-start',
     },
     greeting: {
         fontSize: 28,

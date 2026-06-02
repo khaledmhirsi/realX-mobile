@@ -35,9 +35,9 @@ type Props = {
 };
 
 export default function XCard({ earnings = 0, currency = 'XP', creatorCode, glass = 'liquid', tilt = true }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { width } = useWindowDimensions();
-  const isRTL = I18nManager.isRTL;
+  const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
   const cardWidth = Math.min(width - CARD_HORIZONTAL_GUTTER, CARD_MAX_WIDTH);
   const cardHeight = cardWidth / CARD_ASPECT_RATIO;
   const amount = formatAmount(earnings);
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   cardContentRTL: {
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
   },
   earningsSection: {
     maxWidth: '78%',
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   },
   bottomRowRTL: {
     flexDirection: 'row-reverse',
-    justifyContent: 'flex-start',
+    justifyContent: 'flex-end',
   },
   creatorCodeContainer: {
     flexDirection: 'row',
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   },
   creatorCodeContainerRTL: {
     flexDirection: 'row-reverse',
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-end',
   },
   creatorCodeSpacer: {
     minHeight: 30,

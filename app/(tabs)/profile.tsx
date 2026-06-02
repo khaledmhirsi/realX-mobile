@@ -21,7 +21,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { isDark, theme } = useAppTheme();
-  const isRTL = I18nManager.isRTL;
+  const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
   const { studentData: userData } = useStudent();
 
   const changeLanguage = async (language: 'en' | 'ar') => {
@@ -86,7 +86,7 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, isRTL && styles.headerRTL]}>
           <PhonkText
             style={[
               { color: theme.text, textAlign: isRTL ? 'right' : 'left' },
@@ -98,7 +98,7 @@ export default function ProfileScreen() {
         </View>
 
         <View style={[styles.topPill, { backgroundColor: theme.cardMuted }]}>
-          <View style={[styles.profileTopRow]}>
+          <View style={styles.profileTopRow}>
             <UserAvatar
               firstName={userData?.firstName}
               lastName={userData?.lastName}
@@ -115,8 +115,8 @@ export default function ProfileScreen() {
         </View>
 
         <View style={[styles.bottomPill, { backgroundColor: theme.cardMuted }]}>
-          <View style={[styles.profileBottomRow]}>
-            <View style={styles.userInfo}>
+          <View style={styles.profileBottomRow}>
+            <View style={[styles.userInfo, isRTL && styles.userInfoRTL]}>
               <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium, textAlign: isRTL ? 'right' : 'left' }, styles.userName]}>
                 {userData ? `${userData.firstName} ${userData.lastName}` : 'Darren Watkins'}
               </Text>
@@ -133,29 +133,30 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View style={styles.sectionHeader}>
+        <View style={[styles.sectionHeader, isRTL && styles.sectionHeaderRTL]}>
           <PhonkText
             style={[
-              { color: theme.text, textAlign: isRTL ? 'right' : 'left' },
+              { color: theme.text },
               styles.sectionTitle,
               { textTransform: isRTL ? 'none' : 'uppercase' },
+              isRTL && styles.sectionTitleRTL,
             ]}
           >
             {t('savings_tracker')}
           </PhonkText>
         </View>
 
-        <View style={[styles.savingsCard, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }]}>
+        <View style={[styles.savingsCard, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }, isRTL && styles.savingsCardRTL]}>
           <Text
             style={[
               { color: theme.text, fontFamily: Typography.poppins.medium },
               styles.savingsLabel,
-              { textAlign: isRTL ? 'right' : 'left' },
+              isRTL && styles.savingsLabelRTL,
             ]}
           >
             {t('all_time_saved')}
           </Text>
-          <View style={[styles.savingsAmountContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}> 
+          <View style={[styles.savingsAmountContainer, isRTL && styles.savingsAmountContainerRTL]}>
             <PhonkText style={[{ color: theme.brandText, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }, styles.savingsAmountGreen]}>
               {t('amount_with_currency', { amount: isRTL ? toArabicDigits((userData?.savings ?? 0).toFixed(2)) : (userData?.savings ?? 0).toFixed(2), currency: t('currency_qar') })}
             </PhonkText>
@@ -177,9 +178,11 @@ export default function ProfileScreen() {
                 <PhonkText style={styles.onlyOnRealxText}>{t('only_on_realx')}</PhonkText>
               </View>
               
-              <PhonkText style={[styles.universityBannerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
-                {t('apply_to_universities')}
-              </PhonkText>
+              <View style={styles.universityBannerTitleRow}>
+                <PhonkText style={[styles.universityBannerTitle, isRTL && styles.universityBannerTitleRTL]}>
+                  {t('apply_to_universities')}
+                </PhonkText>
+              </View>
               
               <TouchableOpacity
                 style={[styles.universityBannerButton, { backgroundColor: theme.logoTile }]}
@@ -284,6 +287,9 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 16,
   },
+  headerRTL: {
+    alignItems: 'flex-start',
+  },
   headerText: {
     fontSize: 28,
     letterSpacing: 0.5,
@@ -321,6 +327,9 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
   },
+  userInfoRTL: {
+    justifyContent: 'flex-start',
+  },
   userName: {
     fontSize: 20,
     fontFamily: Typography.poppins.semiBold,
@@ -341,9 +350,16 @@ const styles = StyleSheet.create({
   sectionHeader: {
     marginBottom: 8,
   },
+  sectionHeaderRTL: {
+    alignItems: 'flex-start',
+  },
   sectionTitle: {
     fontSize: 18,
     textTransform: 'uppercase',
+  },
+  sectionTitleRTL: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   savingsCard: {
     borderRadius: 32,
@@ -352,14 +368,24 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 2,
   },
+  savingsCardRTL: {
+    alignItems: 'flex-start',
+  },
   savingsLabel: {
     fontSize: 14,
     fontFamily: Typography.poppins.medium,
+  },
+  savingsLabelRTL: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   savingsAmountContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 8,
+  },
+  savingsAmountContainerRTL: {
+    alignSelf: 'flex-start',
   },
   savingsAmountGreen: {
     fontSize: 32,
@@ -402,6 +428,13 @@ const styles = StyleSheet.create({
     marginTop: -16,
     marginBottom: 8,
     lineHeight: 24,
+  },
+  universityBannerTitleRow: {
+    width: '100%',
+    alignItems: 'flex-start',
+  },
+  universityBannerTitleRTL: {
+    writingDirection: 'rtl',
   },
   universityBannerButton: {
     paddingVertical: 12,

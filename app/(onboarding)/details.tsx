@@ -43,6 +43,7 @@ export default function DetailsOnboarding() {
     const { t } = useTranslation();
     const { theme } = useAppTheme();
     const isRTL = I18nManager.isRTL;
+    const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
     const inputTextAlign: 'left' | 'right' = isRTL ? 'right' : 'left';
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
@@ -118,7 +119,7 @@ export default function DetailsOnboarding() {
                             style={[styles.iconButton, { opacity: 0 }]}
                             disabled={true}
                         >
-                            <Ionicons name="arrow-back" size={24} color="black" />
+                            <Ionicons name={arrowIconName} size={24} color="black" />
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => router.replace('/')}
