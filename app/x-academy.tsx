@@ -36,7 +36,7 @@ export default function XAcademyScreen() {
   const { width } = useWindowDimensions();
   const { t, i18n } = useTranslation();
   const { theme } = useAppTheme();
-  const isRTL = I18nManager.isRTL;
+  const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
 
   const [universities, setUniversities] = useState<(University & { id: string })[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +73,7 @@ export default function XAcademyScreen() {
       style={[styles.container, { backgroundColor: theme.background }]}
       edges={['top']}
     >
-      <View style={[styles.header, { borderBottomColor: theme.border }, isRTL && styles.rowReverse]}>
+      <View style={[styles.header, { borderBottomColor: theme.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons
             name={isRTL ? 'arrow-forward' : 'arrow-back'}
@@ -82,8 +82,8 @@ export default function XAcademyScreen() {
           />
         </TouchableOpacity>
 
-        <PhonkText style={styles.headerTitle}>
-          <Text style={{ color: theme.brand }}>{t('x_academy_title_x')} </Text>
+        <PhonkText style={[styles.headerTitle, isRTL && styles.headerTitleRTL]}>
+          <Text style={{ color: theme.brand }}>{isRTL ? 'إكس' : t('x_academy_title_x')} </Text>
           <Text style={{ color: theme.text }}>{t('x_academy_title_academy')}</Text>
         </PhonkText>
       </View>
@@ -130,7 +130,8 @@ export default function XAcademyScreen() {
               <PhonkText
                 style={[
                   styles.sectionTitle,
-                  { color: theme.text, textAlign: isRTL ? 'right' : 'left' },
+                  { color: theme.text },
+                  isRTL && styles.sectionTitleRTL,
                 ]}
               >
                 {t('universities')}
@@ -161,7 +162,7 @@ export default function XAcademyScreen() {
                       <View style={styles.uniCardOverlay} />
                     </View>
 
-                    <View style={[styles.uniCardContent, isRTL && styles.rowReverse]}>
+                    <View style={styles.uniCardContent}>
                       <View style={[styles.logoContainer, { backgroundColor: theme.logoTile }]}>
                         <Image
                           source={{ uri: uni.logoUrl }}
@@ -173,7 +174,7 @@ export default function XAcademyScreen() {
                       <View
                         style={[
                           styles.uniDetails,
-                          { alignItems: isRTL ? 'flex-end' : 'flex-start' },
+                          { alignItems: 'flex-start' },
                         ]}
                       >
                         <Text
@@ -186,7 +187,7 @@ export default function XAcademyScreen() {
                           {uniName}
                         </Text>
 
-                        <View style={[styles.applyButton, { backgroundColor: theme.logoTile }, isRTL && styles.rowReverse]}>
+                        <View style={[styles.applyButton, { backgroundColor: theme.logoTile }]}>
                           <Text style={[styles.applyButtonText, { color: theme.logoTileText }]}>
                             {t('apply_now').toUpperCase()}
                           </Text>
@@ -198,11 +199,7 @@ export default function XAcademyScreen() {
                             }
                             size={16}
                             color={theme.logoTileText}
-                            style={
-                              isRTL
-                                ? { marginRight: 4 }
-                                : { marginLeft: 4 }
-                            }
+                            style={styles.applyButtonIcon}
                           />
                         </View>
                       </View>
@@ -225,14 +222,16 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 16,
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
   },
 
-  backButton: { marginRight: 16 },
+  backButton: {},
 
   headerTitle: { fontSize: 24, letterSpacing: 0.5 },
+  headerTitleRTL: { textAlign: 'right', writingDirection: 'rtl' },
 
   scrollContent: { paddingBottom: 40 },
 
@@ -254,6 +253,7 @@ const styles = StyleSheet.create({
   carouselBannerImage: { width: '100%', height: '100%' },
 
   sectionHeader: {
+    alignItems: 'flex-start',
     paddingHorizontal: 20,
     marginTop: 16,
     marginBottom: 16,
@@ -262,6 +262,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 22,
     textTransform: 'uppercase',
+  },
+  sectionTitleRTL: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
 
   listContainer: {
@@ -328,5 +332,9 @@ const styles = StyleSheet.create({
   applyButtonText: {
     fontFamily: Typography.hanson.bold,
     fontSize: 10,
+  },
+
+  applyButtonIcon: {
+    marginStart: 4,
   },
 });

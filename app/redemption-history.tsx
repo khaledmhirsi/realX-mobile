@@ -16,7 +16,7 @@ import {
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
@@ -59,7 +59,7 @@ interface Transaction {
 export default function RedemptionHistoryScreen() {
   const { t, i18n } = useTranslation();
   const { theme } = useAppTheme();
-  const isArabic = i18n.language === 'ar';
+  const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
   const currency = t('currency_qar');
   const fmt = (n: number, decimals = 0) => isArabic ? toArabicDigits(n.toFixed(decimals)) : n.toFixed(decimals);
   const router = useRouter();
@@ -234,9 +234,11 @@ export default function RedemptionHistoryScreen() {
             router.back();
           }}
         >
-          <Ionicons name="arrow-back" size={24} color={theme.icon} />
+          <Ionicons name={isArabic ? 'arrow-forward' : 'arrow-back'} size={24} color={theme.icon} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>{t('redemption_history')}</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }, isArabic && styles.headerTitleRTL]}>
+          {t('redemption_history')}
+        </Text>
       </View>
 
       {loading ? (
@@ -268,16 +270,20 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
   backButton: {
     padding: 4,
-    marginRight: 12,
   },
   headerTitle: {
     fontSize: 22,
     fontFamily: Typography.poppins.medium,
+  },
+  headerTitleRTL: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   loadingContainer: {
     flex: 1,

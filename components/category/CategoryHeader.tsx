@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { memo, useMemo } from 'react';
-import { ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { I18nManager, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 
@@ -27,7 +27,7 @@ function CategoryHeader({ title, icon, onBackPress }: Props) {
                 onPress={onBackPress}
                 activeOpacity={0.7}
             >
-                <Ionicons name="arrow-back" size={24} color={theme.icon} />
+                <Ionicons name={I18nManager.isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={theme.icon} />
             </TouchableOpacity>
 
 
@@ -40,7 +40,7 @@ function CategoryHeader({ title, icon, onBackPress }: Props) {
                         contentFit="cover"
                     />
                 )}
-                <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+                <Text style={[styles.title, { color: theme.text }, I18nManager.isRTL && styles.titleRTL]}>{title}</Text>
             </View>
         </View>
     );
@@ -52,6 +52,7 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 8,
         paddingHorizontal: 16,
         paddingVertical: 12,
     },
@@ -61,7 +62,6 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 8,
     },
     titleContainer: {
         flexDirection: 'row',
@@ -71,6 +71,10 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 22,
         fontFamily: Typography.poppins.semiBold,
+    },
+    titleRTL: {
+        textAlign: 'right',
+        writingDirection: 'rtl',
     },
     imageIcon: {
         width: 48,

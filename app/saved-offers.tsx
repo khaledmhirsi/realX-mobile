@@ -169,9 +169,11 @@ export default function SavedOffersScreen() {
           onPress={() => router.back()}
           activeOpacity={0.8}
         >
-          <Ionicons name="arrow-back" size={22} color={theme.icon} />
+          <Ionicons name={isArabic ? 'arrow-forward' : 'arrow-back'} size={22} color={theme.icon} />
         </TouchableOpacity>
-        <PhonkText style={[styles.headerTitle, { color: theme.text }]}>{t('saved_offers')}</PhonkText>
+        <PhonkText style={[styles.headerTitle, { color: theme.text }, isArabic && styles.headerTitleRTL]}>
+          {t('saved_offers')}
+        </PhonkText>
       </View>
 
       {loading ? (
@@ -217,6 +219,10 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
+  },
+  headerTitleRTL: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   listContent: {
     paddingHorizontal: 20,

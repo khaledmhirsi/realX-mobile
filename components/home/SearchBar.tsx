@@ -199,12 +199,12 @@ function SearchBarContent({
   isRTL,
 }: SearchBarContentProps) {
   return (
-    <View style={[styles.searchContent, isRTL && styles.searchContentRTL]}>
+    <View style={styles.searchContent}>
       <Ionicons
         name="search"
         size={20}
         color={isActive ? activeColor : iconColor}
-        style={[styles.icon, isRTL && styles.iconRTL]}
+        style={styles.icon}
       />
       <TextInput
         style={[
@@ -234,7 +234,7 @@ function SearchBarContent({
           accessibilityRole="button"
           accessibilityLabel="Clear search"
           hitSlop={8}
-          style={[styles.clearButton, isRTL && styles.clearButtonRTL]}
+          style={styles.clearButton}
         >
           <Ionicons name="close-circle" size={18} color={placeholderColor} />
         </TouchableOpacity>
@@ -269,12 +269,8 @@ const styles = StyleSheet.create({
   },
   searchContent: {
     alignItems: "center",
-    direction: "ltr",
     flexDirection: "row",
     width: "100%",
-  },
-  searchContentRTL: {
-    flexDirection: "row-reverse",
   },
   topHighlight: {
     position: "absolute",
@@ -291,11 +287,7 @@ const styles = StyleSheet.create({
     height: 1,
   },
   icon: {
-    marginRight: 10,
-  },
-  iconRTL: {
-    marginRight: 0,
-    marginLeft: 10,
+    marginEnd: 10,
   },
   input: {
     flex: 1,
@@ -304,10 +296,6 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   clearButton: {
-    marginLeft: 8,
-  },
-  clearButtonRTL: {
-    marginLeft: 0,
-    marginRight: 8,
+    marginStart: 8,
   },
 });

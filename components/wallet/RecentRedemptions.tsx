@@ -122,15 +122,17 @@ export default function RecentRedemptions() {
     );
 
     const renderSeparator = () => (
-        <View style={[styles.separator, isRTL && styles.separatorRTL]} />
+        <View style={[styles.separator, isArabic && styles.separatorRTL]} />
     );
 
     if (loading) {
         return (
             <View style={styles.container}>
-                <Text style={[styles.sectionTitle, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
-                    {t('recent_redemptions')}
-                </Text>
+                <View style={styles.textRow}>
+                    <Text style={[styles.sectionTitle, { color: theme.text }, isArabic && styles.textRTL]}>
+                        {t('recent_redemptions')}
+                    </Text>
+                </View>
                 <ActivityIndicator
                     size="small"
                     color={Colors.brandGreen}
@@ -142,9 +144,11 @@ export default function RecentRedemptions() {
 
     return (
         <View style={styles.container}>
-            <Text style={[styles.sectionTitle, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
-                {t('recent_redemptions')}
-            </Text>
+            <View style={styles.textRow}>
+                <Text style={[styles.sectionTitle, { color: theme.text }, isArabic && styles.textRTL]}>
+                    {t('recent_redemptions')}
+                </Text>
+            </View>
             {redemptions.length > 0 ? (
                 <FlashList
                     data={redemptions}
@@ -155,9 +159,11 @@ export default function RecentRedemptions() {
                     contentContainerStyle={[styles.listContent, { backgroundColor: theme.background }]}
                 />
             ) : (
-                <Text style={[styles.emptyText, { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' }]}>
-                    {t('no_recent_redemptions')}
-                </Text>
+                <View style={styles.textRow}>
+                    <Text style={[styles.emptyText, { color: theme.subtleText }, isArabic && styles.textRTL]}>
+                        {t('no_recent_redemptions')}
+                    </Text>
+                </View>
             )}
         </View>
     );
@@ -167,10 +173,14 @@ const styles = StyleSheet.create({
     container: {
         paddingTop: 24,
     },
+    textRow: {
+        width: '100%',
+        alignItems: 'flex-start',
+        paddingHorizontal: 20,
+    },
     sectionTitle: {
         fontSize: 20,
         fontFamily: Typography.poppins.semiBold,
-        paddingHorizontal: 20,
         marginBottom: 16,
     },
     listContent: {
@@ -187,8 +197,11 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: 14,
         fontFamily: Typography.poppins.medium,
-        paddingHorizontal: 20,
         paddingTop: 10,
+    },
+    textRTL: {
+        textAlign: 'right',
+        writingDirection: 'rtl',
     },
     loader: {
         paddingTop: 20,

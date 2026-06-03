@@ -17,7 +17,7 @@ import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Linking, Platform, Pressable, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, I18nManager, Linking, Platform, Pressable, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker, Polyline, Region } from 'react-native-maps';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Supercluster, { ClusterFeature, PointFeature } from 'supercluster';
@@ -63,6 +63,8 @@ function clampRegion(region: Region): Region {
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const MAP_GEOHASH_PRECISION = 5;
 const MAP_RECENTS_KEY = 'realx.map.recentPlaces.v1';
+const MAP_BOTTOM_PANEL_OFFSET = 50;
+const MAP_FLOATING_BUTTON_GAP = 12;
 const _DEFAULT_ZOOM = 11.5;
 void _DEFAULT_ZOOM;
 
@@ -145,11 +147,17 @@ function callPhoneNumber(phoneNumber?: string) {
   void Linking.openURL(`tel:${dialable}`);
 }
 
+function formatMapSearchPlaceholder(placeholder: string, isRTL: boolean) {
+  if (!isRTL) return placeholder;
+
+  return placeholder.replace(/[\s.。…]+$/u, '');
+}
+
 export default function MapScreen() {
   const { t, i18n } = useTranslation();
   const { isDark, theme } = useAppTheme();
   const router = useRouter();
-  const isArabic = i18n.language === 'ar';
+  const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
   const insets = useSafeAreaInsets();
 
   const mapRef = useRef<MapView>(null);
@@ -178,12 +186,22 @@ export default function MapScreen() {
   const [savedMapPlaceIds, setSavedMapPlaceIds] = useState<Set<string>>(new Set());
   const [savingMapPlaceIds, setSavingMapPlaceIds] = useState<Set<string>>(new Set());
   const [selectedClusterPreview, setSelectedClusterPreview] = useState<VendorMapItem[]>([]);
+  const [bottomMapPanelHeight, setBottomMapPanelHeight] = useState(0);
   const [navigationTarget, setNavigationTarget] = useState<{ lat: number; lng: number; vendorId: string } | null>(null);
   const pendingSelectVendorIdRef = useRef<string | null>(null);
   const vendorsRef = useRef<VendorMapItem[]>([]);
   const params = useLocalSearchParams<{ vendorId?: string; locationId?: string; lat?: string; lng?: string }>();
   const isSearchActive = isSearchFocused || searchQuery.length > 0;
   const searchPlaceholder = t('search_placeholder');
+  const visibleSearchPlaceholder = isSearchActive ? '' : formatMapSearchPlaceholder(animatedSearchPlaceholder ?? searchPlaceholder, isArabic);
+  const hasBottomMapPanel = Boolean(selectedMapVendor) || selectedClusterPreview.length > 0;
+  const bottomPanelOffset = insets.bottom + MAP_BOTTOM_PANEL_OFFSET;
+  const locationButtonBottom = hasBottomMapPanel && bottomMapPanelHeight > 0
+    ? bottomPanelOffset + bottomMapPanelHeight + MAP_FLOATING_BUTTON_GAP
+    : Platform.OS === 'ios'
+      ? insets.bottom + 92
+      : 24;
+  const cancelNavButtonBottom = locationButtonBottom + 56;
 
   useEffect(() => {
     vendorsRef.current = vendors;
@@ -801,15 +819,17 @@ export default function MapScreen() {
             ]}
             pointerEvents="auto"
           >
-            <Ionicons
-              name="search"
-              size={20}
-              color={isSearchActive ? theme.brand : theme.iconMuted}
-              style={styles.searchIcon}
-            />
+            <Ionicons name="search" size={20} color={isSearchActive ? theme.brand : theme.iconMuted} />
             <TextInput
-              style={[styles.searchInput, { color: isSearchActive ? theme.brand : theme.inputText }]}
-              placeholder={isSearchActive ? '' : (animatedSearchPlaceholder ?? searchPlaceholder)}
+              style={[
+                styles.searchInput,
+                {
+                  color: isSearchActive ? theme.brand : theme.inputText,
+                  textAlign: isArabic ? 'right' : 'left',
+                  writingDirection: isArabic ? 'rtl' : 'ltr',
+                },
+              ]}
+              placeholder={visibleSearchPlaceholder}
               placeholderTextColor={theme.inputPlaceholder}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -834,7 +854,7 @@ export default function MapScreen() {
         </View>
 
         <Pressable
-          style={[styles.locationButton, { backgroundColor: theme.surfaceElevated, shadowColor: theme.shadow }]}
+          style={[styles.locationButton, { backgroundColor: theme.surfaceElevated, shadowColor: theme.shadow, bottom: locationButtonBottom }]}
           onPress={() => void centerOnUser()}
         >
           <Ionicons name="locate" size={18} color={theme.brand} />
@@ -842,7 +862,7 @@ export default function MapScreen() {
 
         {navigationTarget && (
           <TouchableOpacity
-            style={[styles.cancelNavButton, { backgroundColor: theme.surfaceElevated, shadowColor: theme.shadow }]}
+            style={[styles.cancelNavButton, { backgroundColor: theme.surfaceElevated, shadowColor: theme.shadow, bottom: cancelNavButtonBottom }]}
             onPress={() => setNavigationTarget(null)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
@@ -852,7 +872,7 @@ export default function MapScreen() {
 
         {selectedMapVendor && (
           <Pressable
-            style={[styles.calloutOverlay, { bottom: insets.bottom + 50 }]}
+            style={[styles.calloutOverlay, { bottom: bottomPanelOffset }]}
             onPress={() => {
               setSelectedMapVendor(null);
             }}
@@ -860,16 +880,17 @@ export default function MapScreen() {
             <Pressable
               style={[styles.calloutCard, { backgroundColor: theme.surfaceElevated, shadowColor: theme.shadow }]}
               onPress={(e) => e.stopPropagation()}
+              onLayout={(event) => setBottomMapPanelHeight(Math.ceil(event.nativeEvent.layout.height))}
             >
               <View style={styles.calloutHeader}>
                 <View style={styles.calloutTitleBlock}>
-                  <PhonkText style={[styles.calloutVendorName, { color: theme.text }]} numberOfLines={1}>
+                  <PhonkText style={[styles.calloutVendorName, { color: theme.text }, isArabic && styles.textRTL]} numberOfLines={1}>
                     {isArabic
                       ? (selectedMapVendor.nameAr || selectedMapVendor.name)
                       : selectedMapVendor.name}
                   </PhonkText>
                   {(selectedMapVendor.branchName || selectedMapVendor.address) && (
-                    <Text style={[styles.calloutBranchText, { color: theme.mutedText }]} numberOfLines={1}>
+                    <Text style={[styles.calloutBranchText, { color: theme.mutedText }, isArabic && styles.textRTL]} numberOfLines={1}>
                       {isArabic
                         ? (selectedMapVendor.branchNameAr || selectedMapVendor.branchName || selectedMapVendor.addressAr || selectedMapVendor.address)
                         : (selectedMapVendor.branchName || selectedMapVendor.branchNameAr || selectedMapVendor.address || selectedMapVendor.addressAr)}
@@ -889,7 +910,7 @@ export default function MapScreen() {
               {selectedMapVendor.firstOffer && (
                 <View style={[styles.calloutOfferPill, { backgroundColor: theme.cardMuted }]}>
                   <Ionicons name="pricetag" size={14} color={theme.brand} />
-                  <PhonkText style={[styles.calloutOfferText, { color: theme.brandText }]} numberOfLines={1}>
+                  <PhonkText style={[styles.calloutOfferText, { color: theme.brandText }, isArabic && styles.textRTL]} numberOfLines={1}>
                     {isArabic
                       ? (selectedMapVendor.firstOffer.titleAr || selectedMapVendor.firstOffer.titleEn || '')
                       : (selectedMapVendor.firstOffer.titleEn || selectedMapVendor.firstOffer.titleAr || '')}
@@ -900,7 +921,7 @@ export default function MapScreen() {
               {userLocation && (
                 <View style={styles.calloutDistanceRow}>
                   <Ionicons name="navigate-outline" size={14} color={theme.iconMuted} />
-                  <Text style={[styles.calloutDistanceText, { color: theme.subtleText }]}>
+                  <Text style={[styles.calloutDistanceText, { color: theme.subtleText }, isArabic && styles.textRTL]}>
                     {haversineDistanceKm(userLocation, { latitude: selectedMapVendor.latitude, longitude: selectedMapVendor.longitude }).toFixed(1)} km
                   </Text>
                 </View>
@@ -938,7 +959,7 @@ export default function MapScreen() {
                   activeOpacity={0.7}
                 >
                   <Ionicons name="storefront-outline" size={16} color={theme.text} />
-                  <Text style={[styles.calloutBtnText, { color: theme.text }]} numberOfLines={1}>{t('map_callout_view')}</Text>
+                  <Text style={[styles.calloutBtnText, { color: theme.text }, isArabic && styles.textRTL]} numberOfLines={1}>{t('map_callout_view')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -959,7 +980,7 @@ export default function MapScreen() {
                   activeOpacity={0.7}
                 >
                   <Ionicons name="navigate" size={16} color="#FFF" />
-                  <Text style={[styles.calloutBtnText, { color: '#FFF' }]} numberOfLines={1}>{t('map_callout_directions')}</Text>
+                  <Text style={[styles.calloutBtnText, { color: '#FFF' }, isArabic && styles.textRTL]} numberOfLines={1}>{t('map_callout_directions')}</Text>
                 </TouchableOpacity>
               </View>
             </Pressable>
@@ -970,11 +991,14 @@ export default function MapScreen() {
           <View
             style={[
               styles.clusterPreviewCard,
-              { backgroundColor: theme.surfaceElevated, shadowColor: theme.shadow, bottom: insets.bottom + 50 },
+              { backgroundColor: theme.surfaceElevated, shadowColor: theme.shadow, bottom: bottomPanelOffset },
             ]}
+            onLayout={(event) => setBottomMapPanelHeight(Math.ceil(event.nativeEvent.layout.height))}
           >
             <View style={styles.clusterPreviewHeader}>
-              <Text style={[styles.clusterPreviewTitle, { color: theme.text }]}>{selectedClusterPreview.length} nearby places</Text>
+              <Text style={[styles.clusterPreviewTitle, { color: theme.text }, isArabic && styles.textRTL]}>
+                {t('map_nearby_places_count', { count: selectedClusterPreview.length })}
+              </Text>
               <TouchableOpacity onPress={() => setSelectedClusterPreview([])}>
                 <Ionicons name="close" size={18} color={theme.iconMuted} />
               </TouchableOpacity>
@@ -982,7 +1006,7 @@ export default function MapScreen() {
             {selectedClusterPreview.map((vendor) => (
               <TouchableOpacity key={vendor.id} style={styles.clusterPreviewRow} onPress={() => selectMapVendor(vendor)}>
                 <View style={[styles.clusterPreviewDot, { backgroundColor: markerColorForVendor(vendor) }]} />
-                <Text style={[styles.clusterPreviewName, { color: theme.text }]} numberOfLines={1}>
+                <Text style={[styles.clusterPreviewName, { color: theme.text }, isArabic && styles.textRTL]} numberOfLines={1}>
                   {isArabic ? (vendor.nameAr || vendor.name) : vendor.name}
                 </Text>
                 {vendor.distanceKm != null && <Text style={[styles.clusterPreviewDistance, { color: theme.brandText }]}>{vendor.distanceKm.toFixed(1)} km</Text>}
@@ -1133,6 +1157,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -1143,9 +1168,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 6,
     elevation: 4,
-  },
-  searchIcon: {
-    marginRight: 10,
   },
   searchInput: {
     flex: 1,
@@ -1277,7 +1299,8 @@ const styles = StyleSheet.create({
   },
   calloutTitleBlock: {
     flex: 1,
-    marginRight: 12,
+    marginEnd: 12,
+    alignItems: 'flex-start',
   },
   calloutBranchText: {
     marginTop: 2,
@@ -1294,6 +1317,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignSelf: 'flex-start',
     marginBottom: 8,
+    maxWidth: '100%',
   },
   calloutOfferText: {
     fontSize: 14,
@@ -1302,6 +1326,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    alignSelf: 'flex-start',
     marginBottom: 12,
   },
   calloutDistanceText: {
@@ -1395,6 +1420,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontFamily: Typography.poppins.medium,
+  },
+  textRTL: {
+    writingDirection: 'rtl',
   },
   clusterPreviewDistance: {
     fontSize: 12,

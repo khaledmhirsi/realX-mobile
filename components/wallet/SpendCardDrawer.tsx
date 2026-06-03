@@ -264,13 +264,13 @@ export default function SpendCardDrawer({
                 ) : (
                     <>
                         {/* Header */}
-                        <View style={[styles.header, isRTL && styles.headerRTL]}>
+                        <View style={styles.header}>
                             <ScalePressable
                                 style={[styles.backButton, { backgroundColor: theme.cardMuted }]}
                                 onPress={handleClose}
                                 pressedScale={0.9}
                             >
-                                <Text style={[styles.backArrow, { color: theme.text }]}>{isRTL ? '→' : '←'}</Text>
+                                <Text style={[styles.backArrow, { color: theme.text }]}>{isArabic ? '→' : '←'}</Text>
                             </ScalePressable>
                             <View style={[styles.logoContainer, isArabic && styles.logoContainerRTL]}>
                                 <PhonkText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</PhonkText>
@@ -397,9 +397,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 12,
-    },
-    headerRTL: {
-        flexDirection: 'row-reverse',
     },
     backButton: {
         width: 40,

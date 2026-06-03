@@ -334,7 +334,7 @@ export default function VendorScreen() {
                                 onPress={() => router.back()}
                                 activeOpacity={0.8}
                             >
-                                <Ionicons name="arrow-back" size={24} color={theme.logoTileText} />
+                                <Ionicons name={isArabic ? 'arrow-forward' : 'arrow-back'} size={24} color={theme.logoTileText} />
                             </TouchableOpacity>
 
                         </View>

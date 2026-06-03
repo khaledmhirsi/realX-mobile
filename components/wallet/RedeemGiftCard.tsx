@@ -39,8 +39,8 @@ export default function RedeemGiftCard({
     const [selectedAmount, setSelectedAmount] = useState(amounts[0]);
     const [showCheckout, setShowCheckout] = useState(false);
     const [showTerms, setShowTerms] = useState(false);
-    const { t } = useTranslation();
-    const isRTL = I18nManager.isRTL;
+    const { t, i18n } = useTranslation();
+    const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
 
     if (showCheckout) {
         return (
@@ -57,7 +57,7 @@ export default function RedeemGiftCard({
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header */}
-            <View style={[styles.header, isRTL && styles.headerRTL]}>
+            <View style={styles.header}>
                 <ScalePressable
                     style={[styles.backButton, { backgroundColor: theme.cardMuted }]}
                     onPress={() => {
@@ -214,9 +214,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 12,
-    },
-    headerRTL: {
-        flexDirection: 'row-reverse',
     },
     backButton: {
         width: 40,
