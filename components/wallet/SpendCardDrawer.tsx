@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     I18nManager,
+    Keyboard,
     Modal,
     StyleSheet,
     Text,
@@ -186,6 +187,7 @@ export default function SpendCardDrawer({
     const handleSearchSubmit = () => {
         const committedQuery = normalizeSearchText(searchInput);
 
+        Keyboard.dismiss();
         setSearchQuery(committedQuery);
         searchQueryRef.current = committedQuery;
         void fetchBrands(true, committedQuery);
@@ -205,6 +207,7 @@ export default function SpendCardDrawer({
     };
 
     const handleBrandSelect = (brandId: string) => {
+        Keyboard.dismiss();
         if (selectedBrandId !== brandId) {
             triggerSubtleHaptic();
         }
@@ -328,6 +331,7 @@ export default function SpendCardDrawer({
                                         brands.length === 0 && styles.brandListEmptyContent,
                                     ]}
                                     showsVerticalScrollIndicator={false}
+                                    keyboardShouldPersistTaps="always"
                                     onEndReached={() => {
                                         if (!loadingMore && !isListEnd) {
                                             void fetchBrands(false, searchQueryRef.current);
