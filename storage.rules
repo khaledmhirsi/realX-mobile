@@ -1,6 +1,19 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    // Vendor gallery images are public media managed by admins.
+    match /vendors/{vendorId}/gallery/{imageName} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.contentType.matches('image/.*')
+        && request.resource.size < 10 * 1024 * 1024;
+      allow delete: if isAdmin();
+    }
+
     // Verification request images - only admin SDK (cloud functions) writes,
     // only admin users can read from client (admin panel)
     match /verification_requests/{requestId}/{imageType} {

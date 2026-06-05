@@ -17,6 +17,7 @@ import { useAppTheme } from '../../context/AppThemeContext';
 import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
+import { VendorGallery } from '../../components/vendor/VendorGallery';
 import { haversineDistanceKm, isValidLatLng, LatLng } from '../../utils/mapGeo';
 import { fetchSavedOfferIds, fetchVendorRoute } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
@@ -412,6 +413,8 @@ export default function VendorScreen() {
                             </View>
                         </View>
                     </View>
+
+                    <VendorGallery images={vendor.galleryImages} isArabic={isArabic} />
 
                     {/* Offers List */}
                     <View style={styles.offersList}>
