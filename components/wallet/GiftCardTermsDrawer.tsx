@@ -32,6 +32,7 @@ export default function GiftCardTermsDrawer({
     const { theme } = useAppTheme();
     const { t, i18n } = useTranslation();
     const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+    const sheetWidth = Math.max(0, windowWidth - 32);
     const sheetMaxHeight = Math.max(0, windowHeight * 0.5 - insets.bottom);
     const sheetBodyMaxHeight = Math.max(0, sheetMaxHeight - 120);
 
@@ -48,7 +49,7 @@ export default function GiftCardTermsDrawer({
                         styles.sheetContent,
                         {
                             backgroundColor: theme.card,
-                            width: windowWidth,
+                            width: sheetWidth,
                             maxHeight: sheetMaxHeight,
                             paddingBottom: insets.bottom + 24,
                         },

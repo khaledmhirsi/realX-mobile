@@ -93,6 +93,7 @@ export default function VendorScreen() {
     const { i18n, t } = useTranslation();
     const { isDark, theme } = useAppTheme();
     const isArabic = i18n.language === 'ar';
+    const termsSheetWidth = Math.max(0, windowWidth - 32);
     const [vendor, setVendor] = useState<any>(null);
     const [offers, setOffers] = useState<any[]>([]);
     const [selectedOfferForTC, setSelectedOfferForTC] = useState<any>(null);
@@ -535,7 +536,7 @@ const isSaved = savedOfferIds.has(savedId);
                             styles.termsSheetContent,
                             {
                                 backgroundColor: theme.card,
-                                width: windowWidth,
+                                width: termsSheetWidth,
                                 maxHeight: termsSheetMaxHeight,
                                 paddingBottom: insets.bottom + 24,
                             },
