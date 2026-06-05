@@ -115,7 +115,6 @@ export default function GiftCardTermsDrawer({
         const {
             frame,
             padding,
-            presentationBackground,
             presentationDragIndicator,
             // eslint-disable-next-line @typescript-eslint/no-require-imports
         } = require('@expo/ui/swift-ui/modifiers');
@@ -135,7 +134,6 @@ export default function GiftCardTermsDrawer({
                             frame({ maxWidth: Infinity, alignment: 'topLeading' }),
                             padding({ top: 16, leading: 16, trailing: 16 }),
                             presentationDragIndicator('visible'),
-                            presentationBackground(theme.card),
                         ]}
                     >
                         <SwiftUIRNHostView matchContents>

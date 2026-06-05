@@ -1,6 +1,5 @@
 import { pickLocalizedText } from '../../utils/textFallback';
 import { BottomSheet, RNHostView } from '@expo/ui';
-import { presentationBackground } from '@expo/ui/swift-ui/modifiers';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
 import { deleteDoc, doc, getFirestore, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
@@ -10,7 +9,7 @@ import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
@@ -526,7 +525,6 @@ const isSaved = savedOfferIds.has(savedId);
             <BottomSheet
                 isPresented={!!selectedOfferForTC}
                 onDismiss={() => setSelectedOfferForTC(null)}
-                modifiers={Platform.OS === 'ios' ? [presentationBackground(theme.card)] : undefined}
                 snapPoints={['half']}
                 testID="vendor-terms-bottom-sheet"
             >

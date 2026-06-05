@@ -1,11 +1,9 @@
 import { BottomSheet, RNHostView } from '@expo/ui';
-import { presentationBackground } from '@expo/ui/swift-ui/modifiers';
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     I18nManager,
-    Platform,
     StyleProp,
     StyleSheet,
     Text,
@@ -160,7 +158,6 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
             <BottomSheet
                 isPresented={isSheetPresented}
                 onDismiss={() => setIsSheetPresented(false)}
-                modifiers={Platform.OS === 'ios' ? [presentationBackground(isDark ? '#050B14' : '#EEF7FF')] : undefined}
                 snapPoints={['half']}
                 testID="wakti-bottom-sheet"
             >

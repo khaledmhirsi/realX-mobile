@@ -28,13 +28,11 @@ This project uses Firebase for backend services. To get started with Firebase:
     *   Go to the [Firebase Console](https://console.firebase.google.com/).
     *   Click "Add project" and follow the instructions to create a new project.
 
-2.  **Add Apps to your Firebase Project:**
-    *   **Production Android App:** Register `com.reelx.app`. Download `google-services.json` and place it in the project root directory (`./google-services.json`).
-    *   **Production iOS App:** Register `com.reelx.app`. Download `GoogleService-Info.plist` and place it in the project root directory (`./GoogleService-Info.plist`).
-    *   **Development Android App:** Register `com.reelx.app.dev`. Download `google-services.json` and place it in `firebase/dev/google-services.json`.
-    *   **Development iOS App:** Register `com.reelx.app.dev`. Download `GoogleService-Info.plist` and place it in `firebase/dev/GoogleService-Info.plist`.
+2.  **Add Apps to the Production Firebase Project:**
+    *   **Android App:** Register `com.reelx.app`. Download `google-services.json` and place it in the project root directory (`./google-services.json`).
+    *   **iOS App:** Register `com.reelx.app`. Download `GoogleService-Info.plist` and place it in the project root directory (`./GoogleService-Info.plist`).
 
-    *Note: The root `google-services.json` and `GoogleService-Info.plist` are the production files. Local commands default to the dev app variant through `app.config.js`. See `docs/firebase-environments.md`.*
+    *Note: This repository only uses the production Firebase project, `reelx-backend`. Local, preview, development, and production builds all connect to production data and services.*
 
 3.  **Add Firebase Configuration to your Project:**
     Create a file named `constants/firebaseConfig.ts` and add your Firebase configuration:
@@ -74,6 +72,8 @@ Once dependencies are installed and Firebase is configured, start the Expo devel
 ```bash
 npm run start
 ```
+
+Local development builds use the production app identity and Firebase project. App Check debug tokens must be registered against `reelx-backend` and supplied through an untracked local or EAS environment variable.
 
 This will open a new tab in your browser with the Expo Dev Tools. You can then:
 

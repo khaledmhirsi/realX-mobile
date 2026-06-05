@@ -1,8 +1,6 @@
 import { BottomSheet, RNHostView } from '@expo/ui';
-import { presentationBackground } from '@expo/ui/swift-ui/modifiers';
 import {
     I18nManager,
-    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -92,7 +90,6 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
         <BottomSheet
             isPresented={visible}
             onDismiss={onClose}
-            modifiers={Platform.OS === 'ios' ? [presentationBackground(theme.surfaceElevated)] : undefined}
             snapPoints={[{ fraction: HOW_IT_WORKS_SHEET_FRACTION }]}
             testID="xcard-how-it-works-bottom-sheet"
         >

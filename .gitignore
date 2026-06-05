@@ -33,11 +33,6 @@ yarn-error.*
 # local env files
 .env
 .env*.local
-firebase/dev/GoogleService-Info.plist
-firebase/dev/google-services.json
-firebase/prod/GoogleService-Info.plist
-firebase/prod/google-services.json
-!firebase/dev/README.md
 
 # typescript
 *.tsbuildinfo

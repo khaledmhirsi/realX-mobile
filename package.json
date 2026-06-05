@@ -3,13 +3,10 @@
   "main": "expo-router/entry",
   "version": "1.0.2",
   "scripts": {
-    "start": "APP_VARIANT=development expo start",
-    "start:prod": "APP_VARIANT=production expo start",
+    "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "APP_VARIANT=development expo run:android",
-    "android:prod": "APP_VARIANT=production expo run:android",
-    "ios": "APP_VARIANT=development expo run:ios",
-    "ios:prod": "APP_VARIANT=production expo run:ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "lint": "expo lint"
   },
   "dependencies": {
