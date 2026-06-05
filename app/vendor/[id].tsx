@@ -89,7 +89,7 @@ export default function VendorScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { height: windowHeight } = useWindowDimensions();
+    const { height: windowHeight, width: windowWidth } = useWindowDimensions();
     const { i18n, t } = useTranslation();
     const { isDark, theme } = useAppTheme();
     const isArabic = i18n.language === 'ar';
@@ -535,6 +535,7 @@ const isSaved = savedOfferIds.has(savedId);
                             styles.termsSheetContent,
                             {
                                 backgroundColor: theme.card,
+                                width: windowWidth,
                                 maxHeight: termsSheetMaxHeight,
                                 paddingBottom: insets.bottom + 24,
                             },
