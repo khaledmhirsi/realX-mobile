@@ -1,4 +1,6 @@
 import { pickLocalizedText } from '../../utils/textFallback';
+import { BottomSheet, RNHostView } from '@expo/ui';
+import { presentationBackground } from '@expo/ui/swift-ui/modifiers';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
 import { deleteDoc, doc, getFirestore, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
@@ -8,7 +10,7 @@ import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
@@ -194,6 +196,8 @@ export default function VendorScreen() {
 
     const nearestBranch = branches[0] || null;
     const branchListMaxHeight = Math.max(260, Math.min(520, windowHeight * 0.58 - insets.bottom));
+    const termsSheetMaxHeight = Math.max(0, windowHeight * 0.5 - insets.bottom);
+    const termsSheetBodyMaxHeight = Math.max(0, termsSheetMaxHeight - 120);
 
     const openBranchOnMap = (branch: VendorBranch) => {
         if (!isValidLatLng(branch.latitude, branch.longitude)) return;
@@ -518,82 +522,72 @@ const isSaved = savedOfferIds.has(savedId);
                 </View>
             </ScrollView>
 
-            {/* T&C Modal */}
-            <Modal
-                visible={!!selectedOfferForTC}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setSelectedOfferForTC(null)}
+            <BottomSheet
+                isPresented={!!selectedOfferForTC}
+                onDismiss={() => setSelectedOfferForTC(null)}
+                modifiers={Platform.OS === 'ios' ? [presentationBackground(theme.card)] : undefined}
+                snapPoints={['half']}
+                testID="vendor-terms-bottom-sheet"
             >
-                <Pressable
-                    style={styles.modalOverlay}
-                    onPress={() => setSelectedOfferForTC(null)}
-                >
-                    <GlassView style={StyleSheet.absoluteFill} glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} tintColor="rgba(0,0,0,0.3)" />
-                    <Pressable
+                <RNHostView matchContents>
+                    <View
                         style={[
-                            styles.drawerContainer,
+                            styles.termsSheetContent,
                             {
                                 backgroundColor: theme.card,
-                                paddingBottom: insets.bottom + 20
-                            }
+                                maxHeight: termsSheetMaxHeight,
+                                paddingBottom: insets.bottom + 24,
+                            },
                         ]}
-                        onPress={(e) => e.stopPropagation()}
                     >
-                        {/* Drawer Handle */}
-                        <View style={styles.handleContainer}>
-                            <View style={[styles.handle, { backgroundColor: theme.borderStrong }]} />
-                        </View>
-
-                        <View style={styles.modalContent}>
-                            <View style={styles.modalHeader}>
-                                <PhonkText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</PhonkText>
-                                <TouchableOpacity
-                                    onPress={() => setSelectedOfferForTC(null)}
-                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                >
-                                    <Ionicons name="close-circle" size={28} color={theme.icon} />
-                                </TouchableOpacity>
-                            </View>
-
-                            <ScrollView
-                                showsVerticalScrollIndicator={false}
-                                style={styles.modalBody}
-                                contentContainerStyle={styles.modalBodyContent}
+                        <View style={styles.termsSheetHeader}>
+                            <PhonkText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</PhonkText>
+                            <TouchableOpacity
+                                onPress={() => setSelectedOfferForTC(null)}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             >
-                                <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.descriptionText]}>
-                                    {isArabic
-                                        ? (selectedOfferForTC?.descriptionAr || selectedOfferForTC?.descriptionEn || t('no_specific_terms'))
-                                        : (selectedOfferForTC?.descriptionEn || selectedOfferForTC?.descriptionAr || t('no_specific_terms'))}
-                                </Text>
-
-                                <View style={[styles.commonTerms, { borderTopColor: theme.border }]}>
-                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('in_store_only')}</Text>
-                                    </View>
-                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('cannot_be_combined')}</Text>
-                                    </View>
-                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_promotional_reward')}</Text>
-                                    </View>
-                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_no_cash_withdrawal')}</Text>
-                                    </View>
-                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_in_app_only')}</Text>
-                                    </View>
-                                </View>
-                            </ScrollView>
+                                <Ionicons name="close-circle" size={28} color={theme.icon} />
+                            </TouchableOpacity>
                         </View>
-                    </Pressable>
-                </Pressable>
-            </Modal>
+
+                        <ScrollView
+                            showsVerticalScrollIndicator={false}
+                            nestedScrollEnabled
+                            style={[styles.termsSheetBody, { maxHeight: termsSheetBodyMaxHeight }]}
+                            contentContainerStyle={styles.termsSheetBodyContent}
+                        >
+                            <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.descriptionText]}>
+                                {isArabic
+                                    ? (selectedOfferForTC?.descriptionAr || selectedOfferForTC?.descriptionEn || t('no_specific_terms'))
+                                    : (selectedOfferForTC?.descriptionEn || selectedOfferForTC?.descriptionAr || t('no_specific_terms'))}
+                            </Text>
+
+                            <View style={[styles.commonTerms, { borderTopColor: theme.border }]}>
+                                <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                    <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('in_store_only')}</Text>
+                                </View>
+                                <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                    <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('cannot_be_combined')}</Text>
+                                </View>
+                                <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                    <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_promotional_reward')}</Text>
+                                </View>
+                                <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                    <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_no_cash_withdrawal')}</Text>
+                                </View>
+                                <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                    <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_in_app_only')}</Text>
+                                </View>
+                            </View>
+                        </ScrollView>
+                    </View>
+                </RNHostView>
+            </BottomSheet>
 
             <Modal
                 visible={branchPickerVisible}
@@ -1015,11 +1009,21 @@ const styles = StyleSheet.create({
         fontSize: 20,
         letterSpacing: 0.5,
     },
-    modalBody: {
+    termsSheetContent: {
+        paddingHorizontal: 24,
+        paddingTop: 18,
+    },
+    termsSheetHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: 20,
     },
-    modalBodyContent: {
-        paddingBottom: 20,
+    termsSheetBody: {
+        flexGrow: 0,
+    },
+    termsSheetBodyContent: {
+        paddingBottom: 24,
     },
     descriptionText: {
         fontSize: 16,

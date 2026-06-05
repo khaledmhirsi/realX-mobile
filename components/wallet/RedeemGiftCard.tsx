@@ -69,8 +69,18 @@ export default function RedeemGiftCard({
                     <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={theme.icon} />
                 </ScalePressable>
                 <View style={styles.logoContainer}>
-                    <PhonkText style={[styles.logoX, { color: theme.brand }]}>X</PhonkText>
-                    <PhonkText style={[styles.logoCard, { color: theme.text }]}>CARD</PhonkText>
+                    {isRTL ? (
+                        <Text style={styles.logoArabicText}>
+                            <Text style={[styles.logoCardArabic, { color: theme.text }]}>{t('xcard_title_card')}</Text>
+                            {' '}
+                            <Text style={[styles.logoXArabic, { color: theme.brand }]}>{t('xcard_title_x')}</Text>
+                        </Text>
+                    ) : (
+                        <>
+                            <PhonkText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</PhonkText>
+                            <PhonkText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</PhonkText>
+                        </>
+                    )}
                 </View>
                 <View style={styles.headerSpacer} />
             </View>
@@ -226,11 +236,27 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
+    logoArabicText: {
+        textAlign: 'center',
+        writingDirection: 'rtl',
+    },
     logoX: {
         fontSize: 24,
     },
     logoCard: {
         fontSize: 24,
+    },
+    logoXArabic: {
+        fontFamily: 'TajawalBlack',
+        fontSize: 28,
+        lineHeight: 36,
+        writingDirection: 'rtl',
+    },
+    logoCardArabic: {
+        fontFamily: 'TajawalBlack',
+        fontSize: 28,
+        lineHeight: 36,
+        writingDirection: 'rtl',
     },
     headerSpacer: {
         width: 40,

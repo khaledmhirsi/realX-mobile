@@ -1,14 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import { GlassView } from 'expo-glass-effect';
+import { BottomSheet, RNHostView } from '@expo/ui';
+import { presentationBackground } from '@expo/ui/swift-ui/modifiers';
 import React from 'react';
 import {
     I18nManager,
-    Modal,
-    Pressable,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
+    useWindowDimensions,
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,138 +28,120 @@ export default function GiftCardTermsDrawer({
     onClose,
 }: GiftCardTermsDrawerProps) {
     const insets = useSafeAreaInsets();
-    const { isDark, theme } = useAppTheme();
-    const { t } = useTranslation();
-    const isRTL = I18nManager.isRTL;
+    const { height: windowHeight, width: windowWidth } = useWindowDimensions();
+    const { theme } = useAppTheme();
+    const { t, i18n } = useTranslation();
+    const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+    const sheetMaxHeight = Math.max(0, windowHeight * 0.5 - insets.bottom);
+    const sheetBodyMaxHeight = Math.max(0, sheetMaxHeight - 120);
 
     return (
-        <Modal
-            visible={visible}
-            animationType="slide"
-            transparent={true}
-            onRequestClose={onClose}
+        <BottomSheet
+            isPresented={visible}
+            onDismiss={onClose}
+            modifiers={Platform.OS === 'ios' ? [presentationBackground(theme.card)] : undefined}
+            testID="gift-card-terms-bottom-sheet"
         >
-            <Pressable style={styles.modalOverlay} onPress={onClose}>
-                <GlassView
-                    style={StyleSheet.absoluteFill}
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    tintColor="rgba(0,0,0,0.3)"
-                />
-                <Pressable
+            <RNHostView matchContents>
+                <View
                     style={[
-                        styles.drawerContainer,
+                        styles.sheetContent,
                         {
                             backgroundColor: theme.card,
-                            paddingBottom: insets.bottom + 20,
+                            width: windowWidth,
+                            maxHeight: sheetMaxHeight,
+                            paddingBottom: insets.bottom + 24,
                         },
                     ]}
-                    onPress={(e) => e.stopPropagation()}
-                    >
-                    <View style={styles.handleContainer}>
-                        <View style={[styles.handle, { backgroundColor: theme.borderStrong }]} />
-                    </View>
-
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <PhonkText style={[styles.modalTitleText, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
-                                {t('terms_and_conditions_caps')}
-                            </PhonkText>
-                            <TouchableOpacity
-                                onPress={onClose}
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                                <Ionicons name="close-circle" size={28} color={theme.icon} />
-                            </TouchableOpacity>
-                        </View>
-
-                        <ScrollView
-                            showsVerticalScrollIndicator={false}
-                            style={styles.modalBody}
-                            contentContainerStyle={styles.modalBodyContent}
+                >
+                    <View style={[styles.sheetHeader, isRTL && styles.sheetHeaderRTL]}>
+                        <PhonkText style={[styles.modalTitleText, isRTL && styles.modalTitleTextRTL, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
+                            {t('terms_and_conditions_caps')}
+                        </PhonkText>
+                        <TouchableOpacity
+                            onPress={onClose}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
-                            <Text style={[styles.descriptionText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                {t('no_specific_terms')}
-                            </Text>
-
-                            <View style={[styles.commonTerms, { borderTopColor: theme.border }]}>
-                                <View style={styles.termRow}>
-                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[styles.termText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                        {t('in_store_only')}
-                                    </Text>
-                                </View>
-                                <View style={styles.termRow}>
-                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[styles.termText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                        {t('cannot_be_combined')}
-                                    </Text>
-                                </View>
-                                <View style={styles.termRow}>
-                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[styles.termText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                        {t('xp_promotional_reward')}
-                                    </Text>
-                                </View>
-                                <View style={styles.termRow}>
-                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[styles.termText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                        {t('xp_no_cash_withdrawal')}
-                                    </Text>
-                                </View>
-                                <View style={styles.termRow}>
-                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[styles.termText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                        {t('xp_in_app_only')}
-                                    </Text>
-                                </View>
-                            </View>
-                        </ScrollView>
+                            <Ionicons name="close-circle" size={28} color={theme.icon} />
+                        </TouchableOpacity>
                     </View>
-                </Pressable>
-            </Pressable>
-        </Modal>
+
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        nestedScrollEnabled
+                        style={[styles.sheetBody, { maxHeight: sheetBodyMaxHeight }]}
+                        contentContainerStyle={styles.sheetBodyContent}
+                    >
+                        <Text style={[styles.descriptionText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                            {t('no_specific_terms')}
+                        </Text>
+
+                        <View style={[styles.commonTerms, { borderTopColor: theme.border }]}>
+                            <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
+                                <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                                    {t('in_store_only')}
+                                </Text>
+                            </View>
+                            <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
+                                <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                                    {t('cannot_be_combined')}
+                                </Text>
+                            </View>
+                            <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
+                                <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                                    {t('xp_promotional_reward')}
+                                </Text>
+                            </View>
+                            <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
+                                <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                                    {t('xp_no_cash_withdrawal')}
+                                </Text>
+                            </View>
+                            <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
+                                <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                                    {t('xp_in_app_only')}
+                                </Text>
+                            </View>
+                        </View>
+                    </ScrollView>
+                </View>
+            </RNHostView>
+        </BottomSheet>
     );
 }
 
 const styles = StyleSheet.create({
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'transparent',
-        justifyContent: 'flex-end',
-    },
-    drawerContainer: {
-        borderTopLeftRadius: 32,
-        borderTopRightRadius: 32,
-        maxHeight: '80%',
-    },
-    handleContainer: {
-        alignItems: 'center',
-        paddingVertical: 12,
-    },
-    handle: {
-        width: 40,
-        height: 5,
-        borderRadius: 2.5,
-    },
-    modalContent: {
+    sheetContent: {
         paddingHorizontal: 24,
+        paddingTop: 18,
     },
-    modalHeader: {
+    sheetHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 20,
     },
+    sheetHeaderRTL: {
+        flexDirection: 'row-reverse',
+    },
     modalTitleText: {
+        flex: 1,
         fontSize: 20,
         letterSpacing: 0.5,
     },
-    modalBody: {
-        marginBottom: 20,
+    modalTitleTextRTL: {
+        writingDirection: 'rtl',
     },
-    modalBodyContent: {
-        paddingBottom: 20,
+    sheetBody: {
+        flexGrow: 0,
+    },
+    sheetBodyContent: {
+        paddingBottom: 24,
     },
     descriptionText: {
         fontSize: 16,
@@ -176,9 +159,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 10,
     },
+    termRowRTL: {
+        flexDirection: 'row-reverse',
+    },
     termText: {
         fontSize: 14,
         fontFamily: Typography.poppins.medium,
         flex: 1,
+    },
+    termTextRTL: {
+        writingDirection: 'rtl',
     },
 });

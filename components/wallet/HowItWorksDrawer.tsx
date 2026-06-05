@@ -1,8 +1,8 @@
-import { GlassView } from 'expo-glass-effect';
+import { BottomSheet, RNHostView } from '@expo/ui';
+import { presentationBackground } from '@expo/ui/swift-ui/modifiers';
 import {
     I18nManager,
-    Modal,
-    Pressable,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { toArabicDigits } from '../../utils/numbers';
 
 type Props = {
     visible: boolean;
@@ -24,6 +25,8 @@ type StepData = {
     number: string;
     text: string;
 };
+
+const HOW_IT_WORKS_SHEET_FRACTION = 0.62;
 
 type StepItemProps = {
     step: StepData;
@@ -49,7 +52,7 @@ function StepItem({ step, isArabic }: StepItemProps) {
                         { color: theme.brand },
                     ]}
                 >
-                    {step.number}
+                    {isArabic ? toArabicDigits(step.number) : step.number}
                 </PhonkText>
             </View>
             <Text
@@ -71,10 +74,11 @@ function StepItem({ step, isArabic }: StepItemProps) {
 
 export default function HowItWorksDrawer({ visible, onClose }: Props) {
     const insets = useSafeAreaInsets();
-    const { height } = useWindowDimensions();
+    const { height, width } = useWindowDimensions();
     const { t, i18n } = useTranslation();
     const { theme } = useAppTheme();
     const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
+    const sheetMaxHeight = Math.max(0, height * HOW_IT_WORKS_SHEET_FRACTION - insets.bottom);
 
     const steps: StepData[] = [
         { number: '1', text: t('how_it_works_step_1') },
@@ -85,33 +89,29 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
     ];
 
     return (
-        <Modal
-            visible={visible}
-            animationType="slide"
-            transparent={true}
-            onRequestClose={onClose}
+        <BottomSheet
+            isPresented={visible}
+            onDismiss={onClose}
+            modifiers={Platform.OS === 'ios' ? [presentationBackground(theme.surfaceElevated)] : undefined}
+            snapPoints={[{ fraction: HOW_IT_WORKS_SHEET_FRACTION }]}
+            testID="xcard-how-it-works-bottom-sheet"
         >
-            <Pressable style={styles.overlay} onPress={onClose}>
-                <GlassView style={StyleSheet.absoluteFill} glassEffectStyle="regular" colorScheme="dark" tintColor={theme.overlay} />
-                <Pressable
+            <RNHostView matchContents>
+                <View
                     style={[
-                        styles.drawerContainer,
+                        styles.sheetContent,
                         { backgroundColor: theme.surfaceElevated },
-                        { maxHeight: height * 0.85 },
-                        { paddingBottom: insets.bottom + 20 },
+                        { width },
+                        { maxHeight: sheetMaxHeight },
+                        { paddingBottom: Math.max(insets.bottom, 10) },
                     ]}
-                    onPress={(e) => e.stopPropagation()}
                 >
-                    {/* Drawer Handle */}
-                    <View style={styles.handleContainer}>
-                        <View style={[styles.handle, { backgroundColor: theme.borderStrong }]} />
-                    </View>
-
                     <ScrollView
-                        style={styles.content}
+                        style={[styles.content, { maxHeight: sheetMaxHeight }]}
                         contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={false}
                         bounces={false}
+                        nestedScrollEnabled
                     >
                         {/* Logo */}
                         <View style={styles.logoContainer}>
@@ -151,46 +151,32 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                             ))}
                         </View>
                     </ScrollView>
-                </Pressable>
-            </Pressable>
-        </Modal>
+                </View>
+            </RNHostView>
+        </BottomSheet>
     );
 }
 
 const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: 'transparent',
-        justifyContent: 'flex-end',
-    },
-    drawerContainer: {
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-    },
-    handleContainer: {
-        alignItems: 'center',
+    sheetContent: {
         paddingTop: 12,
-        paddingBottom: 8,
-    },
-    handle: {
-        width: 40,
-        height: 4,
-        borderRadius: 2,
+        alignSelf: 'center',
     },
     content: {
         flexGrow: 0,
+        width: '100%',
     },
     scrollContent: {
         width: '100%',
-        alignItems: 'stretch',
+        alignItems: 'center',
         paddingHorizontal: 24,
     },
     logoContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: 20,
-        paddingBottom: 24,
+        paddingTop: 10,
+        paddingBottom: 14,
     },
     logoArabicText: {
         textAlign: 'center',
@@ -222,8 +208,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: 28,
-        paddingBottom: 24,
+        paddingTop: 18,
+        paddingBottom: 16,
     },
     titleContainerRTL: {
         direction: 'rtl',
@@ -236,9 +222,9 @@ const styles = StyleSheet.create({
     },
     stepsContainer: {
         width: '100%',
-        alignSelf: 'stretch',
-        gap: 12,
-        paddingBottom: 20,
+        alignSelf: 'center',
+        gap: 8,
+        paddingBottom: 4,
     },
     stepItem: {
         width: '100%',
@@ -246,15 +232,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'flex-start',
         borderRadius: 16,
-        paddingVertical: 18,
+        gap: 12,
+        paddingVertical: 12,
         paddingHorizontal: 20,
-        minHeight: 68,
+        minHeight: 54,
     },
     stepItemLTR: {
         flexDirection: 'row',
     },
     stepItemRTL: {
         flexDirection: 'row-reverse',
+        direction: 'rtl',
     },
     stepNumber: {
         fontSize: 28,
