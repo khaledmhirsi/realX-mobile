@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
+import { BottomSheetOverscanBackground, getBottomSheetBackgroundModifiers } from '../../utils/expoUiBottomSheet';
 import PhonkText from '../PhonkText';
 
 type GiftCardTermsDrawerProps = {
@@ -34,6 +35,10 @@ export default function GiftCardTermsDrawer({
     const sheetWidth = Math.max(0, windowWidth - 32);
     const sheetMaxHeight = Math.max(0, windowHeight * 0.5 - insets.bottom);
     const sheetBodyMaxHeight = Math.max(0, sheetMaxHeight - 120);
+    const sheetBackgroundModifiers = React.useMemo(
+        () => getBottomSheetBackgroundModifiers(theme.card),
+        [theme.card],
+    );
     const sheetContent = (
         <View
             style={[
@@ -46,6 +51,7 @@ export default function GiftCardTermsDrawer({
                 },
             ]}
         >
+            <BottomSheetOverscanBackground backgroundColor={theme.card} />
             <View style={[styles.sheetHeader, isRTL && styles.sheetHeaderRTL]}>
                 <PhonkText style={[styles.modalTitleText, isRTL && styles.modalTitleTextRTL, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
                     {t('terms_and_conditions_caps')}
@@ -134,6 +140,7 @@ export default function GiftCardTermsDrawer({
                             frame({ maxWidth: Infinity, alignment: 'topLeading' }),
                             padding({ top: 16, leading: 16, trailing: 16 }),
                             presentationDragIndicator('visible'),
+                            ...(sheetBackgroundModifiers ?? []),
                         ]}
                     >
                         <SwiftUIRNHostView matchContents>
@@ -149,6 +156,7 @@ export default function GiftCardTermsDrawer({
         <UniversalBottomSheet
             isPresented={visible}
             onDismiss={onClose}
+            modifiers={sheetBackgroundModifiers}
             testID="gift-card-terms-bottom-sheet"
         >
             <UniversalRNHostView matchContents>
@@ -160,6 +168,8 @@ export default function GiftCardTermsDrawer({
 
 const styles = StyleSheet.create({
     sheetContent: {
+        position: 'relative',
+        overflow: 'visible',
         paddingHorizontal: 24,
         paddingTop: 18,
     },

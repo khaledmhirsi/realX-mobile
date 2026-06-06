@@ -16,6 +16,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, w
 
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import { BottomSheetOverscanBackground } from '../../utils/expoUiBottomSheet';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
 
@@ -44,6 +45,7 @@ export default function WaktiSheetContent({ isDark = true, onClose, onStoreOpene
     const ctaActionLabel = t('wakti_banner_cta_action');
     const ctaProductName = 'Wakti AI';
     const ctaLabel = `${ctaActionLabel} ${ctaProductName}`;
+    const sheetBackgroundColor = isDark ? '#050B14' : '#EEF7FF';
     const studentFeatures = [
         { label: t('wakti_feature_ai_chat'), icon: 'chatbubble-ellipses-outline' },
         { label: t('wakti_feature_summaries'), icon: 'play-circle-outline' },
@@ -121,6 +123,7 @@ export default function WaktiSheetContent({ isDark = true, onClose, onStoreOpene
 
     return (
         <View style={[styles.container, { minHeight: sheetMinHeight }, isDark ? styles.containerDark : styles.containerLight, isRTL && styles.containerRTL]}>
+            <BottomSheetOverscanBackground backgroundColor={sheetBackgroundColor} />
             <View
                 pointerEvents="none"
                 style={[
@@ -215,7 +218,7 @@ export default function WaktiSheetContent({ isDark = true, onClose, onStoreOpene
                                 style={StyleSheet.absoluteFill}
                                 glassEffectStyle="regular"
                                 colorScheme={isDark ? 'dark' : 'light'}
-                                tintColor={isDark ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.34)'}
+                                tintColor={isDark ? 'rgba(255,255,255,0.20)' : 'rgba(58,145,255,0.26)'}
                             />
                             {isRTL ? (
                                 <>
@@ -406,8 +409,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 9,
     },
     featureCardLight: {
-        backgroundColor: 'rgba(255, 255, 255, 0.24)',
-        borderColor: 'rgba(255, 255, 255, 0.58)',
+        backgroundColor: 'rgba(58, 145, 255, 0.14)',
+        borderColor: 'rgba(58, 145, 255, 0.44)',
     },
     featureCardDark: {
         backgroundColor: 'rgba(255, 255, 255, 0.16)',
@@ -439,7 +442,7 @@ const styles = StyleSheet.create({
         writingDirection: 'rtl',
     },
     featureTextLight: {
-        color: '#FFFFFF',
+        color: '#0A0F0C',
     },
     featureTextDark: {
         color: '#FFFFFF',

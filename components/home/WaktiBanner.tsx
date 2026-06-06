@@ -1,6 +1,6 @@
 import { BottomSheet, RNHostView } from '@expo/ui';
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     I18nManager,
@@ -21,12 +21,14 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 
-import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 import { triggerSubtleHaptic } from '../../utils/haptics';
+import { getBottomSheetBackgroundModifiers } from '../../utils/expoUiBottomSheet';
 import WaktiSheetContent from './WaktiSheetContent';
 
 const waktiBannerImage = require('../../assets/images/waktilogo.png');
+const waktiSheetBackgroundColor = '#050B14';
+const waktiBannerUsesDarkTheme = true;
 const reduceMotion = ReduceMotion.System;
 const gridUnit = 54;
 const gridVerticalOffsets = Array.from({ length: 13 }, (_, index) => index * gridUnit - gridUnit / 2);
@@ -41,9 +43,12 @@ type WaktiBannerProps = {
 
 export default function WaktiBanner({ style }: WaktiBannerProps) {
     const [isSheetPresented, setIsSheetPresented] = useState(false);
-    const { isDark } = useAppTheme();
     const isRTL = I18nManager.isRTL;
     const { t } = useTranslation();
+    const sheetBackgroundModifiers = useMemo(
+        () => getBottomSheetBackgroundModifiers(waktiSheetBackgroundColor),
+        [],
+    );
     const prefersReducedMotion = useReducedMotion();
     const gridSweep = useSharedValue(prefersReducedMotion ? 1 : 0);
 
@@ -85,18 +90,18 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                 onPress={handleBannerPress}
                 style={[
                     styles.card,
-                    isDark ? styles.cardDark : styles.cardLight,
+                    waktiBannerUsesDarkTheme ? styles.cardDark : styles.cardLight,
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel={t('wakti_banner_accessibility_label')}
                 accessibilityHint={t('wakti_banner_accessibility_hint')}
             >
                 <View pointerEvents="none" style={styles.gridLayer}>
-                    <View style={[styles.gridVignette, isDark ? styles.gridVignetteDark : styles.gridVignetteLight]} />
+                    <View style={[styles.gridVignette, waktiBannerUsesDarkTheme ? styles.gridVignetteDark : styles.gridVignetteLight]} />
                     <Animated.View
                         style={[
                             styles.gridSweep,
-                            isDark ? styles.gridSweepDark : styles.gridSweepLight,
+                            waktiBannerUsesDarkTheme ? styles.gridSweepDark : styles.gridSweepLight,
                             gridSweepStyle,
                         ]}
                     />
@@ -106,7 +111,7 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                             style={[
                                 styles.gridLineVertical,
                                 { left: offset },
-                                isDark ? styles.gridLineVerticalDark : styles.gridLineVerticalLight,
+                                waktiBannerUsesDarkTheme ? styles.gridLineVerticalDark : styles.gridLineVerticalLight,
                             ]}
                         />
                     ))}
@@ -116,7 +121,7 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                             style={[
                                 styles.gridLineHorizontal,
                                 { top: offset },
-                                isDark ? styles.gridLineDark : styles.gridLineLight,
+                                waktiBannerUsesDarkTheme ? styles.gridLineDark : styles.gridLineLight,
                             ]}
                         />
                     ))}
@@ -126,17 +131,17 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                             style={[
                                 styles.gridIntersection,
                                 { left: left - 2, top: top - 2 },
-                                isDark ? styles.gridIntersectionDark : styles.gridIntersectionLight,
+                                waktiBannerUsesDarkTheme ? styles.gridIntersectionDark : styles.gridIntersectionLight,
                             ]}
                         />
                     ))}
                 </View>
                 <View style={[styles.content, isRTL && styles.contentRTL]}>
                     <View style={styles.copy}>
-                        <Text style={[styles.headline, isDark ? styles.headlineDark : styles.headlineLight, isRTL && styles.textRTL]} numberOfLines={2}>
-                            {isRTL ? t('wakti_banner_headline') : 'AI FOR STUDENTS'}
+                        <Text style={[styles.headline, waktiBannerUsesDarkTheme ? styles.headlineDark : styles.headlineLight, isRTL && styles.textRTL]} numberOfLines={2}>
+                            {isRTL ? t('wakti_banner_headline') : 'ALL-IN-ONE AI FOR STUDENTS'}
                         </Text>
-                        <View style={[styles.offerPill, isDark ? styles.offerPillDark : styles.offerPillLight, isRTL && styles.offerPillRTL]}>
+                        <View style={[styles.offerPill, waktiBannerUsesDarkTheme ? styles.offerPillDark : styles.offerPillLight, isRTL && styles.offerPillRTL]}>
                             <Text style={[styles.offerText, isRTL && styles.offerTextArabic]} numberOfLines={1}>
                                 {t('wakti_banner_offer')}
                             </Text>
@@ -144,7 +149,7 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                     </View>
 
                     <View style={styles.artWrap}>
-                        <View style={[styles.artPanel, isDark ? styles.artPanelDark : styles.artPanelLight]}>
+                        <View style={[styles.artPanel, waktiBannerUsesDarkTheme ? styles.artPanelDark : styles.artPanelLight]}>
                             <Image
                                 source={waktiBannerImage}
                                 style={styles.artImage}
@@ -159,11 +164,12 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                 isPresented={isSheetPresented}
                 onDismiss={() => setIsSheetPresented(false)}
                 snapPoints={['half']}
+                modifiers={sheetBackgroundModifiers}
                 testID="wakti-bottom-sheet"
             >
                 <RNHostView matchContents>
                     <WaktiSheetContent
-                        isDark={isDark}
+                        isDark
                         onClose={closeSheet}
                         onStoreOpened={() => setIsSheetPresented(false)}
                     />
@@ -213,9 +219,9 @@ const styles = StyleSheet.create({
         gap: 14,
     },
     headline: {
-        fontSize: 22,
-        lineHeight: 30,
-        fontFamily: Typography.hanson.bold,
+        fontSize: 19,
+        lineHeight: 25,
+        fontFamily: Typography.poppins.semiBold,
     },
     headlineLight: {
         color: '#111111',

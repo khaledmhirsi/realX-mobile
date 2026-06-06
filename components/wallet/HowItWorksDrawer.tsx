@@ -1,4 +1,5 @@
 import { BottomSheet, RNHostView } from '@expo/ui';
+import { useMemo } from 'react';
 import {
     I18nManager,
     ScrollView,
@@ -13,6 +14,7 @@ import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { toArabicDigits } from '../../utils/numbers';
+import { BottomSheetOverscanBackground, getBottomSheetBackgroundModifiers } from '../../utils/expoUiBottomSheet';
 
 type Props = {
     visible: boolean;
@@ -77,6 +79,10 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
     const { theme } = useAppTheme();
     const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
     const sheetMaxHeight = Math.max(0, height * HOW_IT_WORKS_SHEET_FRACTION - insets.bottom);
+    const sheetBackgroundModifiers = useMemo(
+        () => getBottomSheetBackgroundModifiers(theme.surfaceElevated),
+        [theme.surfaceElevated],
+    );
 
     const steps: StepData[] = [
         { number: '1', text: t('how_it_works_step_1') },
@@ -91,6 +97,7 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
             isPresented={visible}
             onDismiss={onClose}
             snapPoints={[{ fraction: HOW_IT_WORKS_SHEET_FRACTION }]}
+            modifiers={sheetBackgroundModifiers}
             testID="xcard-how-it-works-bottom-sheet"
         >
             <RNHostView matchContents>
@@ -103,6 +110,7 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                         { paddingBottom: Math.max(insets.bottom, 10) },
                     ]}
                 >
+                    <BottomSheetOverscanBackground backgroundColor={theme.surfaceElevated} />
                     <ScrollView
                         style={[styles.content, { maxHeight: sheetMaxHeight }]}
                         contentContainerStyle={styles.scrollContent}
@@ -156,8 +164,10 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
 
 const styles = StyleSheet.create({
     sheetContent: {
+        position: 'relative',
         paddingTop: 12,
         alignSelf: 'center',
+        overflow: 'visible',
     },
     content: {
         flexGrow: 0,
