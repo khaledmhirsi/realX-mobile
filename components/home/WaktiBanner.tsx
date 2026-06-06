@@ -139,7 +139,7 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                 <View style={[styles.content, isRTL && styles.contentRTL]}>
                     <View style={styles.copy}>
                         <Text style={[styles.headline, waktiBannerUsesDarkTheme ? styles.headlineDark : styles.headlineLight, isRTL && styles.textRTL]} numberOfLines={2}>
-                            {isRTL ? t('wakti_banner_headline') : 'ALL-IN-ONE AI FOR STUDENTS'}
+                            {isRTL ? t('wakti_banner_headline') : 'All in one AI App for students'}
                         </Text>
                         <View style={[styles.offerPill, waktiBannerUsesDarkTheme ? styles.offerPillDark : styles.offerPillLight, isRTL && styles.offerPillRTL]}>
                             <Text style={[styles.offerText, isRTL && styles.offerTextArabic]} numberOfLines={1}>

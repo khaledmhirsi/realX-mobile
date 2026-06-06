@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { GlassView } from 'expo-glass-effect';
 import { Image } from 'expo-image';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     I18nManager,
@@ -12,7 +13,7 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -31,14 +32,113 @@ const gridHorizontalOffsets = Array.from({ length: 64 }, (_, index) => index * g
 const gridIntersections = gridVerticalOffsets.flatMap((left) =>
     gridHorizontalOffsets.map((top) => ({ left, top })),
 );
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 type WaktiSheetContentProps = {
     isDark?: boolean;
-    onClose: () => void;
+    onClose?: () => void;
     onStoreOpened?: () => void;
 };
 
-export default function WaktiSheetContent({ isDark = true, onClose, onStoreOpened }: WaktiSheetContentProps) {
+type FeatureChipProps = {
+    feature: string;
+    index: number;
+    featureCardMinHeight: number;
+    featureFontSize: number;
+    featureLineHeight: number;
+    isCompactWidth: boolean;
+    isDark: boolean;
+    isRTL: boolean;
+};
+
+function FeatureChip({
+    feature,
+    index,
+    featureCardMinHeight,
+    featureFontSize,
+    featureLineHeight,
+    isCompactWidth,
+    isDark,
+    isRTL,
+}: FeatureChipProps) {
+    const pulseProgress = useSharedValue(0);
+
+    useEffect(() => {
+        pulseProgress.value = withDelay(
+            index * 260,
+            withRepeat(
+                withSequence(
+                    withTiming(1, { duration: 1900 }),
+                    withTiming(0, { duration: 1900 }),
+                ),
+                -1,
+                false,
+            ),
+        );
+    }, [index, pulseProgress]);
+
+    const chipAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateY: pulseProgress.value * -2 },
+            { scale: 1 + pulseProgress.value * 0.01 },
+        ],
+    }));
+    const chipHighlightStyle = useAnimatedStyle(() => ({
+        opacity: pulseProgress.value * (isDark ? 0.18 : 0.28),
+    }));
+
+    return (
+        <Animated.View
+            style={[
+                styles.featureChipWrap,
+                chipAnimatedStyle,
+            ]}
+            accessibilityRole="text"
+        >
+            <View
+                style={[
+                    styles.featureCard,
+                    {
+                        minHeight: featureCardMinHeight,
+                        paddingHorizontal: isCompactWidth ? 12 : 14,
+                        paddingVertical: isCompactWidth ? 9 : 10,
+                    },
+                    isDark ? styles.featureCardDark : styles.featureCardLight,
+                ]}
+            >
+                <GlassView
+                    style={StyleSheet.absoluteFill}
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    tintColor={isDark ? 'rgba(255,255,255,0.20)' : 'rgba(58,145,255,0.26)'}
+                />
+                <Animated.View
+                    pointerEvents="none"
+                    style={[
+                        styles.featureCardHighlight,
+                        isDark ? styles.featureCardHighlightDark : styles.featureCardHighlightLight,
+                        chipHighlightStyle,
+                    ]}
+                />
+                <Text
+                    style={[
+                        styles.featureText,
+                        {
+                            fontSize: featureFontSize,
+                            lineHeight: featureLineHeight,
+                        },
+                        isDark ? styles.featureTextDark : styles.featureTextLight,
+                        isRTL && styles.featureTextRTL,
+                    ]}
+                >
+                    {feature}
+                </Text>
+            </View>
+        </Animated.View>
+    );
+}
+
+export default function WaktiSheetContent({ isDark = true, onStoreOpened }: WaktiSheetContentProps) {
     const { height, width } = useWindowDimensions();
     const { t, i18n } = useTranslation();
     const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
@@ -47,15 +147,30 @@ export default function WaktiSheetContent({ isDark = true, onClose, onStoreOpene
     const ctaLabel = `${ctaActionLabel} ${ctaProductName}`;
     const sheetBackgroundColor = isDark ? '#050B14' : '#EEF7FF';
     const studentFeatures = [
-        { label: t('wakti_feature_ai_chat'), icon: 'chatbubble-ellipses-outline' },
-        { label: t('wakti_feature_summaries'), icon: 'play-circle-outline' },
-        { label: t('wakti_feature_study_mode'), icon: 'book-outline' },
-        { label: t('wakti_feature_slides'), icon: 'easel-outline' },
+        t('wakti_feature_faster'),
+        t('wakti_feature_smarter'),
+        t('wakti_feature_easier'),
     ];
     const sheetMinHeight = Math.round(height * 0.5);
+    const isCompactWidth = width < 360;
+    const isShortScreen = height < 760;
+    const contentWidth = clamp(width - (isCompactWidth ? 32 : 40), 280, 420);
+    const containerTopPadding = isShortScreen ? 12 : 18;
+    const containerBottomPadding = isShortScreen ? 12 : 16;
+    const contentGap = isShortScreen ? 12 : 16;
+    const headlineFontSize = isCompactWidth ? 22 : 24;
+    const headlineLineHeight = isCompactWidth ? 27 : 29;
+    const featureFontSize = isCompactWidth ? 12 : 13;
+    const featureLineHeight = isCompactWidth ? 15 : 16;
+    const featureCardMinHeight = isCompactWidth ? 44 : 46;
+    const ctaFontSize = isCompactWidth ? 18 : 20;
+    const ctaLineHeight = isCompactWidth ? 22 : 24;
+    const ctaHorizontalPadding = isCompactWidth ? 18 : 24;
+    const logoSize = clamp(width * 0.28, 92, 112);
+    const logoGlowRadius = clamp(logoSize * 0.26, 24, 29);
+    const ctaLabelMaxWidth = contentWidth - ctaHorizontalPadding * 2 - 56;
     const backgroundWidth = width * 5;
     const backgroundHeight = height * 4;
-    const featureCardWidth = Math.min(148, Math.max(124, Math.floor((width - 96) / 2)));
     const logoScale = useSharedValue(1);
     const logoGlow = useSharedValue(0);
     const ctaScale = useSharedValue(1);
@@ -122,7 +237,19 @@ export default function WaktiSheetContent({ isDark = true, onClose, onStoreOpene
     };
 
     return (
-        <View style={[styles.container, { minHeight: sheetMinHeight }, isDark ? styles.containerDark : styles.containerLight, isRTL && styles.containerRTL]}>
+        <View
+            style={[
+                styles.container,
+                {
+                    minHeight: sheetMinHeight,
+                    paddingTop: containerTopPadding,
+                    paddingBottom: containerBottomPadding,
+                    rowGap: contentGap,
+                },
+                isDark ? styles.containerDark : styles.containerLight,
+                isRTL && styles.containerRTL,
+            ]}
+        >
             <BottomSheetOverscanBackground backgroundColor={sheetBackgroundColor} />
             <View
                 pointerEvents="none"
@@ -168,115 +295,109 @@ export default function WaktiSheetContent({ isDark = true, onClose, onStoreOpene
                     />
                 ))}
             </View>
-            <View style={[styles.headerRow, isRTL && styles.headerRowRTL]}>
+            <View style={[styles.contentColumn, { width: contentWidth, rowGap: contentGap }]}>
                 <TouchableOpacity
-                    activeOpacity={0.82}
-                    hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
-                    onPress={onClose}
-                    style={[styles.closeButton, isDark ? styles.closeButtonDark : styles.closeButtonLight]}
+                    activeOpacity={1}
+                    onPressIn={handleLogoPressIn}
+                    onPressOut={handleLogoPressOut}
+                    style={[styles.logoTapTarget, { marginTop: isShortScreen ? 4 : 8, width: logoSize, height: logoSize }]}
                     accessibilityRole="button"
-                    accessibilityLabel={t('cancel')}
+                    accessibilityLabel="Wakti AI logo"
                 >
-                    <Ionicons name="close" size={22} color={isDark ? '#FFFFFF' : '#102B62'} />
-                </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-                activeOpacity={1}
-                onPressIn={handleLogoPressIn}
-                onPressOut={handleLogoPressOut}
-                style={styles.logoTapTarget}
-                accessibilityRole="button"
-                accessibilityLabel="Wakti AI logo"
-            >
-                <Animated.View style={[styles.logoGlow, logoGlowAnimatedStyle]} />
-                <Animated.View style={[styles.logoWrap, logoAnimatedStyle]}>
-                    <Image
-                        source={waktiBannerImage}
-                        style={styles.logo}
-                        contentFit="contain"
-                        accessibilityLabel="Wakti AI logo"
+                    <Animated.View
+                        style={[
+                            styles.logoGlow,
+                            {
+                                width: logoSize,
+                                height: logoSize,
+                                borderRadius: logoGlowRadius,
+                            },
+                            logoGlowAnimatedStyle,
+                        ]}
                     />
-                </Animated.View>
-            </TouchableOpacity>
+                    <Animated.View style={[styles.logoWrap, { width: logoSize, height: logoSize }, logoAnimatedStyle]}>
+                        <Image
+                            source={waktiBannerImage}
+                            style={[styles.logo, { width: logoSize, height: logoSize }]}
+                            contentFit="contain"
+                            accessibilityLabel="Wakti AI logo"
+                        />
+                    </Animated.View>
+                </TouchableOpacity>
 
-            <View style={[styles.copy, isRTL && styles.copyRTL]}>
-                <Text style={[styles.headline, isDark ? styles.headlineDark : styles.headlineLight, isRTL && styles.headlineRTL]} numberOfLines={1}>
-                    {isRTL ? t('wakti_banner_headline') : 'Study smarter with AI'}
-                </Text>
-                <View style={[styles.featureGrid, isRTL && styles.featureGridRTL]}>
-                    {studentFeatures.map((feature) => (
-                        <View
-                            key={feature.label}
-                            style={[
-                                styles.featureCard,
-                                { width: featureCardWidth },
-                                isDark ? styles.featureCardDark : styles.featureCardLight,
-                            ]}
-                        >
-                            <GlassView
-                                style={StyleSheet.absoluteFill}
-                                glassEffectStyle="regular"
-                                colorScheme={isDark ? 'dark' : 'light'}
-                                tintColor={isDark ? 'rgba(255,255,255,0.20)' : 'rgba(58,145,255,0.26)'}
-                            />
-                            {isRTL ? (
-                                <>
-                                    <Text style={[styles.featureText, isDark ? styles.featureTextDark : styles.featureTextLight, styles.featureTextRTL]} numberOfLines={1}>
-                                        {feature.label}
-                                    </Text>
-                                    <View style={[styles.featureIconWrap, isDark ? styles.featureIconWrapDark : styles.featureIconWrapLight]}>
-                                        <Ionicons
-                                            name={feature.icon as keyof typeof Ionicons.glyphMap}
-                                            size={16}
-                                            color={isDark ? '#8CC6FF' : '#1C67CA'}
-                                        />
-                                    </View>
-                                </>
-                            ) : (
-                                <>
-                                    <View style={[styles.featureIconWrap, isDark ? styles.featureIconWrapDark : styles.featureIconWrapLight]}>
-                                        <Ionicons
-                                            name={feature.icon as keyof typeof Ionicons.glyphMap}
-                                            size={16}
-                                            color={isDark ? '#8CC6FF' : '#1C67CA'}
-                                        />
-                                    </View>
-                                    <Text style={[styles.featureText, isDark ? styles.featureTextDark : styles.featureTextLight]} numberOfLines={1}>
-                                        {feature.label}
-                                    </Text>
-                                </>
-                            )}
-                        </View>
-                    ))}
-                </View>
-                <Text style={[styles.offer, isRTL && styles.offerArabic]}>
-                    {t('wakti_banner_offer')}
-                </Text>
-
-                <Animated.View style={[styles.ctaMotionWrap, ctaAnimatedStyle]}>
-                    <TouchableOpacity
-                        activeOpacity={0.9}
-                        onPress={handleStorePress}
-                        onPressIn={handleCtaPressIn}
-                        onPressOut={handleCtaPressOut}
-                        style={[styles.cta, isRTL && styles.ctaRTL]}
-                        accessibilityRole="link"
-                        accessibilityLabel={ctaLabel}
+                <View style={[styles.copy, { rowGap: contentGap }, isRTL && styles.copyRTL]}>
+                    <Text
+                        style={[
+                            styles.headline,
+                            {
+                                fontSize: headlineFontSize,
+                                lineHeight: headlineLineHeight,
+                                maxWidth: contentWidth - 8,
+                            },
+                            isDark ? styles.headlineDark : styles.headlineLight,
+                            isRTL && styles.headlineRTL,
+                        ]}
+                        numberOfLines={2}
                     >
-                        <View style={styles.ctaIconWrap}>
-                            <Ionicons name="arrow-down" size={25} color={Colors.brandGreen} />
-                        </View>
-                        <Text style={[styles.ctaText, isRTL && styles.ctaTextRTL]} numberOfLines={1}>
-                            {isRTL ? (
-                                <>
-                                    {ctaActionLabel}{' '}
-                                    <Text style={styles.waktiEnglishText}>{ctaProductName}</Text>
-                                </>
-                            ) : ctaLabel}
-                        </Text>
-                    </TouchableOpacity>
-                </Animated.View>
+                        {t('wakti_sheet_title')}
+                    </Text>
+                    <View style={[styles.featureGrid, { rowGap: isCompactWidth ? 7 : 8 }, isRTL && styles.featureGridRTL]}>
+                        {studentFeatures.map((feature, index) => (
+                            <FeatureChip
+                                key={feature}
+                                index={index}
+                                feature={feature}
+                                featureCardMinHeight={featureCardMinHeight}
+                                featureFontSize={featureFontSize}
+                                featureLineHeight={featureLineHeight}
+                                isCompactWidth={isCompactWidth}
+                                isDark={isDark}
+                                isRTL={isRTL}
+                            />
+                        ))}
+                    </View>
+                    <Animated.View style={[styles.ctaMotionWrap, ctaAnimatedStyle]}>
+                        <TouchableOpacity
+                            activeOpacity={0.9}
+                            onPress={handleStorePress}
+                            onPressIn={handleCtaPressIn}
+                            onPressOut={handleCtaPressOut}
+                            style={[
+                                styles.cta,
+                                {
+                                    minHeight: isCompactWidth ? 60 : 64,
+                                    paddingHorizontal: ctaHorizontalPadding,
+                                    paddingVertical: isCompactWidth ? 12 : 14,
+                                },
+                                isRTL && styles.ctaRTL,
+                            ]}
+                            accessibilityRole="link"
+                            accessibilityLabel={ctaLabel}
+                        >
+                            <View style={styles.ctaIconWrap}>
+                                <Ionicons name="arrow-down" size={25} color={Colors.brandGreen} />
+                            </View>
+                            <Text
+                                style={[
+                                    styles.ctaText,
+                                    {
+                                        fontSize: ctaFontSize,
+                                        lineHeight: ctaLineHeight,
+                                        maxWidth: ctaLabelMaxWidth,
+                                    },
+                                    isRTL && styles.ctaTextRTL,
+                                ]}
+                            >
+                                {isRTL ? (
+                                    <>
+                                        {ctaActionLabel}{' '}
+                                        <Text style={styles.waktiEnglishText}>{ctaProductName}</Text>
+                                    </>
+                                ) : ctaLabel}
+                            </Text>
+                        </TouchableOpacity>
+                    </Animated.View>
+                </View>
             </View>
         </View>
     );
@@ -287,10 +408,7 @@ const styles = StyleSheet.create({
         position: 'relative',
         flex: 1,
         overflow: 'visible',
-        paddingHorizontal: 18,
-        paddingTop: 8,
-        paddingBottom: 14,
-        gap: 6,
+        alignItems: 'center',
     },
     containerLight: {
         backgroundColor: '#EEF7FF',
@@ -301,34 +419,10 @@ const styles = StyleSheet.create({
     containerRTL: {
         direction: 'rtl',
     },
-    headerRow: {
-        position: 'absolute',
-        top: 22,
-        right: 22,
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        zIndex: 10,
-    },
-    headerRowRTL: {
-        flexDirection: 'row-reverse',
-    },
-    closeButton: {
-        width: 42,
-        height: 42,
+    contentColumn: {
         alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 21,
-        borderWidth: 1,
-        zIndex: 11,
-    },
-    closeButtonLight: {
-        backgroundColor: '#FFFFFF',
-        borderColor: 'rgba(16, 43, 98, 0.10)',
-        boxShadow: '0 10px 24px rgba(16, 43, 98, 0.12)',
-    },
-    closeButtonDark: {
-        backgroundColor: 'rgba(255, 255, 255, 0.10)',
-        borderColor: 'rgba(255, 255, 255, 0.14)',
+        maxWidth: 420,
+        alignSelf: 'center',
     },
     logoWrap: {
         width: 112,
@@ -342,7 +436,6 @@ const styles = StyleSheet.create({
         position: 'relative',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 28,
         zIndex: 2,
     },
     logoGlow: {
@@ -362,8 +455,8 @@ const styles = StyleSheet.create({
     },
     copy: {
         alignItems: 'center',
-        gap: 8,
         zIndex: 2,
+        width: '100%',
     },
     copyRTL: {
         direction: 'rtl',
@@ -385,28 +478,23 @@ const styles = StyleSheet.create({
         writingDirection: 'rtl',
     },
     featureGrid: {
-        alignSelf: 'stretch',
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        columnGap: 7,
-        rowGap: 6,
+        width: '100%',
         justifyContent: 'center',
-        paddingHorizontal: 16,
+        alignItems: 'center',
     },
     featureGridRTL: {
-        flexDirection: 'row-reverse',
+        alignItems: 'center',
+    },
+    featureChipWrap: {
+        width: '100%',
     },
     featureCard: {
-        direction: 'ltr',
-        height: 38,
-        flexDirection: 'row',
+        width: '100%',
         alignItems: 'center',
-        justifyContent: 'flex-start',
-        gap: 8,
+        justifyContent: 'center',
         borderRadius: 13,
         borderWidth: 1.4,
         overflow: 'hidden',
-        paddingHorizontal: 9,
     },
     featureCardLight: {
         backgroundColor: 'rgba(58, 145, 255, 0.14)',
@@ -416,29 +504,26 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.16)',
         borderColor: 'rgba(255, 255, 255, 0.34)',
     },
-    featureIconWrap: {
-        width: 24,
-        height: 24,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 12,
+    featureCardHighlight: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 13,
     },
-    featureIconWrapLight: {
-        backgroundColor: 'rgba(28, 103, 202, 0.14)',
+    featureCardHighlightLight: {
+        backgroundColor: 'rgba(255, 255, 255, 0.92)',
     },
-    featureIconWrapDark: {
-        backgroundColor: 'rgba(140, 198, 255, 0.18)',
+    featureCardHighlightDark: {
+        backgroundColor: 'rgba(163, 215, 255, 0.40)',
     },
     featureText: {
-        flex: 1,
-        flexShrink: 1,
-        fontSize: 12,
-        lineHeight: 15,
+        fontSize: 13,
+        lineHeight: 16,
         fontFamily: Typography.poppins.semiBold,
-        textAlign: 'left',
+        textAlign: 'center',
+        textTransform: 'uppercase',
     },
     featureTextRTL: {
-        textAlign: 'right',
+        textAlign: 'center',
+        textTransform: 'none',
         writingDirection: 'rtl',
     },
     featureTextLight: {
@@ -447,26 +532,8 @@ const styles = StyleSheet.create({
     featureTextDark: {
         color: '#FFFFFF',
     },
-    offer: {
-        color: Colors.brandGreen,
-        fontSize: 34,
-        lineHeight: 38,
-        fontFamily: Typography.hanson.bold,
-        textAlign: 'center',
-        textTransform: 'uppercase',
-        textShadowColor: 'rgba(24, 184, 82, 0.24)',
-        textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 12,
-        marginTop: 16,
-    },
-    offerArabic: {
-        fontFamily: 'TajawalBlack',
-        textTransform: 'none',
-    },
     ctaMotionWrap: {
-        alignSelf: 'center',
-        width: '80%',
-        maxWidth: 320,
+        width: '100%',
     },
     cta: {
         alignSelf: 'stretch',
@@ -501,6 +568,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     ctaTextRTL: {
+        textAlign: 'center',
         writingDirection: 'rtl',
     },
     waktiEnglishText: {
