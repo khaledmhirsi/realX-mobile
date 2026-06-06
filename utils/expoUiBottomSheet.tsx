@@ -1,10 +1,9 @@
 import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
-import type { ModifierConfig as JetpackModifierConfig } from '@expo/ui/jetpack-compose/modifiers';
-import type { ModifierConfig as SwiftUIModifierConfig } from '@expo/ui/swift-ui/modifiers';
 
-type SwiftUIModifiers = typeof import('@expo/ui/swift-ui/modifiers');
-type JetpackModifiers = typeof import('@expo/ui/jetpack-compose/modifiers');
-type BottomSheetModifierConfig = SwiftUIModifierConfig | JetpackModifierConfig;
+type BottomSheetModifierConfig = {
+    $type: string;
+    [key: string]: unknown;
+};
 
 type BottomSheetOverscanBackgroundProps = {
     backgroundColor: string;
@@ -14,15 +13,11 @@ type BottomSheetOverscanBackgroundProps = {
 
 export function getBottomSheetBackgroundModifiers(backgroundColor: string): BottomSheetModifierConfig[] | undefined {
     if (Platform.OS === 'ios') {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { presentationBackground } = require('@expo/ui/swift-ui/modifiers') as SwiftUIModifiers;
-        return [presentationBackground(backgroundColor)];
+        return [{ $type: 'presentationBackground', color: backgroundColor }];
     }
 
     if (Platform.OS === 'android') {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { background } = require('@expo/ui/jetpack-compose/modifiers') as JetpackModifiers;
-        return [background(backgroundColor)];
+        return [{ $type: 'background', color: backgroundColor }];
     }
 
     return undefined;
