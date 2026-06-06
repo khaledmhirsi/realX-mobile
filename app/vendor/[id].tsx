@@ -20,6 +20,7 @@ import PhonkText from '../../components/PhonkText';
 import { VendorGallery } from '../../components/vendor/VendorGallery';
 import { haversineDistanceKm, isValidLatLng, LatLng } from '../../utils/mapGeo';
 import { fetchSavedOfferIds, fetchVendorRoute } from '../../utils/firebaseQueries';
+import { BottomSheetOverscanBackground, getBottomSheetBackgroundModifiers } from '../../utils/expoUiBottomSheet';
 import { queryClient, queryKeys } from '../../utils/queryClient';
 
 type VendorBranch = {
@@ -199,6 +200,10 @@ export default function VendorScreen() {
     const branchListMaxHeight = Math.max(260, Math.min(520, windowHeight * 0.58 - insets.bottom));
     const termsSheetMaxHeight = Math.max(0, windowHeight * 0.5 - insets.bottom);
     const termsSheetBodyMaxHeight = Math.max(0, termsSheetMaxHeight - 120);
+    const termsSheetBackgroundModifiers = useMemo(
+        () => getBottomSheetBackgroundModifiers(theme.card),
+        [theme.card],
+    );
 
     const openBranchOnMap = (branch: VendorBranch) => {
         if (!isValidLatLng(branch.latitude, branch.longitude)) return;
@@ -529,6 +534,7 @@ const isSaved = savedOfferIds.has(savedId);
                 isPresented={!!selectedOfferForTC}
                 onDismiss={() => setSelectedOfferForTC(null)}
                 snapPoints={['half']}
+                modifiers={termsSheetBackgroundModifiers}
                 testID="vendor-terms-bottom-sheet"
             >
                 <RNHostView matchContents>
@@ -543,6 +549,7 @@ const isSaved = savedOfferIds.has(savedId);
                             },
                         ]}
                     >
+                        <BottomSheetOverscanBackground backgroundColor={theme.card} />
                         <View style={styles.termsSheetHeader}>
                             <PhonkText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</PhonkText>
                             <TouchableOpacity
@@ -1013,6 +1020,8 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     termsSheetContent: {
+        position: 'relative',
+        overflow: 'visible',
         paddingHorizontal: 24,
         paddingTop: 18,
     },
