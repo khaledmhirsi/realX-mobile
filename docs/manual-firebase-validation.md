@@ -6,9 +6,8 @@ the target Firebase project.
 
 ## Redemption
 
-- Rotate or migrate every vendor PIN using `setVendorRedemptionPin` or
-  `migrateVendorRedemptionPins`, then confirm public `vendors/{vendorId}` documents no longer
-  contain `pin`.
+- Rotate vendor PINs using `setVendorRedemptionPin`, then confirm public
+  `vendors/{vendorId}` documents do not contain `pin`.
 - Confirm clients cannot read `vendorRedemptionSecrets`, `redemption_rate_limits`, or
   `transactions` belonging to another user.
 - Redeem an offer and gift card with valid and invalid PINs, insufficient balance, concurrent

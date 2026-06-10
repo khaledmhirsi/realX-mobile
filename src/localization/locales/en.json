@@ -256,7 +256,7 @@
   "hold_on": "Hold on",
   "enter_4_digit_pin": "Please enter a 4-digit PIN",
   "enter_valid_amount": "Please enter a valid amount",
-  "redemption_successful_title": "Redemption Successful! 🎉",
+  "redemption_successful_title": "Redemption Successful!",
   "redemption_title_line": "REDEMPTION",
   "redemption_successful_exclaim": "SUCCESSFUL!",
   "thanks_to_creator": "Thanks to {{creator}} you earned more!",

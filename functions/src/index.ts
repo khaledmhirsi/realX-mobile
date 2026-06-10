@@ -560,10 +560,6 @@ export const setVendorRedemptionPin = onCall(
         rotatedBy: request.auth?.uid,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
-      tx.update(vendorRef, {
-        pin: admin.firestore.FieldValue.delete(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
     });
 
     console.info('Vendor redemption PIN rotated', {
@@ -571,99 +567,6 @@ export const setVendorRedemptionPin = onCall(
       adminUid: request.auth.uid,
     });
     return { success: true };
-  }
-);
-
-export const migrateVendorRedemptionPins = onCall(
-  { timeoutSeconds: 300 },
-  async (request: CallableRequest) => {
-    if (!request.auth) {
-      throw new HttpsError('unauthenticated', 'Login required');
-    }
-
-    await assertAdmin(request.auth.uid, request.auth.token.admin === true);
-    const requestedLimit = Number(request.data?.limit || 100);
-    const batchLimit = Math.min(Math.max(Math.floor(requestedLimit), 1), 250);
-    const afterId = request.data?.afterId
-      ? requireDocumentId(request.data.afterId, 'afterId')
-      : null;
-
-    let vendorsQuery = db.collection('vendors').orderBy(admin.firestore.FieldPath.documentId()).limit(batchLimit);
-    if (afterId) {
-      vendorsQuery = vendorsQuery.startAfter(afterId);
-    }
-
-    const snapshot = await vendorsQuery.get();
-    const secretDocs = await db.getAll(
-      ...snapshot.docs.map((vendorDoc) =>
-        db.collection('vendorRedemptionSecrets').doc(vendorDoc.id)
-      )
-    );
-    const batch = db.batch();
-    let migrated = 0;
-    let alreadyMigrated = 0;
-    let invalidPins = 0;
-    let missingPins = 0;
-
-    snapshot.docs.forEach((vendorDoc, index) => {
-      const legacyPin = normalizeDigits(vendorDoc.data()?.pin);
-      if (secretDocs[index]?.exists) {
-        alreadyMigrated++;
-        if (legacyPin) {
-          batch.update(vendorDoc.ref, {
-            pin: admin.firestore.FieldValue.delete(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
-        }
-        return;
-      }
-      if (!legacyPin) {
-        missingPins++;
-        return;
-      }
-      if (!/^\d{4}$/.test(legacyPin)) {
-        invalidPins++;
-        return;
-      }
-
-      batch.set(db.collection('vendorRedemptionSecrets').doc(vendorDoc.id), {
-        ...hashPin(legacyPin),
-        vendorId: vendorDoc.id,
-        migratedBy: request.auth?.uid,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      batch.update(vendorDoc.ref, {
-        pin: admin.firestore.FieldValue.delete(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      migrated++;
-    });
-
-    if (migrated > 0) {
-      await batch.commit();
-    }
-
-    const nextAfterId = snapshot.size === batchLimit
-      ? snapshot.docs[snapshot.docs.length - 1]?.id || null
-      : null;
-
-    console.info('Vendor redemption PIN migration batch completed', {
-      adminUid: request.auth.uid,
-      scanned: snapshot.size,
-      migrated,
-      alreadyMigrated,
-      invalidPins,
-      missingPins,
-      nextAfterId,
-    });
-    return {
-      scanned: snapshot.size,
-      migrated,
-      alreadyMigrated,
-      invalidPins,
-      missingPins,
-      nextAfterId,
-    };
   }
 );
 
