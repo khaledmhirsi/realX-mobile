@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { getAuth, signOut } from '@react-native-firebase/auth';
+import { getAuth } from '@react-native-firebase/auth';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Updates from 'expo-updates';
 
 import { logger } from '../../utils/logger';
+import { clearLocalAuthSession } from '../../utils/auth';
 import { toArabicDigits } from '../../utils/numbers';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
@@ -66,9 +67,8 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const auth = getAuth();
-              if (auth.currentUser) {
-                await signOut(auth);
+              if (getAuth().currentUser) {
+                await clearLocalAuthSession();
               }
             } catch (error) {
               logger.error('Logout error:', error);

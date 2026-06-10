@@ -1,6 +1,7 @@
 import {
     collection,
     doc,
+    documentId,
     FirebaseFirestoreTypes,
     getDoc,
     getDocs,
@@ -18,6 +19,31 @@ export type FirestorePage<T> = {
     lastDoc: FirebaseFirestoreTypes.QueryDocumentSnapshot | null;
     lastDocId: string | null;
     reachedEnd: boolean;
+};
+
+export type MappedPage<T, Cursor> = {
+    items: T[];
+    nextCursor: Cursor | null;
+    reachedEnd: boolean;
+};
+
+export type VendorQueryItem = {
+    id: string;
+    [key: string]: unknown;
+};
+
+export type CategoryVendorCursor = {
+    createdAt: unknown;
+    id: string;
+};
+
+export type CategoryVendorPageOptions = {
+    categoryName: string;
+    searchQuery: string;
+    selectedFilter: string;
+    selectedSubCategory: string;
+    pageSize: number;
+    cursor: CategoryVendorCursor | null;
 };
 
 export type SavedOfferItem = {
@@ -271,26 +297,34 @@ export async function fetchMapLocationsByPrefixes(
 
     const db = getFirestore();
     const fieldName = `geohash${precision}`;
-    const snapshots = await Promise.all(
-        normalizedPrefixes.map((prefix) => getDocs(query(
-            collection(db, 'mapLocations'),
-            where(fieldName, '==', prefix),
-            limit(perPrefixLimit)
-        )))
-    );
     const byId = new Map<string, MapLocationQueryItem>();
 
-    snapshots.forEach((snapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
-        snapshot.docs.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
-            const data = docSnap.data();
-            byId.set(docSnap.id, {
-                id: docSnap.id,
-                ...data,
-            } as MapLocationQueryItem);
-        });
-    });
+    await Promise.all(normalizedPrefixes.map(async (prefix) => {
+        let cursor: FirebaseFirestoreTypes.QueryDocumentSnapshot | null = null;
 
-    return Array.from(byId.values());
+        do {
+            const constraints: any[] = [
+                where(fieldName, '==', prefix),
+                orderBy(documentId()),
+            ];
+            if (cursor) constraints.push(startAfter(cursor));
+            constraints.push(limit(perPrefixLimit));
+
+            const snapshot = await getDocs(query(collection(db, 'mapLocations'), ...constraints));
+            snapshot.docs.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+                const data = docSnap.data();
+                byId.set(docSnap.id, {
+                    id: docSnap.id,
+                    ...data,
+                } as MapLocationQueryItem);
+            });
+            cursor = snapshot.docs.length === perPrefixLimit
+                ? snapshot.docs[snapshot.docs.length - 1]
+                : null;
+        } while (cursor);
+    }));
+
+    return Array.from(byId.values()).sort((a, b) => a.id.localeCompare(b.id));
 }
 
 export async function searchMapLocations(searchQuery: string, pageSize = 25): Promise<MapLocationQueryItem[]> {
@@ -319,28 +353,70 @@ export async function fetchStudentProfile(userId: string) {
 export async function fetchVendorSearchPage(
     searchQuery: string,
     pageSize: number,
-    startAfterDoc: FirebaseFirestoreTypes.QueryDocumentSnapshot | null,
-): Promise<FirestorePage<any>> {
+    cursorId: string | null,
+): Promise<MappedPage<VendorQueryItem, string>> {
     const db = getFirestore();
-    const vendorsRef = collection(db, 'vendors');
     const constraints: any[] = [
         where('searchTokens', 'array-contains', searchQuery),
+        orderBy(documentId()),
     ];
-    const vendorQuery = startAfterDoc
-        ? query(vendorsRef, ...constraints, startAfter(startAfterDoc) as any, limit(pageSize) as any)
-        : query(vendorsRef, ...constraints, limit(pageSize) as any);
-    const snapshot = await getDocs(vendorQuery);
+    if (cursorId) constraints.push(startAfter(cursorId));
+    constraints.push(limit(pageSize));
+
+    const snapshot = await getDocs(query(collection(db, 'vendors'), ...constraints));
     const items = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
         id: docSnap.id,
         ...docSnap.data(),
     }));
-    const lastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
 
     return {
         items,
-        lastDoc,
-        lastDocId: lastDoc?.id ?? null,
-        reachedEnd: snapshot.docs.length < pageSize,
+        nextCursor: items.length === pageSize ? items[items.length - 1]?.id || null : null,
+        reachedEnd: items.length < pageSize,
+    };
+}
+
+export async function fetchCategoryVendorsPage({
+    categoryName,
+    searchQuery,
+    selectedFilter,
+    selectedSubCategory,
+    pageSize,
+    cursor,
+}: CategoryVendorPageOptions): Promise<MappedPage<VendorQueryItem, CategoryVendorCursor>> {
+    const db = getFirestore();
+    const constraints: any[] = [];
+
+    if (selectedSubCategory !== 'all' && !searchQuery) {
+        constraints.push(where('subcategory', 'array-contains', selectedSubCategory));
+    } else {
+        constraints.push(where('mainCategory', '==', categoryName));
+    }
+    if (searchQuery) constraints.push(where('searchTokens', 'array-contains', searchQuery));
+    if (selectedFilter === 'trending') constraints.push(where('isTrending', '==', true));
+    if (selectedFilter === 'cashbacks') constraints.push(where('xcard', '==', true));
+
+    constraints.push(
+        orderBy('createdAt', 'desc'),
+        orderBy(documentId(), 'desc')
+    );
+    if (cursor) constraints.push(startAfter(cursor.createdAt, cursor.id));
+    constraints.push(limit(pageSize));
+
+    const snapshot = await getDocs(query(collection(db, 'vendors'), ...constraints));
+    const items = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+        xcard: docSnap.data().xcard || false,
+    }));
+    const lastItem = items[items.length - 1];
+
+    return {
+        items,
+        nextCursor: items.length === pageSize && lastItem
+            ? { createdAt: lastItem.createdAt, id: lastItem.id }
+            : null,
+        reachedEnd: items.length < pageSize,
     };
 }
 

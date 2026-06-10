@@ -28,8 +28,8 @@ import { clearPendingVerification } from '../../utils/verificationPending';
 
 export default function PendingVerificationScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ email?: string; role?: string }>();
-  const { email } = params;
+  const params = useLocalSearchParams<{ email?: string; role?: string; statusToken?: string }>();
+  const { email, statusToken } = params;
   const { t } = useTranslation();
   const { theme } = useAppTheme();
 
@@ -40,12 +40,12 @@ export default function PendingVerificationScreen() {
   const appStateRef = useRef(AppState.currentState);
 
   const checkStatus = useCallback(async () => {
-    if (!email || status !== 'pending') return;
+    if (!email || !statusToken || status !== 'pending') return;
     setChecking(true);
     try {
       const fnInstance = getFunctions(undefined, 'me-central1');
       const checkFn = httpsCallable(fnInstance, 'checkVerificationStatus');
-      const result = await checkFn({ email });
+      const result = await checkFn({ email, statusToken });
       const data = result.data as { status: string; role?: string; rejectionReason?: string };
 
       setLastChecked(new Date());
@@ -69,7 +69,7 @@ export default function PendingVerificationScreen() {
     } finally {
       setChecking(false);
     }
-  }, [email, router, status]);
+  }, [email, router, status, statusToken]);
 
   // Check on mount + whenever app comes back to foreground
   useEffect(() => {

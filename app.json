@@ -49,8 +49,7 @@
       ]
     },
     "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "output": "static"
     },
     "plugins": [
       "expo-router",
@@ -107,14 +106,6 @@
         "expo-build-properties",
         {
           "ios": {
-            "forceStaticLinking": [
-              "RNFBAnalytics",
-              "RNFBApp",
-              "RNFBCrashlytics",
-              "RNFBInAppMessaging",
-              "RNFBInstallations",
-              "RNFBPerf"
-            ],
             "useFrameworks": "static"
           }
         }

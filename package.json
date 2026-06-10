@@ -1,13 +1,16 @@
 {
   "name": "reelx",
   "main": "expo-router/entry",
-  "version": "1.0.2",
+  "version": "1.1.4",
+  "packageManager": "pnpm@10.11.0",
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
+    "doctor": "expo-doctor"
   },
   "dependencies": {
     "@bottom-tabs/react-navigation": "^1.1.0",
@@ -47,7 +50,6 @@
     "expo-system-ui": "~56.0.5",
     "expo-updates": "~56.0.17",
     "expo-web-browser": "~56.0.5",
-    "firebase-admin": "^13.6.1",
     "geofire-common": "^6.0.0",
     "i18next": "^25.8.18",
     "react": "19.2.3",
@@ -70,6 +72,7 @@
     "babel-preset-expo": "~56.0.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~56.0.4",
+    "expo-doctor": "^1.19.9",
     "typescript": "~6.0.3"
   },
   "private": true

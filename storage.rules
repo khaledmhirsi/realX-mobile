@@ -5,24 +5,48 @@ service firebase.storage {
       return request.auth != null && request.auth.token.admin == true;
     }
 
-    // Vendor gallery images are public media managed by admins.
-    match /vendors/{vendorId}/gallery/{imageName} {
-      allow read: if true;
-      allow create, update: if isAdmin()
-        && request.resource.contentType.matches('image/.*')
-        && request.resource.size < 10 * 1024 * 1024;
-      allow delete: if isAdmin();
-    }
-
-    // Verification request images - only admin SDK (cloud functions) writes,
-    // only admin users can read from client (admin panel)
+    // Sensitive student ID images are written by Admin SDK and read by admins only.
     match /verification_requests/{requestId}/{imageType} {
-      allow write: if false; // Written by admin SDK in cloud functions
-      allow read: if request.auth != null
-        && get(/databases/(default)/documents/students/$(request.auth.uid)).data.admin == true;
+      allow write: if false;
+      allow read: if isAdmin();
     }
 
-    // Deny everything else
+    // Public media managed by admins.
+    match /vendors/{vendorId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /banners/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /trending-offer-banners/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /featured-brand-showcase/{brandId}/{section}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /universities/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /brands/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /categories/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

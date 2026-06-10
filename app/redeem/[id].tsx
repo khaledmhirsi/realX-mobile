@@ -247,7 +247,6 @@ export default function RedeemScreen() {
             const result = await redeemOffer({
                 offerIndex: offerIndexParam != null ? parseInt(offerIndexParam, 10) : 0,
                 vendorId: vendorId || id,
-                vendorName: (isArabic ? (vendor?.nameAr || vendor?.name) : vendor?.name) || '',
                 totalAmount,
                 pin: normalizeDigits(pin),
                 creatorCode: creatorCode ? normalizeDigits(creatorCode).trim() : undefined,

@@ -1,10 +1,13 @@
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { getAuth, getIdToken } from '@react-native-firebase/auth';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { logger } from './logger';
+
+const PUSH_TOKEN_STORAGE_KEY = 'registered_expo_push_token';
 
 export const getExpoProjectId = () => {
   return (
@@ -55,6 +58,7 @@ const registerPushTokenViaCallable = async (token: string) => {
         token,
         platform: Platform.OS,
       });
+      await AsyncStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token);
       return;
     } catch (error: any) {
       lastError = error;
@@ -111,4 +115,18 @@ export const syncExpoPushTokenForUser = async (uid: string) => {
   }
 
   return token;
+};
+
+export const unregisterExpoPushTokenForCurrentUser = async () => {
+  const token = await AsyncStorage.getItem(PUSH_TOKEN_STORAGE_KEY);
+  if (!token || !getAuth().currentUser) return;
+
+  try {
+    const functions = getFunctions(undefined, 'me-central1');
+    const unregisterPushToken = httpsCallable(functions, 'unregisterPushToken');
+    await unregisterPushToken({ token });
+    await AsyncStorage.removeItem(PUSH_TOKEN_STORAGE_KEY);
+  } catch (error) {
+    logger.warn('Unable to unregister Expo push token before sign-out', { error });
+  }
 };

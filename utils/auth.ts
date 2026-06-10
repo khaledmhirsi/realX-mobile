@@ -1,4 +1,5 @@
 import { getAuth, signOut } from '@react-native-firebase/auth';
+import { unregisterExpoPushTokenForCurrentUser } from './pushNotifications';
 
 // Auth utility helpers
 // Magic link helpers have been removed — OTP auth is now used instead.
@@ -17,6 +18,7 @@ export const isInvalidAuthSessionError = (error: unknown) => {
 
 export const clearLocalAuthSession = async () => {
   try {
+    await unregisterExpoPushTokenForCurrentUser();
     await signOut(getAuth());
   } catch (error) {
     const code = String((error as { code?: unknown } | null)?.code || '').toLowerCase();

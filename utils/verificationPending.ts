@@ -6,13 +6,15 @@ const STALE_THRESHOLD_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 export type PendingVerificationData = {
   email: string;
   role: string;
+  statusToken: string;
   submittedAt: string;
 };
 
-export async function savePendingVerification(email: string, role: string): Promise<void> {
+export async function savePendingVerification(email: string, role: string, statusToken: string): Promise<void> {
   const data: PendingVerificationData = {
     email,
     role,
+    statusToken,
     submittedAt: new Date().toISOString(),
   };
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -24,6 +26,10 @@ export async function getPendingVerification(): Promise<PendingVerificationData 
     if (!raw) return null;
 
     const data: PendingVerificationData = JSON.parse(raw);
+    if (!data.email || !data.role || !data.statusToken || !data.submittedAt) {
+      await clearPendingVerification();
+      return null;
+    }
 
     // Auto-clear if older than 30 days
     const submittedAt = new Date(data.submittedAt).getTime();

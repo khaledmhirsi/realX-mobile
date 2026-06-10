@@ -1,5 +1,4 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { collection, getDocs, getFirestore, query, where, limit, startAfter } from '@react-native-firebase/firestore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +20,7 @@ import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
 import { triggerSubtleHaptic } from '../utils/haptics';
 import { queryClient, queryKeys } from '../utils/queryClient';
+import { fetchVendorSearchPage, VendorQueryItem } from '../utils/firebaseQueries';
 
 export default function SearchScreen() {
     const { q } = useLocalSearchParams<{ q: string }>();
@@ -31,10 +31,10 @@ export default function SearchScreen() {
 
     const [searchQuery, setSearchQuery] = useState(q || '');
     const [committedQuery, setCommittedQuery] = useState((q || '').trim().toLowerCase());
-    const [results, setResults] = useState<any[]>([]);
+    const [results, setResults] = useState<VendorQueryItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
-    const lastDocRef = useRef<any>(null);
+    const cursorRef = useRef<string | null>(null);
     const [isListEnd, setIsListEnd] = useState(false);
 
     // Fetch vendors with pagination — only when user has typed a query
@@ -43,7 +43,7 @@ export default function SearchScreen() {
 
         if (!trimmedQuery) {
             setResults([]);
-            lastDocRef.current = null;
+            cursorRef.current = null;
             setIsListEnd(true);
             setLoading(false);
             setLoadingMore(false);
@@ -54,54 +54,27 @@ export default function SearchScreen() {
 
         if (isNew) {
             setLoading(true);
-            lastDocRef.current = null;
+            cursorRef.current = null;
             setIsListEnd(false);
         } else {
             setLoadingMore(true);
         }
 
         try {
-            const db = getFirestore();
-            const vendorsRef = collection(db, 'vendors');
             const PAGE_SIZE = 20;
-
-            const constraints: any[] = [
-                where('searchTokens', 'array-contains', trimmedQuery),
-            ];
-
-            let q;
-            if (isNew) {
-                q = query(vendorsRef, ...constraints, limit(PAGE_SIZE) as any);
-            } else {
-                const startAfterDoc = lastDocRef.current;
-                q = startAfterDoc
-                    ? query(vendorsRef, ...constraints, startAfter(startAfterDoc) as any, limit(PAGE_SIZE) as any)
-                    : query(vendorsRef, ...constraints, limit(PAGE_SIZE) as any);
-            }
-
-            const snapshot = await queryClient.fetchQuery({
-                queryKey: queryKeys.searchVendorsPage(trimmedQuery, (isNew ? null : lastDocRef.current?.id ?? null)),
-                queryFn: () => getDocs(q),
+            const cursor = isNew ? null : cursorRef.current;
+            const page = await queryClient.fetchQuery({
+                queryKey: queryKeys.searchVendorsPage(trimmedQuery, cursor),
+                queryFn: () => fetchVendorSearchPage(trimmedQuery, PAGE_SIZE, cursor),
             });
 
-            // Map vendor documents directly
-            const fetched: any[] = snapshot.docs.map((docSnap: any) => ({
-                id: docSnap.id,
-                ...docSnap.data(),
-            }));
-
             if (isNew) {
-                setResults(fetched);
+                setResults(page.items);
             } else {
-                setResults(prev => [...prev, ...fetched]);
+                setResults(prev => [...prev, ...page.items]);
             }
-
-            if (snapshot.docs.length > 0) {
-                lastDocRef.current = snapshot.docs[snapshot.docs.length - 1];
-                setIsListEnd(snapshot.docs.length < PAGE_SIZE);
-            } else {
-                setIsListEnd(true);
-            }
+            cursorRef.current = page.nextCursor;
+            setIsListEnd(page.reachedEnd);
         } catch (error) {
             logger.error('Error fetching vendors for search:', error);
         } finally {

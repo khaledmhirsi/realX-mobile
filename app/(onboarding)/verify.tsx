@@ -138,17 +138,18 @@ export default function VerifyOtpScreen() {
           // Submit the verification request with stored images
           const images = getVerificationImages();
           const submitFn = httpsCallable(fnInstance, 'submitVerificationRequest');
-          await submitFn({
+          const submission = await submitFn({
             email,
             idFrontBase64: images.frontBase64,
             idBackBase64: images.backBase64,
             role: role || 'student',
           });
+          const { statusToken } = submission.data as { statusToken: string };
           clearVerificationImages();
-          await savePendingVerification(email, role || 'student');
+          await savePendingVerification(email, role || 'student', statusToken);
           router.replace({
             pathname: '/(onboarding)/pending',
-            params: { email },
+            params: { email, statusToken },
           });
         }
         return;

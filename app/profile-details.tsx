@@ -21,6 +21,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../utils/logger';
+import { unregisterExpoPushTokenForCurrentUser } from '../utils/pushNotifications';
 import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
 import PhonkText from '../components/PhonkText';
@@ -168,6 +169,7 @@ export default function ProfileDetailsScreen() {
 
                         setIsLoading(true);
                         try {
+                            await unregisterExpoPushTokenForCurrentUser();
                             // The "Delete User Data" extension is triggered by the Auth user deletion
                             await deleteUser(user);
                             

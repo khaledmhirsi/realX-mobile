@@ -1,15 +1,42 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 //These are the cloud functions file
 
 
 import * as admin from 'firebase-admin';
 import { CallableRequest, HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import { setGlobalOptions } from 'firebase-functions';
-import { onDocumentWritten } from 'firebase-functions/v2/firestore';
-import { geohashForLocation } from 'geofire-common';
 import { Resend } from 'resend';
-import { createHash, randomInt } from 'crypto';
+import {
+  createHash,
+  randomInt,
+} from 'crypto';
+import {
+  hashPin,
+  isAllowedGiftCardValue,
+  normalizeDigits,
+  parseRedemptionInput,
+  RedemptionInput,
+  RedemptionType,
+  requireDocumentId,
+  requirePin,
+  verifyPin,
+} from './redemptionSecurity';
+import {
+  hashToken,
+  parseVerificationImage,
+  secureToken,
+  secureTokenMatches,
+} from './verificationSecurity';
+import { createGeospatialFunctions } from './geospatial';
+import { createNotificationFunctions } from './notifications';
+import {
+  getRequestFingerprint,
+  isAllowedStudentEmail,
+  isValidDob,
+  isValidEmail,
+  isValidOtpPurpose,
+  isValidSignupGender,
+  isValidSignupRole,
+} from './authSecurity';
 
 admin.initializeApp();
 setGlobalOptions({ region: 'me-central1', maxInstances: 10 });
@@ -23,6 +50,12 @@ function getResend(): Resend {
 }
 
 const db = admin.firestore();
+const {
+  registerPushToken,
+  sendCreatorCodeUsedPush,
+  unregisterPushToken,
+} = createNotificationFunctions(db);
+export { registerPushToken, unregisterPushToken };
 const getStorageBucket = () => {
   const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'reelx-backend';
   const bucketName = process.env.FIREBASE_STORAGE_BUCKET ||
@@ -31,28 +64,6 @@ const getStorageBucket = () => {
   return admin.storage().bucket(bucketName);
 };
 const REVIEW_EMAIL = (process.env.APPLE_REVIEW_EMAIL || 'apple-review@realx.qa').toLowerCase().trim();
-const ALLOWED_STUDENT_EMAIL_DOMAINS = new Set([
-  'gemsed.com',
-  'dpsmisdoha.com',
-  'oliveschooldoha.com',
-  'bpsdoha.edu.qa',
-  'rajagiridoha.com',
-  'education.qa',
-  'americanacademy.sch.qa',
-  'student.ukm.qa',
-  'miesppu.edu.qa',
-  'abdn.ac.uk',
-  'student.dbs.sch.qa',
-  'asd.equ.qa',
-  'qu.edu.qa',
-  'oryx.edu.qa',
-  'lu.edu.qa',
-  'student.ukm.qa',
-  'tamu.edu',
-  'hbku.edu.qa',
-  'andrew.cmu.edu'
-]);
-
 /**
  * =============================
  * Utils
@@ -70,35 +81,27 @@ const generateCode = () => {
 const toCents = (amount: number) => Math.round(amount * 100);
 const fromCents = (cents: number) => cents / 100;
 
-const verifyPin = (inputPin: string, storedPin: string) => inputPin === storedPin;
-
-const normalizeDigits = (input: string | number | undefined | null): string => {
-  if (input === null || input === undefined) return '';
-
-  const str = String(input);
-
-  const arabic = '٠١٢٣٤٥٦٧٨٩';
-  const persian = '۰۱۲۳۴۵۶۷۸۹';
-
-  return str.replace(/[٠-٩۰-۹]/g, (d) => {
-    const index = arabic.indexOf(d);
-    if (index > -1) return index.toString();
-    return persian.indexOf(d).toString();
-  });
-};
-
-const isValidCoordinate = (value: unknown, min: number, max: number) =>
-  typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
-
 const hashDocId = (value: string) =>
   createHash('sha256').update(value).digest('hex');
 
-const isAllowedStudentEmail = (email: string) => {
-  const domain = email.split('@')[1]?.trim().toLowerCase();
+const REDEMPTION_RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
+const MAX_REDEMPTIONS_PER_WINDOW = 10;
+const assertAdmin = async (uid: string) => {
+  const adminDoc = await db.collection('students').doc(uid).get();
+  if (!adminDoc.exists || adminDoc.data()?.admin !== true) {
+    throw new HttpsError('permission-denied', 'Admin access required');
+  }
+};
 
-  if (!domain) return false;
-
-  return domain.endsWith('.qa') || domain.endsWith('.edu.qa') || ALLOWED_STUDENT_EMAIL_DOMAINS.has(domain);
+const checkEmailAndClientRateLimits = async (
+  request: CallableRequest,
+  action: string,
+  email: string
+) => {
+  await Promise.all([
+    checkAccountRateLimit(`${action}:email:${email}`),
+    checkAccountRateLimit(`${action}:client:${getRequestFingerprint(request)}`),
+  ]);
 };
 
 const getQatarDateKey = () => {
@@ -164,7 +167,7 @@ const getOnlineRedemptionConfig = async (vendorId: string) => {
  * Creator Code Helpers
  * =============================
  */
-const validateCreatorCode = async (tx, creatorCode: string | null) => {
+const validateCreatorCode = async (tx: admin.firestore.Transaction, creatorCode: string | null) => {
   if (!creatorCode) return null;
 
   const code = normalizeDigits(creatorCode).trim().toUpperCase();
@@ -194,13 +197,22 @@ const validateCreatorCode = async (tx, creatorCode: string | null) => {
  * =============================
  */
 
-const calculateDiscount = (totalCents: number, discountType, discountValue) => {
+const calculateDiscount = (
+  totalCents: number,
+  discountType: unknown,
+  discountValue: unknown
+) => {
   let discountCents = 0;
+  const numericDiscountValue = Number(discountValue);
+
+  if (!Number.isFinite(numericDiscountValue) || numericDiscountValue < 0) {
+    throw new HttpsError('invalid-argument', 'Invalid discount value');
+  }
 
   if (discountType === 'percentage') {
-    discountCents = Math.round(totalCents * (discountValue / 100));
+    discountCents = Math.round(totalCents * (numericDiscountValue / 100));
   } else if (discountType === 'amount') {
-    discountCents = toCents(discountValue);
+    discountCents = toCents(numericDiscountValue);
   } else if (discountType === 'buy1get1') {
     // No discount for buy1get1 - user pays full amount
     discountCents = 0;
@@ -222,6 +234,11 @@ const calculateCashback = ({
   vendorData,
   creatorUid,
   type,
+}: {
+  finalCents: number;
+  vendorData: Record<string, unknown>;
+  creatorUid?: string | null;
+  type: RedemptionType;
 }) => {
   let userCashback = 0;
   let creatorCashback = 0;
@@ -250,125 +267,61 @@ const calculateCashback = ({
   return { userCashback, creatorCashback };
 };
 
-const sendCreatorCodeUsedPush = async ({
-  creatorUid,
-  vendorName,
-  cashbackAmount,
-  transactionId,
-}: {
-  creatorUid: string;
-  vendorName: string;
-  cashbackAmount: number;
-  transactionId: string;
-}) => {
-  const creatorRef = db.collection('students').doc(creatorUid);
-  const creatorDoc = await creatorRef.get();
-
-  if (!creatorDoc.exists) {
-    return;
-  }
-
-  const creatorData = creatorDoc.data() || {};
-  const tokenCandidates = [
-    ...(Array.isArray(creatorData.expoPushTokens) ? creatorData.expoPushTokens : []),
-    ...(Array.isArray(creatorData.pushTokens) ? creatorData.pushTokens : []),
-    creatorData.expoPushToken,
-    creatorData.pushToken,
-  ].filter(Boolean);
-
-  const tokens = [...new Set(tokenCandidates)];
-  if (tokens.length === 0) return;
-
-  const messages = tokens.map((to) => ({
-    to,
-    sound: 'sound.wav',
-    title: 'Your code was used!',
-    body: `Someone used your code at ${vendorName}. You earned XP ${cashbackAmount.toFixed(2)} XPoints!`,
-    data: {
-      type: 'creator_code_used',
-      transactionId,
-      vendorName,
-      cashbackAmount,
-    },
-    channelId: 'reelx_general',
-  }));
-
-  const response = await fetch('https://exp.host/--/api/v2/push/send', {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Accept-Encoding': 'gzip, deflate',
-      'Content-type': 'application/json',
-    },
-    body: JSON.stringify(messages),
-  });
-
-  const payload = await response.json();
-  const ticketErrors = Array.isArray(payload?.data)
-    ? payload.data
-      .map((ticket, index) => ({ ticket, index }))
-      .filter(({ ticket }) => ticket?.status === 'error')
-    : [];
-
-  if (ticketErrors.length === 0) return;
-
-  const invalidTokens = ticketErrors
-    .filter(({ ticket }) =>
-      ['DeviceNotRegistered', 'InvalidCredentials', 'MessageTooBig'].includes(ticket?.details?.error)
-    )
-    .map(({ index }) => tokens[index])
-    .filter(Boolean);
-
-  if (invalidTokens.length === 0) return;
-
-  const remainingTokens = tokens.filter((token) => !invalidTokens.includes(token));
-  await creatorRef.set(
-    {
-      expoPushTokens: remainingTokens,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    },
-    { merge: true }
-  );
-};
-
 /**
  * =============================
  * Core Transaction
  * =============================
  */
-const processTransaction = async (options) => {
+const checkRedemptionRateLimit = async (uid: string, vendorId: string) => {
+  const now = admin.firestore.Timestamp.now();
+  const rateRef = db
+    .collection('redemption_rate_limits')
+    .doc(hashDocId(`${uid}:${vendorId}`));
+
+  await db.runTransaction(async (tx) => {
+    const rateDoc = await tx.get(rateRef);
+    const data = rateDoc.data() || {};
+    const existingWindowStart = data.windowStart?.toMillis?.() ?? 0;
+    const isCurrentWindow = now.toMillis() - existingWindowStart < REDEMPTION_RATE_LIMIT_WINDOW_MS;
+    const attemptCount = isCurrentWindow ? Number(data.attemptCount || 0) : 0;
+
+    if (attemptCount >= MAX_REDEMPTIONS_PER_WINDOW) {
+      console.warn('Redemption rate limit exceeded', { uid, vendorId });
+      throw new HttpsError('resource-exhausted', 'Too many redemption attempts. Please try again later.');
+    }
+
+    tx.set(rateRef, {
+      uid,
+      vendorId,
+      attemptCount: attemptCount + 1,
+      windowStart: isCurrentWindow ? data.windowStart : now,
+      updatedAt: now,
+      expiresAt: admin.firestore.Timestamp.fromMillis(now.toMillis() + REDEMPTION_RATE_LIMIT_WINDOW_MS),
+    });
+  });
+};
+
+const processTransaction = async ({
+  uid,
+  type,
+  input,
+}: {
+  uid: string;
+  type: RedemptionType;
+  input: RedemptionInput;
+}) => {
   const {
-    uid,
     vendorId,
-    vendorName,
     totalAmount,
     pin,
-    type,
     giftCardAmount = 0,
     offerIndex = null,
     creatorCode = null,
-    itemPrice = null,
-  } = options;
-
-  const normalizedTotalAmount = parseFloat(normalizeDigits(totalAmount));
-  const normalizedGiftCardAmount = parseFloat(normalizeDigits(giftCardAmount));
-  const normalizedPin = normalizeDigits(pin);
-
-  if (isNaN(normalizedTotalAmount) || normalizedTotalAmount <= 0) {
-    throw new HttpsError('invalid-argument', 'Invalid total amount');
-  }
-
-  const normalizedItemPrice = itemPrice ? parseFloat(normalizeDigits(itemPrice)) : null;
-  if (normalizedItemPrice !== null && (isNaN(normalizedItemPrice) || normalizedItemPrice <= 0)) {
-    throw new HttpsError('invalid-argument', 'Invalid item price');
-  }
-
-  if (!normalizedPin || normalizedPin.length !== 4) {
-    throw new HttpsError('invalid-argument', 'Invalid PIN');
-  }
+  } = input;
 
   const userRef = db.collection('students').doc(uid);
   const vendorRef = db.collection('vendors').doc(vendorId);
+  const secretRef = db.collection('vendorRedemptionSecrets').doc(vendorId);
   const transactionRef = db.collection('transactions').doc();
 
   return db.runTransaction(async (tx) => {
@@ -377,23 +330,33 @@ const processTransaction = async (options) => {
      * 1. READS
      * =============================
      */
-    const [userDoc, vendorDoc] = await Promise.all([
+    const [userDoc, vendorDoc, secretDoc] = await Promise.all([
       tx.get(userRef),
       tx.get(vendorRef),
+      tx.get(secretRef),
     ]);
 
     if (!userDoc.exists) throw new HttpsError('not-found', 'User not found');
     if (!vendorDoc.exists) throw new HttpsError('not-found', 'Vendor not found');
+    if (!secretDoc.exists) {
+      throw new HttpsError('failed-precondition', 'Vendor redemption is not configured');
+    }
 
-    const userData = userDoc.data();
-    const vendorData = vendorDoc.data();
+    const userData = userDoc.data() || {};
+    const vendorData = vendorDoc.data() || {};
+    const vendorName = typeof vendorData.name === 'string' ? vendorData.name : '';
+
+    if (userData.redemptionDisabled === true || userData.accountType === 'browse_only') {
+      throw new HttpsError('permission-denied', 'This account cannot make redemptions');
+    }
 
     /**
      * =============================
      * 2. PIN VALIDATION
      * =============================
      */
-    if (!verifyPin(normalizedPin, vendorData.pin)) {
+    if (!verifyPin(pin, secretDoc.data() || {})) {
+      console.warn('Redemption rejected: invalid PIN', { uid, vendorId, type });
       throw new HttpsError('permission-denied', 'Invalid PIN');
     }
 
@@ -402,7 +365,7 @@ const processTransaction = async (options) => {
      * 3. AMOUNTS
      * =============================
      */
-    const totalCents = toCents(normalizedTotalAmount);
+    const totalCents = toCents(totalAmount);
     let discountCents = 0;
     let finalCents = totalCents;
     let giftcardSavingsCents = 0;
@@ -422,6 +385,9 @@ const processTransaction = async (options) => {
           throw new HttpsError('not-found', 'Offer not found for this vendor');
         }
         appliedOffer = vendorOffers[offerIndex];
+        if (!appliedOffer || appliedOffer.isActive === false) {
+          throw new HttpsError('failed-precondition', 'Offer is not available');
+        }
 
         // For buy1get1, no discount value needed
         const discountArg = appliedOffer.discountType === 'buy1get1'
@@ -446,7 +412,10 @@ const processTransaction = async (options) => {
      */
     if (type === 'giftcard') {
       const balance = toCents(userData.cashback || 0);
-      const redeemCents = toCents(normalizedGiftCardAmount || 0);
+      const redeemCents = toCents(giftCardAmount);
+      if (!isAllowedGiftCardValue(giftCardAmount, vendorData.loyalty)) {
+        throw new HttpsError('invalid-argument', 'Gift card value is not available for this vendor');
+      }
       giftcardSavingsCents = redeemCents;
 
       if (balance < redeemCents) {
@@ -482,7 +451,8 @@ const processTransaction = async (options) => {
       userId: uid,
       vendorId,
       vendorName,
-      totalAmount: normalizedTotalAmount,
+      vendorNameAr: typeof vendorData.nameAr === 'string' ? vendorData.nameAr : null,
+      totalAmount,
       discountAmount: fromCents(discountCents),
       finalAmount: fromCents(finalCents),
       creatorCode: creatorData?.code || null,
@@ -498,7 +468,7 @@ const processTransaction = async (options) => {
      * 8. UPDATE USER
      * =============================
      */
-    const userUpdates = {};
+    const userUpdates: Record<string, admin.firestore.FieldValue> = {};
 
     const totalSavingsCents = discountCents + giftcardSavingsCents;
 
@@ -554,108 +524,113 @@ const processTransaction = async (options) => {
   });
 };
 
-/**
- * =============================
- * Vendor Geo Index Sync
- * =============================
- */
-export const syncVendorGeohash = onDocumentWritten(
-  'vendors/{vendorId}',
-  async (event) => {
-    const afterData = event.data?.after?.data();
-    if (!afterData) return;
-
-    const lat = afterData.lat;
-    const lng = afterData.lng;
-
-    if (!isValidCoordinate(lat, -90, 90) || !isValidCoordinate(lng, -180, 180)) {
-      if (typeof afterData.geohash === 'string' && afterData.geohash.length > 0) {
-        await event.data?.after?.ref.set(
-          {
-            geohash: admin.firestore.FieldValue.delete(),
-          },
-          { merge: true }
-        );
-      }
-      return;
-    }
-
-    const nextGeohash = geohashForLocation([lat, lng]).slice(0, 5);
-    if (afterData.geohash === nextGeohash) return;
-
-    await event.data?.after?.ref.set(
-      {
-        geohash: nextGeohash,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
-  }
-);
-
-export const backfillVendorGeohashes = onCall(
-  { enforceAppCheck: true },
-  async (request: CallableRequest) => {
-    if (!request.auth) {
-      throw new HttpsError('unauthenticated', 'Login required');
-    }
-
-    const adminDoc = await db.collection('students').doc(request.auth.uid).get();
-    if (!adminDoc.exists || adminDoc.data()?.admin !== true) {
-      throw new HttpsError('permission-denied', 'Admin access required');
-    }
-
-    const requestedLimit = Number(request.data?.limit || 500);
-    const batchLimit = Math.min(Math.max(requestedLimit, 1), 1000);
-
-    const snapshot = await db.collection('vendors').limit(batchLimit).get();
-    if (snapshot.empty) {
-      return { scanned: 0, updated: 0 };
-    }
-
-    const writeBatch = db.batch();
-    let updated = 0;
-
-    snapshot.docs.forEach((vendorDoc) => {
-      const data = vendorDoc.data();
-      const lat = data?.lat;
-      const lng = data?.lng;
-
-      if (!isValidCoordinate(lat, -90, 90) || !isValidCoordinate(lng, -180, 180)) {
-        return;
-      }
-
-      const nextGeohash = geohashForLocation([lat, lng]).slice(0, 5);
-      if (data?.geohash === nextGeohash) return;
-
-      writeBatch.set(
-        vendorDoc.ref,
-        {
-          geohash: nextGeohash,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
-      updated++;
-    });
-
-    if (updated > 0) {
-      await writeBatch.commit();
-    }
-
-    return {
-      scanned: snapshot.size,
-      updated,
-      limit: batchLimit,
-    };
-  }
-);
+export const {
+  backfillVendorGeohashes,
+  syncVendorGeohash,
+} = createGeospatialFunctions(db);
 
 /**
  * =============================
  * Public Functions
  * =============================
  */
+export const setVendorRedemptionPin = onCall(
+  { enforceAppCheck: true },
+  async (request: CallableRequest) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Login required');
+    }
+
+    await assertAdmin(request.auth.uid);
+    const vendorId = requireDocumentId(request.data?.vendorId, 'Vendor ID');
+    const pin = requirePin(request.data?.pin);
+    const vendorRef = db.collection('vendors').doc(vendorId);
+    const secretRef = db.collection('vendorRedemptionSecrets').doc(vendorId);
+
+    await db.runTransaction(async (tx) => {
+      const vendorDoc = await tx.get(vendorRef);
+      if (!vendorDoc.exists) {
+        throw new HttpsError('not-found', 'Vendor not found');
+      }
+
+      tx.set(secretRef, {
+        ...hashPin(pin),
+        vendorId,
+        rotatedBy: request.auth?.uid,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      tx.update(vendorRef, {
+        pin: admin.firestore.FieldValue.delete(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+
+    console.info('Vendor redemption PIN rotated', {
+      vendorId,
+      adminUid: request.auth.uid,
+    });
+    return { success: true };
+  }
+);
+
+export const migrateVendorRedemptionPins = onCall(
+  { enforceAppCheck: true, timeoutSeconds: 300 },
+  async (request: CallableRequest) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Login required');
+    }
+
+    await assertAdmin(request.auth.uid);
+    const requestedLimit = Number(request.data?.limit || 100);
+    const batchLimit = Math.min(Math.max(Math.floor(requestedLimit), 1), 250);
+    const afterId = request.data?.afterId
+      ? requireDocumentId(request.data.afterId, 'afterId')
+      : null;
+
+    let vendorsQuery = db.collection('vendors').orderBy(admin.firestore.FieldPath.documentId()).limit(batchLimit);
+    if (afterId) {
+      vendorsQuery = vendorsQuery.startAfter(afterId);
+    }
+
+    const snapshot = await vendorsQuery.get();
+    const batch = db.batch();
+    let migrated = 0;
+
+    snapshot.docs.forEach((vendorDoc) => {
+      const legacyPin = normalizeDigits(vendorDoc.data()?.pin);
+      if (!/^\d{4}$/.test(legacyPin)) return;
+
+      batch.set(db.collection('vendorRedemptionSecrets').doc(vendorDoc.id), {
+        ...hashPin(legacyPin),
+        vendorId: vendorDoc.id,
+        migratedBy: request.auth?.uid,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      batch.update(vendorDoc.ref, {
+        pin: admin.firestore.FieldValue.delete(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      migrated++;
+    });
+
+    if (migrated > 0) {
+      await batch.commit();
+    }
+
+    const nextAfterId = snapshot.size === batchLimit
+      ? snapshot.docs[snapshot.docs.length - 1]?.id || null
+      : null;
+
+    console.info('Vendor redemption PIN migration batch completed', {
+      adminUid: request.auth.uid,
+      scanned: snapshot.size,
+      migrated,
+      nextAfterId,
+    });
+    return { scanned: snapshot.size, migrated, nextAfterId };
+  }
+);
+
 export const redeemGiftCard = onCall(
   { enforceAppCheck: true },
   async (request: CallableRequest) => {
@@ -663,12 +638,15 @@ export const redeemGiftCard = onCall(
       throw new HttpsError('unauthenticated', 'Login required');
     }
 
-    const result = await processTransaction({
-      uid: request.auth.uid,
-      type: 'giftcard',
-      ...request.data,
-    });
+    const input = parseRedemptionInput(request.data, 'giftcard');
+    await checkRedemptionRateLimit(request.auth.uid, input.vendorId);
+    const result = await processTransaction({ uid: request.auth.uid, type: 'giftcard', input });
 
+    console.info('Gift card redemption completed', {
+      uid: request.auth.uid,
+      vendorId: input.vendorId,
+      transactionId: result.transactionId,
+    });
     return result;
   }
 );
@@ -680,21 +658,24 @@ export const redeemOffer = onCall(
       throw new HttpsError('unauthenticated', 'Login required');
     }
 
-    const result = await processTransaction({
-      uid: request.auth.uid,
-      type: 'offer',
-      ...request.data,
-    });
+    const input = parseRedemptionInput(request.data, 'offer');
+    await checkRedemptionRateLimit(request.auth.uid, input.vendorId);
+    const result = await processTransaction({ uid: request.auth.uid, type: 'offer', input });
 
     if (result?.creatorUid && result?.creatorCashback > 0) {
       await sendCreatorCodeUsedPush({
         creatorUid: result.creatorUid,
-        vendorName: result.vendorName || request.data?.vendorName || 'a vendor',
+        vendorName: result.vendorName || 'a vendor',
         cashbackAmount: result.creatorCashback,
         transactionId: result.transactionId,
       });
     }
 
+    console.info('Offer redemption completed', {
+      uid: request.auth.uid,
+      vendorId: input.vendorId,
+      transactionId: result.transactionId,
+    });
     return result;
   }
 );
@@ -801,7 +782,7 @@ export const redeemOnlineVendor = onCall(
         status: 'completed',
         userId: uid,
         vendorId,
-        vendorName: vendorData.name || request.data?.vendorName || '',
+        vendorName: vendorData.name || '',
         vendorNameAr: vendorData.nameAr || null,
         discountCode,
         purchaseUrl,
@@ -836,7 +817,7 @@ export const redeemOnlineVendor = onCall(
  * Creator Code Assignment
  * =============================
  */
-const reserveCreatorCode = async (tx, uid: string) => {
+const reserveCreatorCode = async (tx: admin.firestore.Transaction, uid: string) => {
   let attempts = 0;
 
   while (attempts < 5) {
@@ -898,8 +879,6 @@ export const assignCreatorCode = onCall(
  * =============================
  */
 const WAKTI_API_KEY_HEADER = 'x-wakti-api-key';
-const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
 export const verifyWaktiStudent = onRequest(
   { secrets: ['WAKTI_API_KEY'] },
   async (request, response) => {
@@ -965,7 +944,7 @@ export const checkStudentExists = onCall(
       );
     }
 
-    await checkAccountRateLimit(`check_student_${email}`);
+    await checkEmailAndClientRateLimits(request, 'check_student', email);
 
     const snapshot = await db
       .collection('students')
@@ -986,7 +965,7 @@ export const checkStudentExistsLogin = onCall(
       throw new HttpsError('invalid-argument', 'Email required');
     }
 
-    await checkAccountRateLimit(`check_login_${email}`);
+    await checkEmailAndClientRateLimits(request, 'check_login', email);
 
     const snapshot = await db
       .collection('students')
@@ -1008,11 +987,6 @@ const MAX_OTP_SENDS_PER_WINDOW = 5;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const COOLDOWN_MS = 60 * 1000; // 60 seconds
 const MAX_VERIFY_ATTEMPTS = 3;
-const OTP_PURPOSES = ['signup', 'login', 'verification'];
-
-const isValidOtpPurpose = (purpose: unknown) =>
-  typeof purpose === 'string' && OTP_PURPOSES.includes(purpose);
-
 const getOtpRef = (email: string) =>
   db.collection('otps').doc(hashDocId(`otp:${email}`));
 
@@ -1058,6 +1032,7 @@ async function checkAccountRateLimit(key: string): Promise<void> {
       checkCount,
       windowStart,
       updatedAt: now,
+      expiresAt: admin.firestore.Timestamp.fromMillis(now.toMillis() + ACCOUNT_CHECK_RATE_LIMIT_MS),
     });
   });
 }
@@ -1080,6 +1055,8 @@ export const sendOtp = onCall(
     if (!isValidOtpPurpose(purpose)) {
       throw new HttpsError('invalid-argument', 'Purpose must be "signup", "login", or "verification"');
     }
+
+    await checkEmailAndClientRateLimits(request, `send_otp_${purpose}`, email);
 
     // Signup: restrict to approved school email domains
     if (purpose === 'signup') {
@@ -1333,7 +1310,7 @@ export const verifyOtp = onCall(
     });
 
     if (!verificationResult.success) {
-      throw new HttpsError(verificationResult.code, verificationResult.message);
+      throw new HttpsError('invalid-argument', verificationResult.message || 'Incorrect code');
     }
 
     // Verification: just confirm email is verified, no auth user creation
@@ -1385,21 +1362,6 @@ export const verifyOtp = onCall(
  * Signup Completion
  * =============================
  */
-const isValidSignupRole = (role: unknown) =>
-  role === 'student' || role === 'creator';
-
-const isValidSignupGender = (gender: unknown) =>
-  gender === 'Male' || gender === 'Female';
-
-const isValidDob = (dob: unknown) => {
-  if (typeof dob !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
-    return false;
-  }
-
-  const parsed = new Date(`${dob}T00:00:00.000Z`);
-  return !Number.isNaN(parsed.getTime()) && parsed.getTime() <= Date.now();
-};
-
 export const completeSignup = onCall(
   { enforceAppCheck: true },
   async (request: CallableRequest) => {
@@ -1480,7 +1442,7 @@ export const completeSignup = onCall(
         };
       }
 
-      const studentData = {
+      const studentData: Record<string, unknown> = {
         firstName,
         lastName,
         dob,
@@ -1510,7 +1472,6 @@ export const completeSignup = onCall(
  * Student ID Verification
  * =============================
  */
-const MAX_IMAGE_SIZE = 3 * 1024 * 1024; // 3MB per image
 const VERIFICATION_MAX_SUBMISSIONS = 3;
 const VERIFICATION_RATE_LIMIT_MS = 60 * 60 * 1000; // 1 hour
 
@@ -1526,21 +1487,25 @@ export const submitVerificationRequest = onCall(
       throw new HttpsError('invalid-argument', 'Valid email required');
     }
 
+    await checkEmailAndClientRateLimits(request, 'submit_verification', normalizedEmail);
+
     // Reject approved school emails — they should use normal signup
     if (isAllowedStudentEmail(normalizedEmail)) {
       throw new HttpsError('invalid-argument', 'Please use the regular signup with your school email');
     }
 
-    if (!idFrontBase64 || !idBackBase64) {
-      throw new HttpsError('invalid-argument', 'Both front and back of student ID are required');
-    }
+    const frontImage = parseVerificationImage(idFrontBase64, 'Front');
+    const backImage = parseVerificationImage(idBackBase64, 'Back');
 
-    // Validate image sizes
-    const frontBuffer = Buffer.from(idFrontBase64, 'base64');
-    const backBuffer = Buffer.from(idBackBase64, 'base64');
-
-    if (frontBuffer.length > MAX_IMAGE_SIZE || backBuffer.length > MAX_IMAGE_SIZE) {
-      throw new HttpsError('invalid-argument', 'Each image must be under 3MB');
+    const otpDoc = await getOtpRef(normalizedEmail).get();
+    const otpData = otpDoc.data() || {};
+    if (
+      !otpDoc.exists ||
+      otpData.purpose !== 'verification' ||
+      otpData.verified !== true ||
+      otpData.expiresAt?.toMillis?.() < Date.now()
+    ) {
+      throw new HttpsError('permission-denied', 'A valid verified email code is required');
     }
 
     // Rate limit: max submissions per time window
@@ -1559,18 +1524,6 @@ export const submitVerificationRequest = onCall(
       );
     }
 
-    // Check for existing pending request
-    const existingPending = await db
-      .collection('verification_requests')
-      .where('email', '==', normalizedEmail)
-      .where('status', '==', 'pending')
-      .limit(1)
-      .get();
-
-    if (!existingPending.empty) {
-      throw new HttpsError('already-exists', 'You already have a pending verification request');
-    }
-
     // Check no existing student account
     const existingStudent = await db
       .collection('students')
@@ -1583,34 +1536,57 @@ export const submitVerificationRequest = onCall(
     }
 
     // Create Firestore doc first to get requestId
-    const requestRef = db.collection('verification_requests').doc();
+    const requestRef = db.collection('verification_requests').doc(hashDocId(`verification:${normalizedEmail}`));
     const requestId = requestRef.id;
+    const statusToken = secureToken();
 
     // Upload images to Firebase Storage
     const bucket = getStorageBucket();
-    const frontPath = `verification_requests/${requestId}/front.jpg`;
-    const backPath = `verification_requests/${requestId}/back.jpg`;
+    const uploadId = hashDocId(statusToken).slice(0, 16);
+    const frontPath = `verification_requests/${requestId}/${uploadId}-front.${frontImage.extension}`;
+    const backPath = `verification_requests/${requestId}/${uploadId}-back.${backImage.extension}`;
+    const uploadedFiles = [bucket.file(frontPath), bucket.file(backPath)];
 
-    await Promise.all([
-      bucket.file(frontPath).save(frontBuffer, { metadata: { contentType: 'image/jpeg' } }),
-      bucket.file(backPath).save(backBuffer, { metadata: { contentType: 'image/jpeg' } }),
-    ]);
+    try {
+      await Promise.all([
+        uploadedFiles[0].save(frontImage.buffer, { metadata: { contentType: frontImage.contentType } }),
+        uploadedFiles[1].save(backImage.buffer, { metadata: { contentType: backImage.contentType } }),
+      ]);
 
-    // Create Firestore document
-    await requestRef.set({
-      email: normalizedEmail,
-      status: 'pending',
-      role: normalizedRole,
-      idFrontPath: frontPath,
-      idBackPath: backPath,
-      submittedAt: admin.firestore.FieldValue.serverTimestamp(),
-      reviewedAt: null,
-      reviewedBy: null,
-      rejectionReason: null,
-      authUid: null,
-    });
+      await db.runTransaction(async (tx) => {
+        const existingRequest = await tx.get(requestRef);
 
-    return { success: true, requestId };
+        if (existingRequest.exists) {
+          const existingStatus = existingRequest.data()?.status;
+          if (existingStatus === 'pending') {
+            throw new HttpsError('already-exists', 'You already have a pending verification request');
+          }
+          if (existingStatus === 'approved' || existingStatus === 'approving') {
+            throw new HttpsError('failed-precondition', 'This verification request is already approved');
+          }
+        }
+
+        tx.set(requestRef, {
+          email: normalizedEmail,
+          status: 'pending',
+          role: normalizedRole,
+          statusTokenHash: hashToken(statusToken),
+          idFrontPath: frontPath,
+          idBackPath: backPath,
+          submittedAt: admin.firestore.FieldValue.serverTimestamp(),
+          expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          reviewedAt: null,
+          reviewedBy: null,
+          rejectionReason: null,
+          authUid: null,
+        });
+      });
+    } catch (error) {
+      await Promise.allSettled(uploadedFiles.map((file) => file.delete({ ignoreNotFound: true })));
+      throw error;
+    }
+
+    return { success: true, requestId, statusToken };
   }
 );
 
@@ -1618,26 +1594,25 @@ export const checkVerificationStatus = onCall(
   { enforceAppCheck: true },
   async (request: CallableRequest) => {
     const email = request.data?.email?.toLowerCase()?.trim();
+    const statusToken = typeof request.data?.statusToken === 'string' ? request.data.statusToken : '';
 
-    if (!email) {
-      throw new HttpsError('invalid-argument', 'Email required');
+    if (!email || !statusToken) {
+      throw new HttpsError('invalid-argument', 'Email and status token are required');
     }
 
-    const snapshot = await db
+    const requestDoc = await db
       .collection('verification_requests')
-      .where('email', '==', email)
-      .orderBy('submittedAt', 'desc')
-      .limit(1)
+      .doc(hashDocId(`verification:${email}`))
       .get();
 
-    if (snapshot.empty) {
-      return { status: 'none' };
+    const data = requestDoc.data() || {};
+    if (!requestDoc.exists || !secureTokenMatches(statusToken, data.statusTokenHash)) {
+      throw new HttpsError('permission-denied', 'Invalid verification status token');
     }
 
-    const data = snapshot.docs[0].data();
     return {
       status: data.status,
-      requestId: snapshot.docs[0].id,
+      requestId: requestDoc.id,
       rejectionReason: data.rejectionReason || null,
       role: data.role || 'student',
     };
@@ -1656,38 +1631,50 @@ export const listPendingVerificationRequests = onCall(
       throw new HttpsError('permission-denied', 'Admin access required');
     }
 
-    const snapshot = await db
+    const requestedLimit = Number(request.data?.limit || 25);
+    const pageLimit = Math.min(Math.max(Math.floor(requestedLimit), 1), 50);
+    const cursorMillis = Number(request.data?.cursorMillis || 0);
+    let pendingQuery = db
       .collection('verification_requests')
       .where('status', '==', 'pending')
       .orderBy('submittedAt', 'asc')
-      .get();
+      .limit(pageLimit);
+
+    if (Number.isFinite(cursorMillis) && cursorMillis > 0) {
+      pendingQuery = pendingQuery.startAfter(admin.firestore.Timestamp.fromMillis(cursorMillis));
+    }
+
+    const snapshot = await pendingQuery.get();
 
     const bucket = getStorageBucket();
-    const requests = [];
-
-    for (const doc of snapshot.docs) {
+    const requests = await Promise.all(snapshot.docs.map(async (doc) => {
       const data = doc.data();
 
       // Generate signed download URLs (valid for 1 hour)
-      const [frontUrl] = await bucket.file(data.idFrontPath).getSignedUrl({
-        action: 'read',
-        expires: Date.now() + 60 * 60 * 1000,
-      });
-      const [backUrl] = await bucket.file(data.idBackPath).getSignedUrl({
-        action: 'read',
-        expires: Date.now() + 60 * 60 * 1000,
-      });
+      const [[frontUrl], [backUrl]] = await Promise.all([
+        bucket.file(data.idFrontPath).getSignedUrl({
+          action: 'read',
+          expires: Date.now() + 60 * 60 * 1000,
+        }),
+        bucket.file(data.idBackPath).getSignedUrl({
+          action: 'read',
+          expires: Date.now() + 60 * 60 * 1000,
+        }),
+      ]);
 
-      requests.push({
+      return {
         requestId: doc.id,
         email: data.email,
         submittedAt: data.submittedAt,
         frontImageUrl: frontUrl,
         backImageUrl: backUrl,
-      });
-    }
+      };
+    }));
 
-    return { requests };
+    const nextCursorMillis = snapshot.size === pageLimit
+      ? snapshot.docs[snapshot.docs.length - 1]?.data()?.submittedAt?.toMillis?.() || null
+      : null;
+    return { requests, nextCursorMillis };
   }
 );
 
@@ -1710,87 +1697,68 @@ export const reviewVerificationRequest = onCall(
     }
 
     const requestRef = db.collection('verification_requests').doc(requestId);
-    const requestDoc = await requestRef.get();
-
-    if (!requestDoc.exists) {
-      throw new HttpsError('not-found', 'Verification request not found');
-    }
-
-    const requestData = requestDoc.data();
-    if (requestData.status !== 'pending') {
-      throw new HttpsError('failed-precondition', 'Request already reviewed');
-    }
 
     if (action === 'approve') {
-    // Create Firebase Auth user
-      let uid: string;
-      try {
-        const existingUser = await admin.auth().getUserByEmail(requestData.email);
-        uid = existingUser.uid;
-      } catch {
-        const newUser = await admin.auth().createUser({
-          email: requestData.email,
-          emailVerified: true,
+      const requestData = await db.runTransaction(async (tx) => {
+        const requestDoc = await tx.get(requestRef);
+        if (!requestDoc.exists) {
+          throw new HttpsError('not-found', 'Verification request not found');
+        }
+        if (requestDoc.data()?.status !== 'pending') {
+          throw new HttpsError('failed-precondition', 'Request already reviewed');
+        }
+        tx.update(requestRef, {
+          status: 'approving',
+          reviewedBy: request.auth?.uid,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
-        uid = newUser.uid;
+        return requestDoc.data() || {};
+      });
+
+      try {
+        let uid: string;
+        try {
+          const existingUser = await admin.auth().getUserByEmail(requestData.email);
+          uid = existingUser.uid;
+        } catch {
+          const newUser = await admin.auth().createUser({
+            email: requestData.email,
+            emailVerified: true,
+          });
+          uid = newUser.uid;
+        }
+
+        await requestRef.update({
+          status: 'approved',
+          reviewedAt: admin.firestore.FieldValue.serverTimestamp(),
+          reviewedBy: request.auth.uid,
+          authUid: uid,
+        });
+      } catch (error) {
+        await requestRef.update({
+          status: 'pending',
+          reviewedBy: null,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        throw error;
       }
-
-      await requestRef.update({
-        status: 'approved',
-        reviewedAt: admin.firestore.FieldValue.serverTimestamp(),
-        reviewedBy: request.auth.uid,
-        authUid: uid,
-      });
     } else {
-      await requestRef.update({
-        status: 'rejected',
-        reviewedAt: admin.firestore.FieldValue.serverTimestamp(),
-        reviewedBy: request.auth.uid,
-        rejectionReason: rejectionReason || null,
+      await db.runTransaction(async (tx) => {
+        const requestDoc = await tx.get(requestRef);
+        if (!requestDoc.exists) {
+          throw new HttpsError('not-found', 'Verification request not found');
+        }
+        if (requestDoc.data()?.status !== 'pending') {
+          throw new HttpsError('failed-precondition', 'Request already reviewed');
+        }
+        tx.update(requestRef, {
+          status: 'rejected',
+          reviewedAt: admin.firestore.FieldValue.serverTimestamp(),
+          reviewedBy: request.auth?.uid,
+          rejectionReason: typeof rejectionReason === 'string' ? rejectionReason.trim().slice(0, 500) : null,
+        });
       });
     }
-
-    return { success: true };
-  }
-);
-
-export const registerPushToken = onCall(
-  { enforceAppCheck: true },
-  async (request: CallableRequest) => {
-    const { auth, data } = request;
-
-    if (!auth) {
-      throw new HttpsError('unauthenticated', 'User not authenticated');
-    }
-
-    const token = data?.token;
-    const platform = data?.platform;
-
-    if (!token || typeof token !== 'string') {
-      throw new HttpsError('invalid-argument', 'token is required');
-    }
-
-    if (!token.startsWith('ExponentPushToken[') && !token.startsWith('ExpoPushToken[')) {
-      throw new HttpsError('invalid-argument', 'Invalid Expo push token');
-    }
-
-    // Use token as doc ID so duplicate writes are idempotent
-    const tokenDocRef = db.collection('pushTokens').doc(token);
-    const studentRef = db.collection('students').doc(auth.uid);
-
-    await Promise.all([
-      tokenDocRef.set({
-        token,
-        userId: auth.uid,
-        platform: typeof platform === 'string' ? platform : null,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      }, { merge: true }),
-      studentRef.set({
-        expoPushTokens: admin.firestore.FieldValue.arrayUnion(token),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      }, { merge: true }),
-    ]);
 
     return { success: true };
   }

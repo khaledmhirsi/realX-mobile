@@ -83,7 +83,6 @@ export default function GiftCardCheckout({
 
             await redeemGiftCard({
                 vendorId: brand.id,
-                vendorName: brand.name,
                 giftCardAmount: selectedAmount,
                 totalAmount: totalBillNum,
                 pin,

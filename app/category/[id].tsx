@@ -1,4 +1,3 @@
-import { collection, getDocs, getFirestore, limit, orderBy, query, startAfter, where } from '@react-native-firebase/firestore';
 import { FlashList } from '@shopify/flash-list';
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -18,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { SearchBar } from '../../components/home';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
-import { fetchCategory } from '../../utils/firebaseQueries';
+import { CategoryVendorCursor, fetchCategory, fetchCategoryVendorsPage } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
 
 const BACKGROUND_ICONS = [
@@ -266,66 +265,37 @@ export default function CategoryScreen() {
                 return;
             }
 
-            const db = getFirestore();
-            const vendorsRef = collection(db, 'vendors');
             const PAGE_SIZE = 10;
             const activeSearchQuery = searchQuery.trim().toLowerCase();
-
-            const baseConstraints: any[] = [];
-
-            if (selectedSubCategory !== 'all' && !activeSearchQuery) {
-                baseConstraints.push(where('subcategory', 'array-contains', selectedSubCategory));
-            } else {
-                baseConstraints.push(where('mainCategory', '==', englishCategoryName));
-            }
-
-            if (activeSearchQuery) {
-                baseConstraints.push(where('searchTokens', 'array-contains', activeSearchQuery));
-            }
-
-            if (selectedFilter === 'trending') {
-                baseConstraints.push(where('isTrending', '==', true));
-            } else if (selectedFilter === 'cashbacks') {
-                baseConstraints.push(where('xcard', '==', true));
-            }
-
-            let q;
-            if (isNew) {
-                q = query(vendorsRef, ...baseConstraints, orderBy('createdAt', 'desc') as any, limit(PAGE_SIZE) as any);
-            } else {
-                const startAfterDoc = lastDocRef.current;
-                q = startAfterDoc
-                    ? query(vendorsRef, ...baseConstraints, orderBy('createdAt', 'desc') as any, startAfter(startAfterDoc) as any, limit(PAGE_SIZE) as any)
-                    : query(vendorsRef, ...baseConstraints, orderBy('createdAt', 'desc') as any, limit(PAGE_SIZE) as any);
-            }
-
-            const querySnapshot = await queryClient.fetchQuery({
+            const cursor = isNew ? null : lastDocRef.current as CategoryVendorCursor | null;
+            const page = await queryClient.fetchQuery({
                 queryKey: queryKeys.vendorsPage('category', {
                     activeSearchQuery,
                     englishCategoryName,
                     selectedFilter,
                     selectedSubCategory,
-                }, (isNew ? null : lastDocRef.current?.id ?? null)),
-                queryFn: () => getDocs(q),
+                }, cursor?.id ?? null),
+                queryFn: () => fetchCategoryVendorsPage({
+                    categoryName: englishCategoryName,
+                    searchQuery: activeSearchQuery,
+                    selectedFilter,
+                    selectedSubCategory,
+                    pageSize: PAGE_SIZE,
+                    cursor,
+                }),
             });
 
-            if (!querySnapshot.empty) {
-                const fetchedVendors = querySnapshot.docs.map((doc: any) => ({
-                    id: doc.id,
-                    ...doc.data(),
-                    xcard: doc.data().xcard || false
-                }));
-
+            if (page.items.length > 0) {
                 if (isNew) {
-                    setVendors(fetchedVendors);
+                    setVendors(page.items);
                 } else {
-                    setVendors(prev => [...prev, ...fetchedVendors]);
+                    setVendors(prev => [...prev, ...page.items]);
                 }
 
                 restoreFlashListScroll();
 
-                lastDocRef.current = querySnapshot.docs[querySnapshot.docs.length - 1];
-                setIsListEnd(querySnapshot.docs.length < PAGE_SIZE);
+                lastDocRef.current = page.nextCursor;
+                setIsListEnd(page.reachedEnd);
             } else {
                 setIsListEnd(true);
                 if (isNew) {

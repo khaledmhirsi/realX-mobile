@@ -264,7 +264,11 @@ function LayoutContent({
         if (!currentPath.includes('pending')) {
           router.replace({
             pathname: '/(onboarding)/pending',
-            params: { email: pendingVerification.email, role: pendingVerification.role },
+            params: {
+              email: pendingVerification.email,
+              role: pendingVerification.role,
+              statusToken: pendingVerification.statusToken,
+            },
           } as any);
         }
       } else if (!inAuthGroup) {
@@ -282,10 +286,13 @@ function LayoutContent({
           const fetchRoleAndNavigate = async () => {
             let role: string | undefined;
             try {
-              if (user.email) {
+              if (user.email && pendingVerification?.statusToken) {
                 const fnInstance = getFunctions(undefined, 'me-central1');
                 const checkStatus = httpsCallable(fnInstance, 'checkVerificationStatus');
-                const result = await checkStatus({ email: user.email });
+                const result = await checkStatus({
+                  email: user.email,
+                  statusToken: pendingVerification.statusToken,
+                });
                 const data = result.data as { status: string; role?: string };
                 if (data.status !== 'none') {
                   role = data.role;

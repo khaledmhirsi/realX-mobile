@@ -9,68 +9,38 @@ Follow these steps to set up and run the project locally.
 ### Prerequisites
 
 *   Node.js (LTS version recommended)
-*   npm or Yarn
+*   pnpm 10 for the mobile app
+*   npm for `functions/`
 *   Expo Go app on your mobile device (optional, for testing on device)
 
 ### 1. Install Dependencies
 
-Install the project dependencies using npm:
+Install the mobile dependencies using pnpm:
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 2. Configure Firebase
 
-This project uses Firebase for backend services. To get started with Firebase:
+This project uses React Native Firebase and the production `reelx-backend` project.
 
-1.  **Create a Firebase Project:**
-    *   Go to the [Firebase Console](https://console.firebase.google.com/).
-    *   Click "Add project" and follow the instructions to create a new project.
-
-2.  **Add Apps to the Production Firebase Project:**
+1.  **Add Apps to the Production Firebase Project:**
     *   **Android App:** Register `com.reelx.app`. Download `google-services.json` and place it in the project root directory (`./google-services.json`).
     *   **iOS App:** Register `com.reelx.app`. Download `GoogleService-Info.plist` and place it in the project root directory (`./GoogleService-Info.plist`).
 
     *Note: This repository only uses the production Firebase project, `reelx-backend`. Local, preview, development, and production builds all connect to production data and services.*
 
-3.  **Add Firebase Configuration to your Project:**
-    Create a file named `constants/firebaseConfig.ts` and add your Firebase configuration:
-
-    ```typescript
-    // constants/firebaseConfig.ts
-    import { initializeApp } from 'firebase/app';
-    // import { getAuth } from 'firebase/auth'; // if using Firebase Auth
-    // import { getFirestore } from 'firebase/firestore'; // if using Firestore
-    // import { getStorage } from 'firebase/storage'; // if using Firebase Storage
-
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID",
-      measurementId: "YOUR_MEASUREMENT_ID" // Optional
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    // export const auth = getAuth(app); // if using Firebase Auth
-    // export const db = getFirestore(app); // if using Firestore
-    // export const storage = getStorage(app); // if using Firebase Storage
-    ```
-    *Note: You will need to install specific Firebase modules (e.g., `firebase/auth`, `firebase/firestore`) depending on the services you use: `npm install firebase`*
-
-4.  **Initialize Firebase in your App:**
-    Ensure your Firebase app is initialized at an appropriate entry point, like `app/_layout.tsx` or a dedicated initialization file. The `initializeApp` call from the previous step handles this.
+2.  **Configure App Check:**
+    Register local debug tokens against `reelx-backend` and supply them through an untracked
+    environment file or EAS environment variable.
 
 ### 3. Start the Development Server
 
 Once dependencies are installed and Firebase is configured, start the Expo development server:
 
 ```bash
-npm run start
+pnpm start
 ```
 
 Local development builds use the production app identity and Firebase project. App Check debug tokens must be registered against `reelx-backend` and supplied through an untracked local or EAS environment variable.
@@ -84,15 +54,16 @@ This will open a new tab in your browser with the Expo Dev Tools. You can then:
 
 You can start developing by editing the files inside the **app** directory.
 
-## ♻️ Get a Fresh Project (Reset Starter Code)
+## Clear Generated Output
 
-If you wish to reset the project to a blank state and start fresh, run:
+To clear Expo caches and generated build output without deleting source files, run:
 
 ```bash
-npm run reset-project
+pnpm reset-project
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Firebase validation is manual. Use the checklist in
+[`docs/manual-firebase-validation.md`](docs/manual-firebase-validation.md) before deployment.
 
 ## 📚 Learn More
 

@@ -489,6 +489,11 @@ export default function MapScreen() {
           queryFn: () => fetchMapLocationsByPrefixes(tileSet.precision, normalizedMissingPrefixes),
         });
         const indexedVendors = parseMapLocationDocs(indexedLocations);
+        logger.log('[Map] Indexed tile read completed', {
+          precision: tileSet.precision,
+          prefixCount: normalizedMissingPrefixes.length,
+          documentCount: indexedLocations.length,
+        });
         const byPrefix = new Map<string, VendorMapItem[]>();
 
         indexedVendors.forEach((vendor) => {

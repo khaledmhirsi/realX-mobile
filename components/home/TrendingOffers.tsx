@@ -108,6 +108,9 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
             }
 
             if (fetchedResults.length === 0) {
+                logger.warn('[TrendingOffers] Using bounded legacy vendor fallback', {
+                    limit: TRENDING_FALLBACK_LIMIT,
+                });
                 fetchedResults = await fetchLegacyTrendingVendors();
             }
 
