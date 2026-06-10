@@ -221,10 +221,11 @@ const styles = StyleSheet.create({
     headline: {
         fontSize: 19,
         lineHeight: 25,
-        fontFamily: Typography.poppins.semiBold,
+        fontFamily: Typography.hanson.bold,
+        color: '#FFFFFF',
     },
     headlineLight: {
-        color: '#111111',
+        color: '#FFFFFF',
     },
     headlineDark: {
         color: '#FFFFFF',
@@ -271,16 +272,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         overflow: 'hidden',
         borderRadius: 27,
-        borderWidth: 1,
     },
     artPanelLight: {
         backgroundColor: 'rgba(239, 247, 255, 0.84)',
-        borderColor: 'rgba(255, 255, 255, 0.86)',
         boxShadow: '0 20px 48px rgba(28, 103, 202, 0.22)',
     },
     artPanelDark: {
         backgroundColor: 'rgba(255, 255, 255, 0.18)',
-        borderColor: 'rgba(255, 255, 255, 0.26)',
         boxShadow: '0 26px 62px rgba(124, 181, 255, 0.30)',
     },
     artImage: {
