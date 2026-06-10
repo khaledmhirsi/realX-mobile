@@ -86,7 +86,9 @@ const hashDocId = (value: string) =>
 
 const REDEMPTION_RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 const MAX_REDEMPTIONS_PER_WINDOW = 10;
-const assertAdmin = async (uid: string) => {
+const assertAdmin = async (uid: string, hasAdminClaim = false) => {
+  if (hasAdminClaim) return;
+
   const adminDoc = await db.collection('students').doc(uid).get();
   if (!adminDoc.exists || adminDoc.data()?.admin !== true) {
     throw new HttpsError('permission-denied', 'Admin access required');
@@ -535,13 +537,12 @@ export const {
  * =============================
  */
 export const setVendorRedemptionPin = onCall(
-  { enforceAppCheck: true },
   async (request: CallableRequest) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Login required');
     }
 
-    await assertAdmin(request.auth.uid);
+    await assertAdmin(request.auth.uid, request.auth.token.admin === true);
     const vendorId = requireDocumentId(request.data?.vendorId, 'Vendor ID');
     const pin = requirePin(request.data?.pin);
     const vendorRef = db.collection('vendors').doc(vendorId);
@@ -574,13 +575,13 @@ export const setVendorRedemptionPin = onCall(
 );
 
 export const migrateVendorRedemptionPins = onCall(
-  { enforceAppCheck: true, timeoutSeconds: 300 },
+  { timeoutSeconds: 300 },
   async (request: CallableRequest) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Login required');
     }
 
-    await assertAdmin(request.auth.uid);
+    await assertAdmin(request.auth.uid, request.auth.token.admin === true);
     const requestedLimit = Number(request.data?.limit || 100);
     const batchLimit = Math.min(Math.max(Math.floor(requestedLimit), 1), 250);
     const afterId = request.data?.afterId
@@ -593,12 +594,37 @@ export const migrateVendorRedemptionPins = onCall(
     }
 
     const snapshot = await vendorsQuery.get();
+    const secretDocs = await db.getAll(
+      ...snapshot.docs.map((vendorDoc) =>
+        db.collection('vendorRedemptionSecrets').doc(vendorDoc.id)
+      )
+    );
     const batch = db.batch();
     let migrated = 0;
+    let alreadyMigrated = 0;
+    let invalidPins = 0;
+    let missingPins = 0;
 
-    snapshot.docs.forEach((vendorDoc) => {
+    snapshot.docs.forEach((vendorDoc, index) => {
       const legacyPin = normalizeDigits(vendorDoc.data()?.pin);
-      if (!/^\d{4}$/.test(legacyPin)) return;
+      if (secretDocs[index]?.exists) {
+        alreadyMigrated++;
+        if (legacyPin) {
+          batch.update(vendorDoc.ref, {
+            pin: admin.firestore.FieldValue.delete(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+        }
+        return;
+      }
+      if (!legacyPin) {
+        missingPins++;
+        return;
+      }
+      if (!/^\d{4}$/.test(legacyPin)) {
+        invalidPins++;
+        return;
+      }
 
       batch.set(db.collection('vendorRedemptionSecrets').doc(vendorDoc.id), {
         ...hashPin(legacyPin),
@@ -625,9 +651,19 @@ export const migrateVendorRedemptionPins = onCall(
       adminUid: request.auth.uid,
       scanned: snapshot.size,
       migrated,
+      alreadyMigrated,
+      invalidPins,
+      missingPins,
       nextAfterId,
     });
-    return { scanned: snapshot.size, migrated, nextAfterId };
+    return {
+      scanned: snapshot.size,
+      migrated,
+      alreadyMigrated,
+      invalidPins,
+      missingPins,
+      nextAfterId,
+    };
   }
 );
 
